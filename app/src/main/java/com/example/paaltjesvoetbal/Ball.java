@@ -1,15 +1,14 @@
-package com.example.paaltjesvoetbal;
+package com.example.paaltjesvoetbal;  // Adjust the package name to your actual package
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 
 public class Ball {
     private float x, y, radius;
     private int color;
     private float velocityX, velocityY;
+    private static final float DAMPING_FACTOR = 0.98F;
 
-    // Constructor
     public Ball(float x, float y, float radius, int color) {
         this.x = x;
         this.y = y;
@@ -19,13 +18,37 @@ public class Ball {
         this.velocityY = 0;
     }
 
-    // Draw the ball
     public void draw(Canvas canvas, Paint paint) {
         paint.setColor(color);
         canvas.drawCircle(x, y, radius, paint);
     }
 
-    // Getters and setters for position, radius, and velocity
+    // Update the ball's position and apply velocity decay
+    public void update(float screenX, float screenY) {
+        // Apply damping factor to simulate velocity decay
+        velocityX *= DAMPING_FACTOR;
+        velocityY *= DAMPING_FACTOR;
+
+        // Update position based on velocity
+        x += velocityX;
+        y += velocityY;
+
+        // Constrain the ball within the screen boundaries and make it bounce
+        bounce(screenX, screenY);
+    }
+
+    private void bounce(float screenX, float screenY) {
+        // Check for collisions with left and right edges
+        if (x - radius <= 0 || x + radius >= screenX) {
+            velocityX = -velocityX;  // Reverse horizontal direction
+        }
+
+        // Check for collisions with top and bottom edges
+        if (y - radius <= 0 || y + radius >= screenY) {
+            velocityY = -velocityY;  // Reverse vertical direction
+        }
+    }
+
     public float getX() {
         return x;
     }
@@ -46,43 +69,8 @@ public class Ball {
         return radius;
     }
 
-    public void setRadius(float radius) {
-        this.radius = radius;
-    }
-
-    // Getters and setters for velocity
-    public float getVelocityX() {
-        return velocityX;
-    }
-
-    public void setVelocityX(float velocityX) {
+    public void setVelocity(float velocityX, float velocityY) {
         this.velocityX = velocityX;
-    }
-
-    public float getVelocityY() {
-        return velocityY;
-    }
-
-    public void setVelocityY(float velocityY) {
         this.velocityY = velocityY;
-    }
-
-    // Ball bouncing logic
-    public void bounce(float screenX, float screenY) {
-        // Check for collisions with left and right edges
-        if (x - radius <= 0 || x + radius >= screenX) {
-            velocityX = -velocityX;  // Reverse horizontal direction
-        }
-
-        // Check for collisions with top and bottom edges
-        if (y - radius <= 0 || y + radius >= screenY) {
-            velocityY = -velocityY;  // Reverse vertical direction
-        }
-    }
-
-    // Move the ball based on its velocity
-    public void updatePosition() {
-        x += velocityX;
-        y += velocityY;
     }
 }

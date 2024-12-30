@@ -68,9 +68,7 @@ public class GameView extends SurfaceView implements Runnable {
         checkPlayerBallCollision();
         // Move the ball based on its velocity
         for (Ball ball : ballList) {
-            ball.updatePosition();  // Move the ball
-            // Ensure the ball bounces off the screen edges
-            ball.bounce(screenX, screenY);
+            ball.update(screenX, screenY);  // Use ball.update() method
         }
     }
 
@@ -236,7 +234,6 @@ public class GameView extends SurfaceView implements Runnable {
         ball.setY(newBallY);
 
         // Set the velocity so the ball moves in the same direction the player is facing
-        ball.setVelocityX(deltaX * 6); // Modify the velocity based on player movement
-        ball.setVelocityY(deltaY * 6); // Modify the velocity based on player movement
+        ball.setVelocity(deltaX * 6, deltaY * 6); // Modify the velocity based on player movement
     }
 }
