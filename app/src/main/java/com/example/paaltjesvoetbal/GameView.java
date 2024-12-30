@@ -66,6 +66,12 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void update() {
         checkPlayerBallCollision();
+        // Move the ball based on its velocity
+        for (Ball ball : ballList) {
+            ball.updatePosition();  // Move the ball
+            // Ensure the ball bounces off the screen edges
+            ball.bounce(screenX, screenY);
+        }
     }
 
     private void draw() {
@@ -142,7 +148,7 @@ public class GameView extends SurfaceView implements Runnable {
             controlledPlayer.setX(controlledPlayer.getX() + deltaX * 6);
             controlledPlayer.setY(controlledPlayer.getY() + deltaY * 6);
 
-            // Constrain the player to screen bounds
+            // Constrain the player to screen bounds (account for player radius)
             controlledPlayer.setX(Math.max(controlledPlayer.getRadius(), Math.min(screenX - controlledPlayer.getRadius(), controlledPlayer.getX())));
             controlledPlayer.setY(Math.max(controlledPlayer.getRadius(), Math.min(screenY - controlledPlayer.getRadius(), controlledPlayer.getY())));
         }
@@ -210,20 +216,27 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void onPlayerHitBall(Player player, Ball ball) {
-        player.setBall(ball);
-        // Calculate the direction from player to ball
-        float dx = ball.getX() - player.getX();
-        float dy = ball.getY() - player.getY();
+        // Calculate the direction the player is heading
+        float deltaX = ball.getX() - player.getX();
+        float deltaY = ball.getY() - player.getY();
 
         // Normalize the direction vector
-        float magnitude = (float) Math.sqrt(dx * dx + dy * dy);
+        float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         if (magnitude > 0) {
-            dx /= magnitude;
-            dy /= magnitude;
+            deltaX /= magnitude;
+            deltaY /= magnitude;
         }
 
-        // Move the ball in the direction of the player
-        ball.setX(player.getX() + dx * 10);
-        ball.setY(player.getY() + dy * 10);
+        // Position the ball in front of the player (in the direction they are heading)
+        float newBallX = player.getX() + deltaX * (player.getRadius() + ball.getRadius() + 10);  // Adjust distance if needed
+        float newBallY = player.getY() + deltaY * (player.getRadius() + ball.getRadius() + 10);  // Adjust distance if needed
+
+        // Move the ball to the player's side in the direction they are heading
+        ball.setX(newBallX);
+        ball.setY(newBallY);
+
+        // Set the velocity so the ball moves in the same direction the player is facing
+        ball.setVelocityX(deltaX * 6); // Modify the velocity based on player movement
+        ball.setVelocityY(deltaY * 6); // Modify the velocity based on player movement
     }
 }
