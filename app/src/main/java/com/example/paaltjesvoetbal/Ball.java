@@ -45,8 +45,8 @@ public class Ball {
             float combinedRadius = this.player.getRadius() + this.radius; // Combine player and ball radii
 
             // Calculate new position based on direction, adjusted by combined radius
-            x = this.player.getX() + (float) Math.cos(direction) * combinedRadius;
-            y = this.player.getY() + (float) Math.sin(direction) * combinedRadius;
+            x = (float) (this.player.getX() + (float) Math.cos(direction) * combinedRadius * 1.1);
+            y = (float) (this.player.getY() + (float) Math.sin(direction) * combinedRadius * 1.1);
         }
     }
 
