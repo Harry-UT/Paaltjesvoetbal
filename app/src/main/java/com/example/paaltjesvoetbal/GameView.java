@@ -41,7 +41,9 @@ public class GameView extends SurfaceView implements Runnable {
             players.add(newPlayer);
 
             // Initialize the joystick for each player
-            Joystick newJoystick = new Joystick(screenX, screenY, newPlayer);
+            Joystick newJoystick = new Joystick(screenX - 60, screenY - 60);
+            newJoystick.setPlayer(newPlayer); // Set the player for this joystick
+            newPlayer.setJoystick(newJoystick); // Optionally link the joystick back to the player
             joysticks.add(newJoystick);
         }
 
@@ -91,7 +93,7 @@ public class GameView extends SurfaceView implements Runnable {
 
             // Draw the joysticks
             for (Joystick joystick : joysticks) {
-                joystick.draw(canvas);
+                joystick.draw(canvas, paint);  // Call the draw method for each joystick
             }
 
             holder.unlockCanvasAndPost(canvas);
@@ -131,20 +133,17 @@ public class GameView extends SurfaceView implements Runnable {
             Joystick joystick = joysticks.get(i);
             Player controlledPlayer = players.get(i);
 
-            // Calculate movement direction from joystick stick position
-            float deltaX = joystick.getStickPosition().x - joystick.getBaseCenter().x;
-            float deltaY = joystick.getStickPosition().y - joystick.getBaseCenter().y;
+            // Get the player's direction set by the joystick
+            float direction = controlledPlayer.getDirection();  // The direction set by joystick
 
-            // Normalize the direction vector
-            float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (magnitude > 0) {
-                deltaX /= magnitude;
-                deltaY /= magnitude;
-            }
+            // Calculate movement based on joystick direction (player will move in this direction)
+            float moveSpeed = 6;  // The speed at which the player moves
+            float moveX = moveSpeed * (float) Math.cos(direction);  // Horizontal movement
+            float moveY = moveSpeed * (float) Math.sin(direction);  // Vertical movement
 
-            // Move the controlled player based on joystick direction
-            controlledPlayer.setX(controlledPlayer.getX() + deltaX * 6);
-            controlledPlayer.setY(controlledPlayer.getY() + deltaY * 6);
+            // Update the player's position
+            controlledPlayer.setX(controlledPlayer.getX() + moveX);
+            controlledPlayer.setY(controlledPlayer.getY() + moveY);
 
             // Constrain the player to screen bounds (account for player radius)
             controlledPlayer.setX(Math.max(controlledPlayer.getRadius(), Math.min(screenX - controlledPlayer.getRadius(), controlledPlayer.getX())));
@@ -214,7 +213,9 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void onPlayerHitBall(Player player, Ball ball) {
-        // Calculate the direction the player is heading
+        player.setBall(ball);
+        ball.setPlayer(player);
+        // Calculate the direction vector
         float deltaX = ball.getX() - player.getX();
         float deltaY = ball.getY() - player.getY();
 
@@ -225,15 +226,15 @@ public class GameView extends SurfaceView implements Runnable {
             deltaY /= magnitude;
         }
 
-        // Position the ball in front of the player (in the direction they are heading)
-        float newBallX = player.getX() + deltaX * (player.getRadius() + ball.getRadius() + 10);  // Adjust distance if needed
-        float newBallY = player.getY() + deltaY * (player.getRadius() + ball.getRadius() + 10);  // Adjust distance if needed
+        // Get the combined radius of player and ball
+        float combinedRadius = player.getRadius() + ball.getRadius();
 
-        // Move the ball to the player's side in the direction they are heading
+        // Position the ball in front of the player, adjusted by the combined radius
+        float newBallX = player.getX() + deltaX * combinedRadius;
+        float newBallY = player.getY() + deltaY * combinedRadius;
+
+        // Move the ball to the desired position next to the player
         ball.setX(newBallX);
         ball.setY(newBallY);
-
-        // Set the velocity so the ball moves in the same direction the player is facing
-        ball.setVelocity(deltaX * 6, deltaY * 6); // Modify the velocity based on player movement
     }
 }

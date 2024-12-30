@@ -8,6 +8,7 @@ public class Ball {
     private int color;
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.98F;
+    private Player player;
 
     public Ball(float x, float y, float radius, int color) {
         this.x = x;
@@ -23,18 +24,30 @@ public class Ball {
         canvas.drawCircle(x, y, radius, paint);
     }
 
-    // Update the ball's position and apply velocity decay
-    public void update(float screenX, float screenY) {
-        // Apply damping factor to simulate velocity decay
-        velocityX *= DAMPING_FACTOR;
-        velocityY *= DAMPING_FACTOR;
+    public void update(int screenX, int screenY) {
+        if (this.player == null) {
+            // Update ball position based on its velocity
+            x += velocityX;
+            y += velocityY;
 
-        // Update position based on velocity
-        x += velocityX;
-        y += velocityY;
+            // Check for screen boundary collisions
+            if (x - radius < 0 || x + radius > screenX) {
+                velocityX = -velocityX;  // Reverse horizontal direction
+            }
+            if (y - radius < 0 || y + radius > screenY) {
+                velocityY = -velocityY;  // Reverse vertical direction
+            }
+        } else {
+            // Update the ball's position based on the player's direction
+            float direction = this.player.getDirection();  // Get the player's direction (angle in radians)
 
-        // Constrain the ball within the screen boundaries and make it bounce
-        bounce(screenX, screenY);
+            // Define a distance to move the ball from the player (e.g., just in front of the player)
+            float combinedRadius = this.player.getRadius() + this.radius; // Combine player and ball radii
+
+            // Calculate new position based on direction, adjusted by combined radius
+            x = this.player.getX() + (float) Math.cos(direction) * combinedRadius;
+            y = this.player.getY() + (float) Math.sin(direction) * combinedRadius;
+        }
     }
 
     private void bounce(float screenX, float screenY) {
@@ -72,5 +85,12 @@ public class Ball {
     public void setVelocity(float velocityX, float velocityY) {
         this.velocityX = velocityX;
         this.velocityY = velocityY;
+    }
+
+    public Player getPlayer() {
+        return this.player;
+    }
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 }

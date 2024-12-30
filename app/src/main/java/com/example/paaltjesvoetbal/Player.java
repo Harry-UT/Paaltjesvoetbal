@@ -3,27 +3,24 @@ package com.example.paaltjesvoetbal;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-import java.util.ArrayList;
-
 public class Player {
-    private float x, y, radius;
-    private int color;
-    private Ball ball;
+    private float x, y;  // Position of the player
+    private int radius;  // Player's radius
+    private int color;  // Player's color
+    private Ball ball;  // Reference to the ball the player is controllin
 
-    public Player(float x, float y, float radius, int color) {
+    private Joystick joystick;
+
+    // Constructor to initialize the player
+    public Player(float x, float y, int radius, int color) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.color = color;
+        this.ball = null;  // Initially, the player is not controlling any ball
     }
 
-    // Draw the player
-    public void draw(Canvas canvas, Paint paint) {
-        paint.setColor(color);
-        canvas.drawCircle(x, y, radius, paint);
-    }
-
-    // Getters and setters for position
+    // Getter and setter for the player's position
     public float getX() {
         return x;
     }
@@ -40,15 +37,46 @@ public class Player {
         this.y = y;
     }
 
-    public float getRadius() {
+    // Getter and setter for the player's radius
+    public int getRadius() {
         return radius;
     }
 
+    public void setRadius(int radius) {
+        this.radius = radius;
+    }
+
+    // Getter and setter for the player's color
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    // Getter and setter for the player's direction
+    public float getDirection() {
+        return joystick.getDirection();
+    }
+
+    // Getter for the ball the player is controlling
+    public Ball getBall() {
+        return ball;
+    }
+
+    // Set the ball that the player is controlling
     public void setBall(Ball ball) {
         this.ball = ball;
     }
 
-    public Ball getBals() {
-        return ball;
+    // Draw method for rendering the player
+    public void draw(Canvas canvas, Paint paint) {
+        paint.setColor(color);
+        canvas.drawCircle(x, y, radius, paint);  // Draw the player as a circle
+    }
+
+    public void setJoystick(Joystick joystick) {
+        this.joystick = joystick;
     }
 }
