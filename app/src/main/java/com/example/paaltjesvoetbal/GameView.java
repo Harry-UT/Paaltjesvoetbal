@@ -6,7 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -17,42 +17,45 @@ import java.util.ArrayList;
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private boolean isPlaying;
-    private SurfaceHolder holder;
-    private Paint paint;
-    private int screenX, screenY;
+    private final SurfaceHolder holder;
+    private final int screenX;
+    private final int screenY;
     private Bitmap background;
-    private ArrayList<Joystick> joysticks;  // List of joysticks for multiple players
-    private ArrayList<Player> players;  // Multiple players, each with its own position
-    private ArrayList<Ball> ballList;  // List to hold the balls
+    private final ArrayList<Joystick> joysticks;
+    private final ArrayList<Player> players;
+    private final ArrayList<Ball> balls;
+    private final ArrayList<ShootButton> shootButtons;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
         this.screenX = screenX;
         this.screenY = screenY;
         holder = getHolder();
-        paint = new Paint();
 
-        // Initialize the player and joystick list
+        // Initialize players and joysticks
         players = new ArrayList<>();
         joysticks = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            // Initialize the player at a specific position
-            Player newPlayer = new Player((float) (screenX / 2), (float) (screenY / 1.1), 50, Color.RED);
-            players.add(newPlayer);
+        shootButtons = new ArrayList<>();
 
-            // Initialize the joystick for each player
-            Joystick newJoystick = new Joystick(screenX - 60, screenY - 60);
-            newJoystick.setPlayer(newPlayer); // Set the player for this joystick
-            newPlayer.setJoystick(newJoystick); // Optionally link the joystick back to the player
-            joysticks.add(newJoystick);
-        }
+        Player newPlayer = new Player(screenX / 2f, screenY / 1.1f, 50, Color.RED);
+        players.add(newPlayer);
 
-        // Initialize the ball list
-        ballList = new ArrayList<>();
-        Ball ball = new Ball((float) screenX / 2, (float) screenY / 2, 30, Color.BLUE);
-        ballList.add(ball);
+        Joystick newJoystick = new Joystick(screenX - 120, screenY - 120);
+        newJoystick.setPlayer(newPlayer);
+        newPlayer.setJoystick(newJoystick);
+        joysticks.add(newJoystick);
 
-        // Load and scale the background image
+        // Initialize the shoot button and add it to the list
+        ShootButton shootButton = new ShootButton(screenX - 500, screenY - 200, 50);
+        shootButtons.add(shootButton);
+        newPlayer.setShootButton(shootButton);
+
+        // Initialize balls
+        balls = new ArrayList<>();
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, 30, Color.BLUE);
+        balls.add(ball);
+
+        // Load background image
         background = BitmapFactory.decodeResource(context.getResources(), R.drawable.background);
         background = scaleBackgroundToFitScreen(background);
     }
@@ -68,10 +71,10 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void update() {
         checkPlayerBallCollision();
-        // Move the ball based on its velocity
-        for (Ball ball : ballList) {
-            ball.update(screenX, screenY);  // Use ball.update() method
+        for (Ball ball : balls) {
+            ball.update(screenX, screenY);
         }
+        updatePlayers();
     }
 
     private void draw() {
@@ -79,21 +82,26 @@ public class GameView extends SurfaceView implements Runnable {
             Canvas canvas = holder.lockCanvas();
 
             // Draw the scaled background
-            canvas.drawBitmap(background, 0, 0, paint);
+            canvas.drawBitmap(background, 0, 0, null);
 
             // Draw the players
             for (Player player : players) {
-                player.draw(canvas, paint);
+                player.draw(canvas);
             }
 
             // Draw the balls
-            for (Ball ball : ballList) {
-                ball.draw(canvas, paint);
+            for (Ball ball : balls) {
+                ball.draw(canvas);
             }
 
             // Draw the joysticks
             for (Joystick joystick : joysticks) {
-                joystick.draw(canvas, paint);  // Call the draw method for each joystick
+                joystick.draw(canvas);  // Call the draw method for each joystick
+            }
+
+            // Draw the shoot buttons
+            for (ShootButton button : shootButtons) {
+                button.draw(canvas);
             }
 
             holder.unlockCanvasAndPost(canvas);
@@ -108,46 +116,58 @@ public class GameView extends SurfaceView implements Runnable {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                // Handle shoot button press
+                for (ShootButton button : shootButtons) {
+                    if (button.isTouched(touchX, touchY)) {
+                        button.setPressed(true); // Set button as pressed
+                        button.shoot();         // Perform the shooting action
+                        return true;  // Stop further processing if shoot button is touched
+                    }
+                }
+                break;
+
             case MotionEvent.ACTION_MOVE:
                 // Handle touch input for each joystick
                 for (Joystick joystick : joysticks) {
-                    joystick.onTouchEvent(touchX, touchY);
+                    float dx = joystick.getBaseCenter().x - touchX;
+                    float dy = joystick.getBaseCenter().y - touchY;
+                    if (Math.sqrt(dx * dx + dy * dy) <= 300) {
+                        joystick.onTouch(touchX, touchY);
+                    }
                 }
-
-                // Move players based on joystick positions
-                movePlayers();
                 break;
+
             case MotionEvent.ACTION_UP:
-                // Reset all joysticks on touch up
+                // Reset joystick and shoot button when touch is released
                 for (Joystick joystick : joysticks) {
                     joystick.reset();
+                }
+                for (ShootButton button : shootButtons) {
+                    button.setPressed(false); // Reset button press state
                 }
                 break;
         }
         return true;
     }
 
-    private void movePlayers() {
-        // Iterate over each joystick and move the corresponding player
-        for (int i = 0; i < joysticks.size(); i++) {
-            Joystick joystick = joysticks.get(i);
-            Player controlledPlayer = players.get(i);
+    private void updatePlayers() {
+        for (Player player : players) {
+            float direction = player.getDirection();  // The direction set by joystick
+            if (direction != 0) {
+                float moveSpeed = 20;
+                float moveX = moveSpeed * (float) Math.cos(direction);
+                float moveY = moveSpeed * (float) Math.sin(direction);
+                float newX = player.getX() + moveX;
+                float newY = player.getY() + moveY;
 
-            // Get the player's direction set by the joystick
-            float direction = controlledPlayer.getDirection();  // The direction set by joystick
+                // Clamp player position within screen bounds
+                newX = Math.max(player.getRadius(), Math.min(newX, screenX - player.getRadius()));
+                newY = Math.max(player.getRadius(), Math.min(newY, screenY - player.getRadius()));
 
-            // Calculate movement based on joystick direction (player will move in this direction)
-            float moveSpeed = 6;  // The speed at which the player moves
-            float moveX = moveSpeed * (float) Math.cos(direction);  // Horizontal movement
-            float moveY = moveSpeed * (float) Math.sin(direction);  // Vertical movement
-
-            // Update the player's position
-            controlledPlayer.setX(controlledPlayer.getX() + moveX);
-            controlledPlayer.setY(controlledPlayer.getY() + moveY);
-
-            // Constrain the player to screen bounds (account for player radius)
-            controlledPlayer.setX(Math.max(controlledPlayer.getRadius(), Math.min(screenX - controlledPlayer.getRadius(), controlledPlayer.getX())));
-            controlledPlayer.setY(Math.max(controlledPlayer.getRadius(), Math.min(screenY - controlledPlayer.getRadius(), controlledPlayer.getY())));
+                // Set the final position after checking bounds
+                player.setX(newX);
+                player.setY(newY);
+            }
         }
     }
 
@@ -155,27 +175,26 @@ public class GameView extends SurfaceView implements Runnable {
         int bgWidth = background.getWidth();
         int bgHeight = background.getHeight();
 
-        // Calculate the scaling factor to fit the screen's width and height
         float scaleX = (float) screenX / bgWidth;
         float scaleY = (float) screenY / bgHeight;
 
-        // Use these factors directly to scale the image to fit the screen
-        int newWidth = (int) (bgWidth * scaleX);  // Stretch width
-        int newHeight = (int) (bgHeight * scaleY);  // Stretch height
+        int newWidth = (int) (bgWidth * scaleX);
+        int newHeight = (int) (bgHeight * scaleY);
 
-        // Create and return the scaled background
         return Bitmap.createScaledBitmap(background, newWidth, newHeight, true);
     }
 
     private void sleep() {
         long currentTime = System.nanoTime();
-        long frameTime = 16_666_667; // Target for 60 FPS
-        long sleepTime = frameTime - (currentTime - System.nanoTime());
+        long frameTime = 16_666_667;  // Target frame time for 60 FPS
+        long elapsedTime = System.nanoTime() - currentTime;
+        long sleepTime = frameTime - elapsedTime;
+
         if (sleepTime > 0) {
             try {
                 Thread.sleep(sleepTime / 1_000_000, (int) (sleepTime % 1_000_000));
             } catch (InterruptedException e) {
-                System.out.println("Sleep went wrong");
+                e.printStackTrace();
             }
         }
     }
@@ -197,15 +216,12 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void checkPlayerBallCollision() {
         for (Player player : players) {
-            for (Ball ball : ballList) {
-                // Calculate the distance between the player and the ball
+            for (Ball ball : balls) {
                 float dx = player.getX() - ball.getX();
                 float dy = player.getY() - ball.getY();
                 float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
-                // Check if the distance is less than or equal to the sum of the radii
                 if (distance <= player.getRadius() + ball.getRadius()) {
-                    // Collision detected
                     onPlayerHitBall(player, ball);
                 }
             }
@@ -215,25 +231,20 @@ public class GameView extends SurfaceView implements Runnable {
     private void onPlayerHitBall(Player player, Ball ball) {
         player.setBall(ball);
         ball.setPlayer(player);
-        // Calculate the direction vector
+
         float deltaX = ball.getX() - player.getX();
         float deltaY = ball.getY() - player.getY();
 
-        // Normalize the direction vector
         float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         if (magnitude > 0) {
             deltaX /= magnitude;
             deltaY /= magnitude;
         }
 
-        // Get the combined radius of player and ball
         float combinedRadius = player.getRadius() + ball.getRadius();
-
-        // Position the ball in front of the player, adjusted by the combined radius
         float newBallX = player.getX() + deltaX * combinedRadius;
         float newBallY = player.getY() + deltaY * combinedRadius;
 
-        // Move the ball to the desired position next to the player
         ball.setX(newBallX);
         ball.setY(newBallY);
     }

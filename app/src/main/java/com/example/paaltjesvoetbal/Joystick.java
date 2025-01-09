@@ -6,9 +6,10 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 
 public class Joystick {
-    private float baseCenterX, baseCenterY;
+    private final float baseCenterX;
+    private final float baseCenterY;
     private float stickX, stickY;
-    private Player player;  // Reference to the player controlled by this joystick
+    private Player player;
     private static final float JOYSTICK_RADIUS = 100; // Define joystick's maximum radius
 
     // Constructor to initialize the joystick position and player reference
@@ -25,8 +26,7 @@ public class Joystick {
         stickY = baseCenterY;
     }
 
-    // Method to handle touch events and update joystick position
-    public void onTouchEvent(float touchX, float touchY) {
+    public void onTouch(float touchX, float touchY) {
         // Calculate the stick's position relative to the joystick base
         float dx = touchX - baseCenterX;
         float dy = touchY - baseCenterY;
@@ -42,12 +42,10 @@ public class Joystick {
         stickY = baseCenterY + dy;
     }
 
-    // Getter for the stick position
     public PointF getStickPosition() {
         return new PointF(stickX, stickY);
     }
 
-    // Getter for the joystick's base center
     public PointF getBaseCenter() {
         return new PointF(baseCenterX, baseCenterY);
     }
@@ -58,14 +56,13 @@ public class Joystick {
         return (float) Math.atan2(dy, dx);  // Angle in radians
     }
 
-    // Set the player this joystick controls
     public void setPlayer(Player player) {
         this.player = player;
     }
 
-    // Add the draw method to render the joystick
-    public void draw(Canvas canvas, Paint paint) {
+    public void draw(Canvas canvas) {
         // Draw the base of the joystick (circle)
+        Paint paint = new Paint();
         paint.setColor(Color.GRAY);  // Joystick base color
         paint.setAlpha(100);  // Slight transparency for the base
         canvas.drawCircle(baseCenterX, baseCenterY, JOYSTICK_RADIUS, paint);

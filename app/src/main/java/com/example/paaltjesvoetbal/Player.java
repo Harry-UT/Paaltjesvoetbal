@@ -8,8 +8,8 @@ public class Player {
     private int radius;  // Player's radius
     private int color;  // Player's color
     private Ball ball;  // Reference to the ball the player is controllin
-
     private Joystick joystick;
+    private ShootButton shootButton;
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color) {
@@ -68,15 +68,28 @@ public class Player {
     // Set the ball that the player is controlling
     public void setBall(Ball ball) {
         this.ball = ball;
+        this.shootButton.setBall(ball);
     }
 
     // Draw method for rendering the player
-    public void draw(Canvas canvas, Paint paint) {
+    public void draw(Canvas canvas) {
+        Paint paint = new Paint();
         paint.setColor(color);
         canvas.drawCircle(x, y, radius, paint);  // Draw the player as a circle
     }
 
     public void setJoystick(Joystick joystick) {
         this.joystick = joystick;
+    }
+    public ShootButton getShootButton() {
+        return shootButton;
+    }
+
+    public void setShootButton(ShootButton shootButton) {
+        this.shootButton = shootButton;
+    }
+
+    public void releaseBall() {
+        this.ball = null;
     }
 }
