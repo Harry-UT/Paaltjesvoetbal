@@ -1,0 +1,9 @@
+workflows:
+  default:
+    name: Default workflow
+    trigger:
+      branches:
+        only:
+          - main
+    scripts:
+      - echo "Hello, Codemagic!"
