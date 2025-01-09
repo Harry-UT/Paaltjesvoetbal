@@ -1,7 +1,0 @@
-workflows:
-  android:
-    name: Android Build
-    scripts:
-      - ./gradlew clean assembleRelease  # Gradle command to build APK
-    artifacts:
-      - app/build/outputs/apk/release/app-release.apk  # Path to the APK file

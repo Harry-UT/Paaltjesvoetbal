@@ -3,14 +3,13 @@ package com.example.paaltjesvoetbal;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.util.Log;
 
 public class ShootButton {
     private final Paint paint;
     private Ball ball;
-    private float x;
-    private float y;
+    private final float x;
+    private final float y;
     private final float radius;
     private boolean isPressed; // Track press state
 

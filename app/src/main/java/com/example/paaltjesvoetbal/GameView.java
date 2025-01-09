@@ -25,7 +25,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final ArrayList<Player> players;
     private final ArrayList<Ball> balls;
     private final ArrayList<ShootButton> shootButtons;
-    private final int PLAYERSPEED = 40;
+    private final int PLAYERSPEED = 20;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
