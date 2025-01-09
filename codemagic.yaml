@@ -1,5 +1,7 @@
 workflows:
-  default:
-    name: Default workflow
+  android:
+    name: Android Build
     scripts:
-      - echo "Hello, Codemagic!"
+      - ./gradlew clean assembleRelease  # Gradle command to build APK
+    artifacts:
+      - app/build/outputs/apk/release/app-release.apk  # Path to the APK file
