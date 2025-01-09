@@ -5,5 +5,3 @@ workflows:
       branches:
         only:
           - main
-    scripts:
-      - echo "Hello, Codemagic!"
