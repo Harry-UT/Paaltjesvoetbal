@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.util.Log;
 
 public class ShootButton {
     private final Paint paint;
@@ -41,15 +42,15 @@ public class ShootButton {
     }
 
     public void shoot() {
+        Log.d("Shoot", this.ball == null ? "Ball null for button" : "Button has ball");
         if (ball != null) {
-            ball.shoot();  // Laat de bal schieten
+            ball.shoot();
         }
+        this.ball = null;
     }
+
     public void setBall(Ball ball) {
         this.ball = ball;
-    }
-    public Ball getBall() {
-        return ball;
     }
 
     public void setPressed(boolean pressed) {

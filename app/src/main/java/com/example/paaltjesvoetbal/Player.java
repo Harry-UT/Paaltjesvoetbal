@@ -5,11 +5,13 @@ import android.graphics.Paint;
 
 public class Player {
     private float x, y;  // Position of the player
-    private int radius;  // Player's radius
+    private final int radius;  // Player's radius
     private int color;  // Player's color
-    private Ball ball;  // Reference to the ball the player is controllin
+    private Ball ball;  // Reference to the ball the player is controlling
     private Joystick joystick;
     private ShootButton shootButton;
+    private static final int COLLISION_TIMEOUT = 200;  // Time in milliseconds for collision timeout
+    private long lastShootTime;  // Last time the ball was shot
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color) {
@@ -18,9 +20,9 @@ public class Player {
         this.radius = radius;
         this.color = color;
         this.ball = null;  // Initially, the player is not controlling any ball
+        this.lastShootTime = 0;  // No ball has been shot yet
     }
 
-    // Getter and setter for the player's position
     public float getX() {
         return x;
     }
@@ -37,16 +39,10 @@ public class Player {
         this.y = y;
     }
 
-    // Getter and setter for the player's radius
     public int getRadius() {
         return radius;
     }
 
-    public void setRadius(int radius) {
-        this.radius = radius;
-    }
-
-    // Getter and setter for the player's color
     public int getColor() {
         return color;
     }
@@ -55,7 +51,7 @@ public class Player {
         this.color = color;
     }
 
-    // Getter and setter for the player's direction
+    // Getter for the player's direction from the joystick
     public float getDirection() {
         return joystick.getDirection();
     }
@@ -69,6 +65,17 @@ public class Player {
     public void setBall(Ball ball) {
         this.ball = ball;
         this.shootButton.setBall(ball);
+        lastShootTime = System.currentTimeMillis();
+    }
+
+    // Method to release the ball (after shooting it)
+    public void releaseBall() {
+        this.ball = null;
+        this.lastShootTime = System.currentTimeMillis();
+    }
+
+    public boolean canTakeBall() {
+        return System.currentTimeMillis() - lastShootTime >= COLLISION_TIMEOUT;
     }
 
     // Draw method for rendering the player
@@ -78,18 +85,16 @@ public class Player {
         canvas.drawCircle(x, y, radius, paint);  // Draw the player as a circle
     }
 
+    // Setters and getters for Joystick and ShootButton
     public void setJoystick(Joystick joystick) {
         this.joystick = joystick;
     }
+
     public ShootButton getShootButton() {
         return shootButton;
     }
 
     public void setShootButton(ShootButton shootButton) {
         this.shootButton = shootButton;
-    }
-
-    public void releaseBall() {
-        this.ball = null;
     }
 }

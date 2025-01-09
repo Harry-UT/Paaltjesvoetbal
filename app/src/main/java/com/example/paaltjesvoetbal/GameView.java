@@ -25,6 +25,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final ArrayList<Player> players;
     private final ArrayList<Ball> balls;
     private final ArrayList<ShootButton> shootButtons;
+    private final int PLAYERSPEED = 40;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -154,9 +155,8 @@ public class GameView extends SurfaceView implements Runnable {
         for (Player player : players) {
             float direction = player.getDirection();  // The direction set by joystick
             if (direction != 0) {
-                float moveSpeed = 20;
-                float moveX = moveSpeed * (float) Math.cos(direction);
-                float moveY = moveSpeed * (float) Math.sin(direction);
+                float moveX = PLAYERSPEED * (float) Math.cos(direction);
+                float moveY = PLAYERSPEED * (float) Math.sin(direction);
                 float newX = player.getX() + moveX;
                 float newY = player.getY() + moveY;
 
@@ -194,7 +194,7 @@ public class GameView extends SurfaceView implements Runnable {
             try {
                 Thread.sleep(sleepTime / 1_000_000, (int) (sleepTime % 1_000_000));
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.e("Error", "Error in sleep");
             }
         }
     }
@@ -229,23 +229,28 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void onPlayerHitBall(Player player, Ball ball) {
-        player.setBall(ball);
-        ball.setPlayer(player);
+        if (player.canTakeBall()) {
+            if (ball.getPlayer() != null) {
+                ball.getPlayer().setBall(null);
+            }
+            player.setBall(ball);
+            ball.setPlayer(player);
 
-        float deltaX = ball.getX() - player.getX();
-        float deltaY = ball.getY() - player.getY();
+            float deltaX = ball.getX() - player.getX();
+            float deltaY = ball.getY() - player.getY();
 
-        float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        if (magnitude > 0) {
-            deltaX /= magnitude;
-            deltaY /= magnitude;
+            float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (magnitude > 0) {
+                deltaX /= magnitude;
+                deltaY /= magnitude;
+            }
+
+            float combinedRadius = player.getRadius() + ball.getRadius();
+            float newBallX = player.getX() + deltaX * combinedRadius;
+            float newBallY = player.getY() + deltaY * combinedRadius;
+
+            ball.setX(newBallX);
+            ball.setY(newBallY);
         }
-
-        float combinedRadius = player.getRadius() + ball.getRadius();
-        float newBallX = player.getX() + deltaX * combinedRadius;
-        float newBallY = player.getY() + deltaY * combinedRadius;
-
-        ball.setX(newBallX);
-        ball.setY(newBallY);
     }
 }

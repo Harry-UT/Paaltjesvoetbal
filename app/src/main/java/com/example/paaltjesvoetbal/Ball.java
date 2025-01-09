@@ -2,6 +2,7 @@ package com.example.paaltjesvoetbal;  // Adjust the package name to your actual 
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.util.Log;
 
 public class Ball {
     private float x;
@@ -109,16 +110,23 @@ public class Ball {
     }
 
     public void shoot() {
+        Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player");
         if (player != null) {
             // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
             float dx = this.x - player.getX();  // Ball's position minus Player's position (shoot away from player)
             float dy = this.y - player.getY();  // Ball's position minus Player's position (shoot away from player)
 
-            // Normalize the direction vector (unit vector)
+            // Normalize direction vector (dx, dy)
             float magnitude = (float) Math.sqrt(dx * dx + dy * dy);
-            if (magnitude > 0) {
+
+            // Only normalize if magnitude is significant
+            if (magnitude > 0.001f) {
                 dx /= magnitude;
                 dy /= magnitude;
+            } else {
+                // Set a default direction if magnitude is too small
+                dx = 1;
+                dy = 0;
             }
 
             // Set the ball's velocity to move away from the player
@@ -129,6 +137,7 @@ public class Ball {
             // Once the ball is shot, release it from the player
             this.player.releaseBall();
             this.player = null;
+            Log.d("Shoot", "Ball was shot");
         }
     }
 }
