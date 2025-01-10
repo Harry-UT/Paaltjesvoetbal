@@ -1,30 +1,46 @@
 package com.example.paaltjesvoetbal;  // Adjust the package name to your actual package
 
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Shader;
 import android.util.Log;
+import android.graphics.Color;
 
 public class Ball {
     private float x;
     private float y;
     private final float radius;
-    private final int color;
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.98F;
     private Player player;
 
-    public Ball(float x, float y, float radius, int color) {
+    public Ball(float x, float y, float radius) {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.color = color;
         this.velocityX = 0;
         this.velocityY = 0;
     }
 
     public void draw(Canvas canvas) {
+        // Create a paint object for the ball
         Paint paint = new Paint();
-        paint.setColor(color);
+        paint.setAntiAlias(true);
+
+        // Create a shader to fill the ball with two colors (black and white)
+        // Adjust the gradient's positions to favor more white area
+        Shader shader = new LinearGradient(
+                x - radius, y, // Start at the left side of the circle
+                x + radius * 0.5f, y, // End at the mid-point of the circle (more white)
+                Color.BLACK, // Color on the left half
+                Color.WHITE, // Color on the right half
+                Shader.TileMode.CLAMP
+        );
+        paint.setShader(shader);
+
+        // Draw the ball with the gradient effect
         canvas.drawCircle(x, y, radius, paint);
     }
 

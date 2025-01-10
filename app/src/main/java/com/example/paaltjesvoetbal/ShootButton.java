@@ -11,20 +11,28 @@ public class ShootButton {
     private final float x;
     private final float y;
     private final float radius;
-    private boolean isPressed; // Track press state
+    private boolean isPressed;
+    private final int color;
+    private int touchID = -1; // Store the pointer ID for the current touch
 
-    public ShootButton(float x, float y, float radius) {
+    public ShootButton(float x, float y, float radius, int color) {
         this.x = x;
         this.y = y;
         this.radius = radius;
+        this.color = color;
         isPressed = false;
         paint = new Paint();
     }
 
     public void draw(Canvas canvas) {
-        // Change color based on the button's pressed state
+        // Draw the outer circle with color based on pressed state
         paint.setColor(isPressed ? Color.DKGRAY : Color.LTGRAY);
         canvas.drawCircle(x, y, radius, paint);
+
+        // Draw the inner circle using the 'color' field
+        paint.setColor(color); // Use the 'color' field for the inner circle
+        float innerRadius = radius * 0.6f; // Smaller radius for the inner circle
+        canvas.drawCircle(x, y, innerRadius, paint);
 
         // Draw text in the center of the button
         paint.setColor(Color.BLACK);
@@ -35,24 +43,44 @@ public class ShootButton {
         canvas.drawText("SHOOT", textX, textY, paint);
     }
 
+    // Check if the touch is within the button's area
     public boolean isTouched(float touchX, float touchY) {
-        float distance = (float) Math.sqrt(Math.pow(touchX - x, 2) + Math.pow(touchY - y, 2));
-        return distance <= radius;
+        float distance = (touchX - x) * (touchX - x) + (touchY - y) * (touchY - y); // Square of distance
+        return distance <= radius * radius; // Compare with the square of the radius
     }
 
+    // Perform the shooting action
     public void shoot() {
-        Log.d("Shoot", this.ball == null ? "Ball null for button" : "Button has ball");
         if (ball != null) {
             ball.shoot();
+            Log.d("Shoot", "Ball shot!");
+        } else {
+            Log.d("Shoot", "Ball null for button");
         }
-        this.ball = null;
     }
 
+    // Set the ball object for the shoot button
     public void setBall(Ball ball) {
         this.ball = ball;
     }
 
+    // Update pressed state
     public void setPressed(boolean pressed) {
         isPressed = pressed;
+    }
+
+    // Set the pointer ID for the current touch
+    public void setTouchID(int pointerId) {
+        this.touchID = pointerId;
+    }
+
+    // Check if the button was touched by a specific pointer ID
+    public boolean wasTouchedBy(int pointer) {
+        return this.touchID == pointer;
+    }
+
+    // Reset the touch ID
+    public void resetTouchID() {
+        this.touchID = -1;
     }
 }

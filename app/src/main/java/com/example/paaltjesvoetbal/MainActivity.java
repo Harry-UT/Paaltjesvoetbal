@@ -22,8 +22,8 @@ public class MainActivity extends Activity {
         int screenX = getResources().getDisplayMetrics().widthPixels;
         int screenY = getResources().getDisplayMetrics().heightPixels;
 
-        // Initialize the GameView
-        gameView = new GameView(this, screenX, screenY);
+        // Initialize the GameView with the Activity context
+        gameView = new GameView(this, screenX, screenY);  // Pass 'this' as the Activity context
 
         // Set the GameView as the content view
         setContentView(gameView);

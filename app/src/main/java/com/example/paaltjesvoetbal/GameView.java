@@ -2,10 +2,10 @@ package com.example.paaltjesvoetbal;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -20,15 +20,17 @@ public class GameView extends SurfaceView implements Runnable {
     private final SurfaceHolder holder;
     private final int screenX;
     private final int screenY;
-    private Bitmap background;
     private final ArrayList<Joystick> joysticks;
     private final ArrayList<Player> players;
     private final ArrayList<Ball> balls;
     private final ArrayList<ShootButton> shootButtons;
-    private final int PLAYERSPEED = 20;
+    private final int PLAYERSPEED = 10;
+    private final int BALLRADIUS = 23;
+    private final int PLAYERCOUNT = 2;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
+        setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
         holder = getHolder();
@@ -38,27 +40,65 @@ public class GameView extends SurfaceView implements Runnable {
         joysticks = new ArrayList<>();
         shootButtons = new ArrayList<>();
 
-        Player newPlayer = new Player(screenX / 2f, screenY / 1.1f, 50, Color.RED);
-        players.add(newPlayer);
+        for (int i = 0; i < PLAYERCOUNT; i++) {
+            Player newPlayer;
+            Joystick newJoystick;
+            ShootButton shootButton;
 
-        Joystick newJoystick = new Joystick(screenX - 120, screenY - 120);
-        newJoystick.setPlayer(newPlayer);
-        newPlayer.setJoystick(newJoystick);
-        joysticks.add(newJoystick);
+            switch (i) {
+                case 0: // Bottom-right
+                    newPlayer = new Player(screenX * 0.75f, screenY * 0.8f, 45, Color.BLUE);
+                    newJoystick = new Joystick(screenX - 120, screenY - 120);
+                    shootButton = new ShootButton(screenX * 0.6f, screenY * 0.96f, 50, Color.BLUE);
+                    newPlayer.setJoystick(newJoystick);
+                    newPlayer.setShootButton(shootButton);
 
-        // Initialize the shoot button and add it to the list
-        ShootButton shootButton = new ShootButton(screenX - 500, screenY - 200, 50);
-        shootButtons.add(shootButton);
-        newPlayer.setShootButton(shootButton);
+                    players.add(newPlayer);
+                    joysticks.add(newJoystick);
+                    shootButtons.add(shootButton);
+                    break;
+                case 1: // Top-left
+                    newPlayer = new Player(screenX * 0.25f, screenY * 0.2f, 45, Color.RED);
+                    newJoystick = new Joystick(120, 120);
+                    shootButton = new ShootButton(screenX * 0.4f, screenY * 0.04f, 50, Color.RED);
+                    newPlayer.setJoystick(newJoystick);
+                    newPlayer.setShootButton(shootButton);
 
-        // Initialize balls
+                    players.add(newPlayer);
+                    joysticks.add(newJoystick);
+                    shootButtons.add(shootButton);
+                    break;
+                case 2: // Bottom-left
+                    newPlayer = new Player(screenX * 0.25f, screenY * 0.8f, 45, Color.GREEN);
+                    newJoystick = new Joystick(120, screenY - 120);
+                    shootButton = new ShootButton(screenX * 0.4f, screenY * 0.96f, 50, Color.GREEN);
+                    newPlayer.setJoystick(newJoystick);
+                    newPlayer.setShootButton(shootButton);
+
+                    players.add(newPlayer);
+                    joysticks.add(newJoystick);
+                    shootButtons.add(shootButton);
+                    break;
+                case 3: // Top-right
+                    newPlayer = new Player(screenX * 0.75f, screenY * 0.2f, 45, Color.YELLOW);
+                    newJoystick = new Joystick(screenX - 120, 120);
+                    shootButton = new ShootButton(screenX * 0.6f, screenY * 0.04f, 50, Color.YELLOW);
+                    newPlayer.setJoystick(newJoystick);
+                    newPlayer.setShootButton(shootButton);
+
+                    players.add(newPlayer);
+                    joysticks.add(newJoystick);
+                    shootButtons.add(shootButton);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, 30, Color.BLUE);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS);
         balls.add(ball);
-
-        // Load background image
-        background = BitmapFactory.decodeResource(context.getResources(), R.drawable.background);
-        background = scaleBackgroundToFitScreen(background);
     }
 
     @Override
@@ -82,8 +122,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (holder.getSurface().isValid()) {
             Canvas canvas = holder.lockCanvas();
 
-            // Draw the scaled background
-            canvas.drawBitmap(background, 0, 0, null);
+            drawPlayground(canvas);
 
             // Draw the players
             for (Player player : players) {
@@ -112,39 +151,80 @@ public class GameView extends SurfaceView implements Runnable {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        float touchX = event.getX();
-        float touchY = event.getY();
+        int action = event.getActionMasked();
+        int actionIndex = event.getActionIndex(); // The specific pointer for non-move actions
+        int pointerId = event.getPointerId(actionIndex); // Get the pointer ID
 
-        switch (event.getAction()) {
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
-                // Handle shoot button press
+            case MotionEvent.ACTION_POINTER_DOWN:
+                float touchX = event.getX(actionIndex);
+                float touchY = event.getY(actionIndex);
+                boolean touchAssigned = false;
+
+                // Check for shoot button touch
                 for (ShootButton button : shootButtons) {
                     if (button.isTouched(touchX, touchY)) {
-                        button.setPressed(true); // Set button as pressed
-                        button.shoot();         // Perform the shooting action
-                        return true;  // Stop further processing if shoot button is touched
+                        button.setTouchID(pointerId);
+                        button.setPressed(true);
+                        touchAssigned = true;
+                        break;
                     }
                 }
-                break;
 
-            case MotionEvent.ACTION_MOVE:
-                // Handle touch input for each joystick
-                for (Joystick joystick : joysticks) {
-                    float dx = joystick.getBaseCenter().x - touchX;
-                    float dy = joystick.getBaseCenter().y - touchY;
-                    if (Math.sqrt(dx * dx + dy * dy) <= 300) {
-                        joystick.onTouch(touchX, touchY);
+                // Check for joystick touch if no button was pressed
+                if (!touchAssigned) {
+                    for (Joystick joystick : joysticks) {
+                        if (joystick.isControlledBy(touchX, touchY) && joystick.getTouchID() == -1) {
+                            joystick.setPointerID(pointerId);
+                            joystick.onTouch(touchX, touchY);
+                            break;
+                        }
                     }
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
-                // Reset joystick and shoot button when touch is released
+            case MotionEvent.ACTION_POINTER_UP:
+                boolean pointerHandled = false;
+
+                // Handle joystick reset
                 for (Joystick joystick : joysticks) {
-                    joystick.reset();
+                    if (joystick.isTouchedBy(pointerId)) {
+                        joystick.reset();
+                        pointerHandled = true;
+                        break;
+                    }
                 }
-                for (ShootButton button : shootButtons) {
-                    button.setPressed(false); // Reset button press state
+
+                // Handle shoot button release
+                if (!pointerHandled) {
+                    for (ShootButton button : shootButtons) {
+                        if (button.wasTouchedBy(pointerId)) {
+                            if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
+                                button.shoot();
+                                button.resetTouchID();
+                            }
+                            button.setPressed(false);
+                            break;
+                        }
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                // Handle move for all active pointers
+                for (int i = 0; i < event.getPointerCount(); i++) {
+                    int movePointerId = event.getPointerId(i);
+                    float moveX = event.getX(i);
+                    float moveY = event.getY(i);
+
+                    for (Joystick joystick : joysticks) {
+                        if (joystick.isTouchedBy(movePointerId)) {
+                            joystick.onTouch(moveX, moveY);
+                            break;
+                        }
+                    }
                 }
                 break;
         }
@@ -169,19 +249,6 @@ public class GameView extends SurfaceView implements Runnable {
                 player.setY(newY);
             }
         }
-    }
-
-    private Bitmap scaleBackgroundToFitScreen(Bitmap background) {
-        int bgWidth = background.getWidth();
-        int bgHeight = background.getHeight();
-
-        float scaleX = (float) screenX / bgWidth;
-        float scaleY = (float) screenY / bgHeight;
-
-        int newWidth = (int) (bgWidth * scaleX);
-        int newHeight = (int) (bgHeight * scaleY);
-
-        return Bitmap.createScaledBitmap(background, newWidth, newHeight, true);
     }
 
     private void sleep() {
@@ -252,5 +319,83 @@ public class GameView extends SurfaceView implements Runnable {
             ball.setX(newBallX);
             ball.setY(newBallY);
         }
+    }
+
+    private void drawPlayground(Canvas canvas) {
+        // Draw the background
+        canvas.drawColor(Color.parseColor("#FFEBCD"));
+
+        // Draw the side lines
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);  // Side lines in black
+        drawCorners(canvas, paint);
+
+        // Draw the bottom UI bar (black)
+        paint.setColor(Color.BLACK);
+        canvas.drawRect(0, screenY, screenX, screenY + 40, paint);
+
+        paint.setStrokeWidth(5);
+
+        // Draw circle in the middle
+        drawMiddle(canvas);
+
+        // Draw the side lines
+//        canvas.drawLine(screenX * 0.95f, screenY * 0.2f, screenX * 0.95f, screenY * 0.8f, paint);
+//        canvas.drawLine(0, 0, 0, screenY, paint);
+//        canvas.drawLine(screenX, 0, screenX, screenY, paint);
+//        canvas.drawLine(0, 0, screenX, 0, paint);
+    }
+
+
+    private void drawCorners(Canvas canvas, Paint paint) {
+        // Top-left corner (triangle)
+        Path topLeftPath = new Path();
+        topLeftPath.moveTo(0, 0);
+        topLeftPath.lineTo(screenX * 0.8f, 0);
+        topLeftPath.lineTo(0, screenX * 0.4f);
+        topLeftPath.close();
+        canvas.drawPath(topLeftPath, paint);
+
+        // Top-right corner (triangle)
+        Path topRightPath = new Path();
+        topRightPath.moveTo(screenX, 0);
+        topRightPath.lineTo(screenX, screenX * 0.4f);
+        topRightPath.lineTo(screenX * 0.2f, 0);
+        topRightPath.close();
+        canvas.drawPath(topRightPath, paint);
+
+        // Bottom-right corner (triangle)
+        Path bottomRightPath = new Path();
+        bottomRightPath.moveTo(screenX, screenY);
+        bottomRightPath.lineTo(screenX, screenY - screenX * 0.4f);
+        bottomRightPath.lineTo(screenX * 0.2f, screenY);
+        bottomRightPath.close();
+        canvas.drawPath(bottomRightPath, paint);
+
+        // Bottom-left corner (triangle)
+        Path bottomLeftPath = new Path();
+        bottomLeftPath.moveTo(0, screenY);
+        bottomLeftPath.lineTo(screenX * 0.8f, screenY);
+        bottomLeftPath.lineTo(0, screenY - screenX * 0.4f);
+        bottomLeftPath.close();
+        canvas.drawPath(bottomLeftPath, paint);
+    }
+
+    private void drawMiddle(Canvas canvas) {
+        // Set up the paint for the circle (donut shape)
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);  // Set the circle's outline color
+        paint.setStyle(Paint.Style.STROKE);  // Set it to STROKE to create an open middle circle
+        paint.setStrokeWidth(20);  // Set the width of the stroke
+
+        // Get the center of the screen
+        float centerX = screenX / 2f;
+        float centerY = screenY / 2f;
+
+        // Radius of the circle
+        float outerRadius = screenX * 0.08f;
+
+        // Draw the outer circle
+        canvas.drawCircle(centerX, centerY, outerRadius, paint);
     }
 }
