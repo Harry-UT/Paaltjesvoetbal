@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.paaltjesvoetbal"
-    compileSdk = 34
+    compileSdk = 35  // Updated to 35
 
     defaultConfig {
         applicationId = "com.example.paaltjesvoetbal"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 24  // Keep this as is (or adjust based on your target audience)
+        targetSdk = 34  // Can stay at 34 or be updated as needed
         versionCode = 1
         versionName = "1.0"
 
@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.androidx.core)  // Correct format
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
