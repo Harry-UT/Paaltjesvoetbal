@@ -1,4 +1,4 @@
-package com.example.paaltjesvoetbal;  // Adjust the package name to your actual package
+package com.example.paaltjesvoetbal;
 
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -10,7 +10,10 @@ import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 public class Ball {
     private float x;
@@ -19,13 +22,17 @@ public class Ball {
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.985F;
     private Player player;
+    private final List<AbstractMap.SimpleEntry<Double, Double>> corners;
+    private long lastBounceTime = 0;
+    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
 
-    public Ball(float x, float y, float radius) {
+    public Ball(float x, float y, float radius, List<AbstractMap.SimpleEntry<Double, Double>> corners) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.velocityX = 0;
         this.velocityY = 0;
+        this.corners = corners;
     }
 
     public void draw(Canvas canvas) {
@@ -48,7 +55,7 @@ public class Ball {
         canvas.drawCircle(x, y, radius, paint);
     }
 
-    public void update(int screenX, int screenY, List<Path> corners) {
+    public void update(int screenX, int screenY) {
         if (this.player == null) {
             // Update ball position based on its velocity
             x += velocityX;
@@ -59,7 +66,7 @@ public class Ball {
             setVelocityY(getVelocityY() * DAMPING_FACTOR);
 
             // Check for screen boundary collisions
-            checkBounce(screenX, screenY, corners);
+            checkBounce(screenX, screenY);
         } else {
             // Update the ball's position based on the player's direction
             float direction = this.player.getDirection();  // Get the player's direction (angle in radians)
@@ -74,16 +81,47 @@ public class Ball {
         }
     }
 
-    private void checkBounce(float screenX, float screenY, List<Path> corners) {
+    private void checkBounce(float screenX, float screenY) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBounceTime < BOUNCE_TIMEOUT) {
+            return;
+        }
+
+        // If x or y is too far out of screen bounds, put it in the middle of the screen
+        if (x < -50) {
+            x = screenX / 2;
+            y = screenY / 2;
+            return;
+        } else if (x > screenX + 50) {
+            x = screenX / 2;
+            y = screenY / 2;
+            return;
+        } else if (y < -50) {
+            x = screenX / 2;
+            y = screenY / 2;
+            return;
+        } else if (y > screenY + 50) {
+            x = screenX / 2;
+            y = screenY / 2;
+            return;
+        }
+
         // Check for collisions with left and right edges
         if (x - radius <= 0 || x + radius >= screenX) {
             setVelocityX(-getVelocityX());  // Reverse horizontal direction
+            lastBounceTime = currentTime;   // Update last bounce time
         }
 
         // Check for collisions with top and bottom edges
         if (y - radius <= 0 || y + radius >= screenY) {
             setVelocityY(-getVelocityY());  // Reverse vertical direction
+            lastBounceTime = currentTime;   // Update last bounce time
         }
+
+        // Check for collisions with corner sides
+        // Each corner is represented as a pair of (a, b) meaning y = a*x + b
+        // Check for collisions with the corner sides
+
     }
 
     public float getX() {

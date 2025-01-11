@@ -16,10 +16,15 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Matrix;
+
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
+import java.util.List;
+import java.util.ArrayList;
+import java.util.AbstractMap.SimpleEntry;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -43,7 +48,6 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 2;
-    private final List<Path> corners = new ArrayList<>();
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -76,10 +80,12 @@ public class GameView extends SurfaceView implements Runnable {
                     break;
             }
         }
+        // Determine corners for ball bounce
+        List<SimpleEntry<Double, Double>> corners = determineCorners();
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, corners);
         balls.add(ball);
     }
 
@@ -92,13 +98,117 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    private List<AbstractMap.SimpleEntry<Double, Double>> determineCorners() {
+        // Initialize formula list
+        List<SimpleEntry<Double, Double>> corners = new ArrayList<>();
+
+        double x1 = 0;
+        double y1 = screenX * 0.5;
+
+        double x2 = screenX * 0.5;
+        double y2 = screenY * 0.09;
+
+        double x3 = screenX;
+        double y3 = screenX * 0.5;
+
+        double x4 = screenX;
+        double y4 = screenY - screenX * 0.5;
+
+        double x5 = screenX * 0.5;
+        double y5 = screenY * 0.91;
+
+        double x6 = 0;
+        double y6 = screenY - screenX * 0.5;
+
+        corners.add(new SimpleEntry<>(x1, y1));
+        corners.add(new SimpleEntry<>(x2, y2));
+        corners.add(new SimpleEntry<>(x3, y3));
+        corners.add(new SimpleEntry<>(x4, y4));
+        corners.add(new SimpleEntry<>(x5, y5));
+        corners.add(new SimpleEntry<>(x6, y6));
+
+        // // Initialize formula list
+        // List<SimpleEntry<Double, Double>> corners = new ArrayList<>();
+
+        // double x1 = 0;
+        // double y1 = screenX * 0.5;
+        // double x2 = screenX * 0.5;
+        // double y2 = screenY * 0.09;
+        // double dy = y2 - y1;
+        // double dx = x2 - x1;
+        // double a = dy / dx;
+        // double b = y1 - a * x1;
+
+        // // Create the SimpleEntry to store (a, b) as the formula
+        // SimpleEntry<Double, Double> formula1 = new SimpleEntry<>(a, b);
+
+        // // Add the formula to the list
+        // corners.add(formula1);
+
+
+        // // Top-right corner
+        // x1 = screenX * 0.5;
+        // y1 = screenY * 0.09;
+        // x2 = screenX;
+        // y2 = screenX * 0.5;
+        // dy = y2 - y1;
+        // dx = x2 - x1;
+        // a = dy / dx;
+        // b = y1 - a * x1;
+
+        // // Create the SimpleEntry to store (a, b) as the formula
+        // SimpleEntry<Double, Double> formula2 = new SimpleEntry<>(a, b);
+
+        // // Add the formula to the list
+        // corners.add(formula2);
+
+
+        // Bottom-right corner
+//        x1 = screenX;
+//        y1 = screenY - screenX * 0.5;
+//        x2 = screenX * 0.5;
+//        y2 = screenY * 0.91;
+//        dy = y2 - y1;
+//        dx = x2 - x1;
+//        a = dy / dx;
+//        b = y1 - a * x1;
+//
+//        // Create the SimpleEntry to store (a, b) as the formula
+//        SimpleEntry<Double, Double> formula3 = new SimpleEntry<>(a, b);
+//
+//        // Add the formula to the list
+//        corners.add(formula3);
+
+
+        // Bottom-left corner
+//        x1 = screenX * 0.5;
+//        y1 = screenY * 0.91;
+//        x2 = 0;
+//        y2 = screenY - screenX * 0.5;
+//        dy = y2 - y1;
+//        dx = x2 - x1;
+//        a = dy / dx;
+//        b = y1 - a * x1;
+
+//        // Create the SimpleEntry to store (a, b) as the formula
+//        SimpleEntry<Double, Double> formula4 = new SimpleEntry<>(a, b);
+//
+//        // Add the formula to the list
+//        corners.add(formula4);
+
+        return corners;
+    }
+
     private void update() {
-        checkPlayerBallCollision();
-        synchronized (balls) {
-            for (Ball ball : balls) {
-                ball.update(screenX, screenY, corners);
+        updateThread = new Thread(() -> {
+            synchronized (balls) {
+                for (Ball ball : balls) {
+                    ball.update(screenX, screenY);
+                }
             }
-        }
+        });
+        updateThread.start();
+        checkPlayerBallCollision();
         updatePlayers();
     }
 
@@ -386,7 +496,6 @@ public class GameView extends SurfaceView implements Runnable {
         topLeftPath.lineTo(0, screenX * 0.5f);
         topLeftPath.close();
         canvas.drawPath(topLeftPath, paint);
-        corners.add(topLeftPath);
 
         // Top-right corner (triangle)
         Path topRightPath = new Path();
@@ -397,7 +506,6 @@ public class GameView extends SurfaceView implements Runnable {
         topRightPath.lineTo(screenX * 0.5f, screenY * 0.09f);
         topRightPath.close();
         canvas.drawPath(topRightPath, paint);
-        corners.add(topRightPath);
 
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
@@ -408,7 +516,6 @@ public class GameView extends SurfaceView implements Runnable {
         bottomRightPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomRightPath.close();
         canvas.drawPath(bottomRightPath, paint);
-        corners.add(bottomRightPath);
 
         // Bottom-left corner (triangle)
         Path bottomLeftPath = new Path();
@@ -419,7 +526,6 @@ public class GameView extends SurfaceView implements Runnable {
         bottomLeftPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomLeftPath.close();
         canvas.drawPath(bottomLeftPath, paint);
-        corners.add(bottomLeftPath);
 
         drawGoals(canvas);
     }
@@ -552,6 +658,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
     }
+    
     private void drawMiddle(Canvas canvas) {
         // Set up the paint for the circle (donut shape)
         Paint paint = new Paint();
