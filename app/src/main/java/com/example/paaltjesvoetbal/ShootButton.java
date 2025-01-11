@@ -36,14 +36,6 @@ public class ShootButton {
         paint.setColor(color); // Use the 'color' field for the inner circle
         float innerRadius = radius * 0.6f; // Smaller radius for the inner circle
         canvas.drawCircle(x, y, innerRadius, paint);
-
-        // Draw text in the center of the button
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(50);
-        paint.setTextAlign(Paint.Align.CENTER);
-        float textX = x;
-        float textY = y - ((paint.descent() + paint.ascent()) / 2);
-        canvas.drawText("SHOOT", textX, textY, paint);
     }
 
     public boolean isTouched(float touchX, float touchY) {
