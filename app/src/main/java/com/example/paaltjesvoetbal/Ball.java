@@ -4,16 +4,20 @@ import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Region;
 import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
+
+import java.util.List;
 
 public class Ball {
     private float x;
     private float y;
     private final float radius;
     private float velocityX, velocityY;
-    private static final float DAMPING_FACTOR = 0.98F;
+    private static final float DAMPING_FACTOR = 0.985F;
     private Player player;
 
     public Ball(float x, float y, float radius) {
@@ -44,7 +48,7 @@ public class Ball {
         canvas.drawCircle(x, y, radius, paint);
     }
 
-    public void update(int screenX, int screenY) {
+    public void update(int screenX, int screenY, List<Path> corners) {
         if (this.player == null) {
             // Update ball position based on its velocity
             x += velocityX;
@@ -55,7 +59,7 @@ public class Ball {
             setVelocityY(getVelocityY() * DAMPING_FACTOR);
 
             // Check for screen boundary collisions
-            checkBounce(screenX, screenY);
+            checkBounce(screenX, screenY, corners);
         } else {
             // Update the ball's position based on the player's direction
             float direction = this.player.getDirection();  // Get the player's direction (angle in radians)
@@ -70,7 +74,7 @@ public class Ball {
         }
     }
 
-    private void checkBounce(float screenX, float screenY) {
+    private void checkBounce(float screenX, float screenY, List<Path> corners) {
         // Check for collisions with left and right edges
         if (x - radius <= 0 || x + radius >= screenX) {
             setVelocityX(-getVelocityX());  // Reverse horizontal direction

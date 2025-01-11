@@ -9,6 +9,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Region;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -16,6 +18,8 @@ import android.view.SurfaceView;
 import android.graphics.Matrix;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
+
 import android.os.Handler;
 import android.os.Looper;
 
@@ -39,6 +43,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 2;
+    private final List<Path> corners = new ArrayList<>();
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -91,7 +96,7 @@ public class GameView extends SurfaceView implements Runnable {
         checkPlayerBallCollision();
         synchronized (balls) {
             for (Ball ball : balls) {
-                ball.update(screenX, screenY);
+                ball.update(screenX, screenY, corners);
             }
         }
         updatePlayers();
@@ -381,6 +386,7 @@ public class GameView extends SurfaceView implements Runnable {
         topLeftPath.lineTo(0, screenX * 0.5f);
         topLeftPath.close();
         canvas.drawPath(topLeftPath, paint);
+        corners.add(topLeftPath);
 
         // Top-right corner (triangle)
         Path topRightPath = new Path();
@@ -391,6 +397,7 @@ public class GameView extends SurfaceView implements Runnable {
         topRightPath.lineTo(screenX * 0.5f, screenY * 0.09f);
         topRightPath.close();
         canvas.drawPath(topRightPath, paint);
+        corners.add(topRightPath);
 
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
@@ -401,6 +408,7 @@ public class GameView extends SurfaceView implements Runnable {
         bottomRightPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomRightPath.close();
         canvas.drawPath(bottomRightPath, paint);
+        corners.add(bottomRightPath);
 
         // Bottom-left corner (triangle)
         Path bottomLeftPath = new Path();
@@ -411,8 +419,139 @@ public class GameView extends SurfaceView implements Runnable {
         bottomLeftPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomLeftPath.close();
         canvas.drawPath(bottomLeftPath, paint);
+        corners.add(bottomLeftPath);
+
+        drawGoals(canvas);
     }
 
+    private void drawGoals(Canvas canvas) {
+        // Top-left goal
+        Vector<Float> A = new Vector<>();
+        A.add(0f);
+        A.add(screenX * 0.5f);
+
+        Vector<Float> B = new Vector<>();
+        B.add(screenX * 0.5f);
+        B.add(screenY * 0.09f);
+
+        Vector<Float> AB = new Vector<>();
+        AB.add(B.get(0) - A.get(0));  // X-component
+        AB.add(B.get(1) - A.get(1));  // Y-component
+
+        Vector<Float> C = new Vector<>();
+        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
+        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
+
+        Vector<Float> CB = new Vector<>();
+        CB.add(B.get(0) - C.get(0));  // X-component
+        CB.add(B.get(1) - C.get(1));  // Y-component
+
+        Vector<Float> CD = new Vector<>();
+        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
+        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
+
+        Vector<Float> CE = new Vector<>();
+        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
+        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
+
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        paint.setStrokeWidth(5);
+        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
+
+        // Top-right goal
+        A = new Vector<>();
+        A.add(screenX * 0.5f);
+        A.add(screenY * 0.09f);
+
+        B = new Vector<>();
+        B.add((float) screenX);
+        B.add(screenX * 0.5f);
+
+        AB = new Vector<>();
+        AB.add(B.get(0) - A.get(0));  // X-component
+        AB.add(B.get(1) - A.get(1));  // Y-component
+
+        C = new Vector<>();
+        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
+        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
+
+        CB = new Vector<>();
+        CB.add(B.get(0) - C.get(0));  // X-component
+        CB.add(B.get(1) - C.get(1));  // Y-component
+
+        CD = new Vector<>();
+        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
+        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
+
+        CE = new Vector<>();
+        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
+        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
+
+        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
+
+        // Bottom-right goal
+        A = new Vector<>();
+        A.add((float) screenX);
+        A.add(screenY - screenX * 0.5f);
+
+        B = new Vector<>();
+        B.add(screenX * 0.5f);
+        B.add(screenY * 0.91f);
+
+        AB = new Vector<>();
+        AB.add(B.get(0) - A.get(0));  // X-component
+        AB.add(B.get(1) - A.get(1));  // Y-component
+
+        C = new Vector<>();
+        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
+        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
+
+        CB = new Vector<>();
+        CB.add(B.get(0) - C.get(0));  // X-component
+        CB.add(B.get(1) - C.get(1));  // Y-component
+
+        CD = new Vector<>();
+        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
+        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
+
+        CE = new Vector<>();
+        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
+        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
+
+        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
+
+        // Bottom-left goal
+        A = new Vector<>();
+        A.add(screenX * 0.5f);
+        A.add(screenY * 0.91f);
+
+        B = new Vector<>();
+        B.add(0f);
+        B.add(screenY - screenX * 0.5f);
+
+        AB = new Vector<>();
+        AB.add(B.get(0) - A.get(0));  // X-component
+        AB.add(B.get(1) - A.get(1));  // Y-component
+
+        C = new Vector<>();
+        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
+        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
+
+        CB = new Vector<>();
+        CB.add(B.get(0) - C.get(0));  // X-component
+        CB.add(B.get(1) - C.get(1));  // Y-component
+
+        CD = new Vector<>();
+        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
+        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
+
+        CE = new Vector<>();
+        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
+        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
+
+        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
+    }
     private void drawMiddle(Canvas canvas) {
         // Set up the paint for the circle (donut shape)
         Paint paint = new Paint();
