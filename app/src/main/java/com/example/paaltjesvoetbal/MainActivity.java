@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SettingsDialog.OnSettingsChangedListener {
 
     private GameView gameView;
 
@@ -23,17 +23,28 @@ public class MainActivity extends Activity {
         int screenY = getResources().getDisplayMetrics().heightPixels;
 
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, screenY);  // Pass 'this' as the Activity context
+        gameView = new GameView(this, screenX, screenY);
 
         // Set the GameView as the content view
         setContentView(gameView);
     }
 
     @Override
+    public void onSettingsChanged(int playerCount) {
+        // Handle the updated player count (or any other settings you want to change)
+        updateGameSettings(playerCount);
+    }
+
+    private void updateGameSettings(int playerCount) {
+        // Update the game based on the selected player count
+        gameView.changePlayerCount(playerCount);
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         if (gameView != null) {
-            gameView.pause();
+            gameView.pause(); // Pause the game to save resources
         }
     }
 
@@ -41,7 +52,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (gameView != null) {
-            gameView.resume();
+            gameView.resume(); // Resume the game
         }
     }
 }
