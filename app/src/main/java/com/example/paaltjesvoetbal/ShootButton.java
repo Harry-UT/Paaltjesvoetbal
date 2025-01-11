@@ -1,5 +1,7 @@
 package com.example.paaltjesvoetbal;
 
+import static java.lang.Math.sqrt;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -24,6 +26,7 @@ public class ShootButton {
         paint = new Paint();
     }
 
+    // Draw shoot button
     public void draw(Canvas canvas) {
         // Draw the outer circle with color based on pressed state
         paint.setColor(isPressed ? Color.DKGRAY : Color.LTGRAY);
@@ -43,11 +46,11 @@ public class ShootButton {
         canvas.drawText("SHOOT", textX, textY, paint);
     }
 
-    // Check if the touch is within the button's area
     public boolean isTouched(float touchX, float touchY) {
-        float expandedRadius = radius * 1.3f; // Increase the touchable radius a bit
-        float distance = (touchX - x) * (touchX - x) + (touchY - y) * (touchY - y); // Square of distance
-        return distance <= expandedRadius * expandedRadius; // Compare with the square of the expanded radius
+        float dx = touchX - x;
+        float dy = touchY - y;
+        float distanceSquared = dx * dx + dy * dy;
+        return distanceSquared <= (radius * 2.2f) * (radius * 2.2f);
     }
 
     // Perform shoot action

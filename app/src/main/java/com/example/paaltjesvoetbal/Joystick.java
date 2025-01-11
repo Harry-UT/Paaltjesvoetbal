@@ -3,21 +3,21 @@ package com.example.paaltjesvoetbal;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PointF;
 
 public class Joystick {
     private final float baseCenterX;
     private final float baseCenterY;
     private float stickX, stickY;
     private int touchID = -1;
-    private static final float JOYSTICK_RADIUS = 100; // Define joystick's maximum radius
+    private final float radius;
 
     // Constructor to initialize the joystick position and player reference
-    public Joystick(float baseCenterX, float baseCenterY) {
+    public Joystick(float baseCenterX, float baseCenterY, float radius) {
         this.baseCenterX = baseCenterX;
         this.baseCenterY = baseCenterY;
         this.stickX = baseCenterX;
         this.stickY = baseCenterY;
+        this.radius = radius;
     }
 
     public void reset() {
@@ -34,9 +34,9 @@ public class Joystick {
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         // Constrain the stick movement within the joystick's base
-        if (distance > JOYSTICK_RADIUS) {
-            dx = dx / distance * JOYSTICK_RADIUS;
-            dy = dy / distance * JOYSTICK_RADIUS;
+        if (distance > radius) {
+            dx = dx / distance * radius;
+            dy = dy / distance * radius;
         }
 
         stickX = baseCenterX + dx;
@@ -66,17 +66,17 @@ public class Joystick {
         Paint paint = new Paint();
         paint.setColor(Color.GRAY);  // Joystick base color
         paint.setAlpha(100);  // Slight transparency for the base
-        canvas.drawCircle(baseCenterX, baseCenterY, JOYSTICK_RADIUS, paint);
+        canvas.drawCircle(baseCenterX, baseCenterY, radius, paint);
 
         // Draw the stick of the joystick (smaller circle)
         paint.setColor(Color.WHITE);  // Joystick stick color
         canvas.drawCircle(stickX, stickY, 30, paint);  // Stick size is smaller
     }
 
-    public boolean isControlledBy(float touchX, float touchY) {
+    public boolean isTouched(float touchX, float touchY) {
         float dx = touchX - baseCenterX;
         float dy = touchY - baseCenterY;
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
-        return distance <= JOYSTICK_RADIUS; // Check if touch is inside the joystick area
+        return distance <= radius * 1.5; // Check if touch is inside the joystick area
     }
 }

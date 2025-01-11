@@ -25,7 +25,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final ArrayList<Ball> balls;
     private final ArrayList<ShootButton> shootButtons;
     private final int PLAYERSPEED = 10;
+    private final int PLAYERRADIUS = 45;
     private final int BALLRADIUS = 23;
+    private final int JOYSTICKRADIUS = 95;
+    private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 4;
 
     public GameView(Context context, int screenX, int screenY) {
@@ -48,9 +51,9 @@ public class GameView extends SurfaceView implements Runnable {
 
             switch (i) {
                 case 0: // Bottom-right
-                    newPlayer = new Player(screenX * 0.75f, screenY * 0.8f, 45, Color.BLUE);
-                    newJoystick = new Joystick(screenX - 120, screenY - 120);
-                    shootButton = new ShootButton(screenX * 0.6f, screenY * 0.96f, 50, Color.BLUE);
+                    newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, Color.BLUE);
+                    newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.1f, JOYSTICKRADIUS);
+                    shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.BLUE);
                     newPlayer.setJoystick(newJoystick);
                     newPlayer.setShootButton(shootButton);
 
@@ -59,9 +62,9 @@ public class GameView extends SurfaceView implements Runnable {
                     shootButtons.add(shootButton);
                     break;
                 case 1: // Top-left
-                    newPlayer = new Player(screenX * 0.25f, screenY * 0.2f, 45, Color.RED);
-                    newJoystick = new Joystick(120, 120);
-                    shootButton = new ShootButton(screenX * 0.4f, screenY * 0.04f, 50, Color.RED);
+                    newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, Color.RED);
+                    newJoystick = new Joystick(screenX * 0.22f, JOYSTICKRADIUS, JOYSTICKRADIUS);
+                    shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.RED);
                     newPlayer.setJoystick(newJoystick);
                     newPlayer.setShootButton(shootButton);
 
@@ -70,9 +73,9 @@ public class GameView extends SurfaceView implements Runnable {
                     shootButtons.add(shootButton);
                     break;
                 case 2: // Bottom-left
-                    newPlayer = new Player(screenX * 0.25f, screenY * 0.8f, 45, Color.GREEN);
-                    newJoystick = new Joystick(120, screenY - 120);
-                    shootButton = new ShootButton(screenX * 0.4f, screenY * 0.96f, 50, Color.GREEN);
+                    newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, Color.GREEN);
+                    newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.1f, JOYSTICKRADIUS);
+                    shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.GREEN);
                     newPlayer.setJoystick(newJoystick);
                     newPlayer.setShootButton(shootButton);
 
@@ -81,9 +84,9 @@ public class GameView extends SurfaceView implements Runnable {
                     shootButtons.add(shootButton);
                     break;
                 case 3: // Top-right
-                    newPlayer = new Player(screenX * 0.75f, screenY * 0.2f, 45, Color.YELLOW);
-                    newJoystick = new Joystick(screenX - 120, 120);
-                    shootButton = new ShootButton(screenX * 0.6f, screenY * 0.04f, 50, Color.YELLOW);
+                    newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, Color.YELLOW);
+                    newJoystick = new Joystick(screenX * 0.78f, JOYSTICKRADIUS, JOYSTICKRADIUS);
+                    shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.YELLOW);
                     newPlayer.setJoystick(newJoystick);
                     newPlayer.setShootButton(shootButton);
 
@@ -176,7 +179,7 @@ public class GameView extends SurfaceView implements Runnable {
                 // Check for joystick touch if no button was pressed
                 if (!touchAssigned) {
                     for (Joystick joystick : joysticks) {
-                        if (joystick.isControlledBy(touchX, touchY) && joystick.getTouchID() == -1) {
+                        if (joystick.isTouched(touchX, touchY) && joystick.getTouchID() == -1) {
                             joystick.setPointerID(pointerId);
                             joystick.onTouch(touchX, touchY);
                             break;
@@ -354,14 +357,14 @@ public class GameView extends SurfaceView implements Runnable {
         Path topLeftPath = new Path();
         topLeftPath.moveTo(0, 0);
         topLeftPath.lineTo(screenX * 0.8f, 0);
-        topLeftPath.lineTo(0, screenX * 0.4f);
+        topLeftPath.lineTo(0, screenX * 0.5f);
         topLeftPath.close();
         canvas.drawPath(topLeftPath, paint);
 
         // Top-right corner (triangle)
         Path topRightPath = new Path();
         topRightPath.moveTo(screenX, 0);
-        topRightPath.lineTo(screenX, screenX * 0.4f);
+        topRightPath.lineTo(screenX, screenX * 0.5f);
         topRightPath.lineTo(screenX * 0.2f, 0);
         topRightPath.close();
         canvas.drawPath(topRightPath, paint);
@@ -369,7 +372,7 @@ public class GameView extends SurfaceView implements Runnable {
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
         bottomRightPath.moveTo(screenX, screenY);
-        bottomRightPath.lineTo(screenX, screenY - screenX * 0.4f);
+        bottomRightPath.lineTo(screenX, screenY - screenX * 0.5f);
         bottomRightPath.lineTo(screenX * 0.2f, screenY);
         bottomRightPath.close();
         canvas.drawPath(bottomRightPath, paint);
@@ -378,7 +381,7 @@ public class GameView extends SurfaceView implements Runnable {
         Path bottomLeftPath = new Path();
         bottomLeftPath.moveTo(0, screenY);
         bottomLeftPath.lineTo(screenX * 0.8f, screenY);
-        bottomLeftPath.lineTo(0, screenY - screenX * 0.4f);
+        bottomLeftPath.lineTo(0, screenY - screenX * 0.5f);
         bottomLeftPath.close();
         canvas.drawPath(bottomLeftPath, paint);
     }

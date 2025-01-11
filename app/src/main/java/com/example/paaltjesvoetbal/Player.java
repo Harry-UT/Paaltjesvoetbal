@@ -56,11 +56,6 @@ public class Player {
         return joystick.getDirection();
     }
 
-    // Getter for the ball the player is controlling
-    public Ball getBall() {
-        return ball;
-    }
-
     // Set the ball that the player is controlling
     public void setBall(Ball ball) {
         this.ball = ball;
@@ -88,10 +83,6 @@ public class Player {
     // Setters and getters for Joystick and ShootButton
     public void setJoystick(Joystick joystick) {
         this.joystick = joystick;
-    }
-
-    public ShootButton getShootButton() {
-        return shootButton;
     }
 
     public void setShootButton(ShootButton shootButton) {
