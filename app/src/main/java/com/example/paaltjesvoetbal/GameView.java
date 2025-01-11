@@ -26,7 +26,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final ArrayList<ShootButton> shootButtons;
     private final int PLAYERSPEED = 10;
     private final int BALLRADIUS = 23;
-    private final int PLAYERCOUNT = 2;
+    private final int PLAYERCOUNT = 4;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -41,6 +41,7 @@ public class GameView extends SurfaceView implements Runnable {
         shootButtons = new ArrayList<>();
 
         for (int i = 0; i < PLAYERCOUNT; i++) {
+            if (i >= 4) break;
             Player newPlayer;
             Joystick newJoystick;
             ShootButton shootButton;
@@ -203,8 +204,9 @@ public class GameView extends SurfaceView implements Runnable {
                         if (button.wasTouchedBy(pointerId)) {
                             if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
                                 button.shoot();
-                                button.resetTouchID();
+                                button.resetBall();
                             }
+                            button.resetTouchID();
                             button.setPressed(false);
                             break;
                         }

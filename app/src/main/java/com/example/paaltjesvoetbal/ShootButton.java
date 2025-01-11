@@ -45,11 +45,12 @@ public class ShootButton {
 
     // Check if the touch is within the button's area
     public boolean isTouched(float touchX, float touchY) {
+        float expandedRadius = radius * 1.3f; // Increase the touchable radius a bit
         float distance = (touchX - x) * (touchX - x) + (touchY - y) * (touchY - y); // Square of distance
-        return distance <= radius * radius; // Compare with the square of the radius
+        return distance <= expandedRadius * expandedRadius; // Compare with the square of the expanded radius
     }
 
-    // Perform the shooting action
+    // Perform shoot action
     public void shoot() {
         if (ball != null) {
             ball.shoot();
@@ -79,8 +80,12 @@ public class ShootButton {
         return this.touchID == pointer;
     }
 
-    // Reset the touch ID
+    // Handle pointer release
     public void resetTouchID() {
         this.touchID = -1;
+    }
+
+    public void resetBall() {
+        this.ball = null;
     }
 }
