@@ -2,29 +2,21 @@ package com.example.paaltjesvoetbal;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
-import android.graphics.Region;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Matrix;
 
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.AbstractMap.SimpleEntry;
+
 import android.os.Handler;
 import android.os.Looper;
 
@@ -32,7 +24,6 @@ import android.os.Looper;
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private Thread updateThread;
-    private Thread drawThread;
     Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
     private boolean isPlaying;
     private final SurfaceHolder holder;
@@ -48,6 +39,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 2;
+    double[][] cornerVectors;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -81,11 +73,13 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
         // Determine corners for ball bounce
-        List<SimpleEntry<Double, Double>> corners = determineCorners();
+        List<Vector> edges = determineCorners();
+//        double[][] cornerVectors = determineCornerVectors(corners);
+//        this.cornerVectors = cornerVectors;
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, corners);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, edges);
         balls.add(ball);
     }
 
@@ -98,105 +92,62 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-    private List<AbstractMap.SimpleEntry<Double, Double>> determineCorners() {
-        // Initialize formula list
-        List<SimpleEntry<Double, Double>> corners = new ArrayList<>();
+    private List<Vector> determineCorners() {
+        // Initialize the corners array
+        List<Vector> edges = new ArrayList<>();
 
+        // Define the screen corners with meaningful names
         double x1 = 0;
-        double y1 = screenX * 0.5;
+        double y1 = screenX * 0.5;  // Left side above
 
         double x2 = screenX * 0.5;
-        double y2 = screenY * 0.09;
+        double y2 = screenY * 0.09;  // Top middle of the screen
 
         double x3 = screenX;
-        double y3 = screenX * 0.5;
+        double y3 = screenX * 0.5;  // Right side, above
 
         double x4 = screenX;
-        double y4 = screenY - screenX * 0.5;
+        double y4 = screenY - screenX * 0.5;  // Bottom right
 
         double x5 = screenX * 0.5;
-        double y5 = screenY * 0.91;
+        double y5 = screenY * 0.91;  // Bottom middle
 
         double x6 = 0;
-        double y6 = screenY - screenX * 0.5;
+        double y6 = screenY - screenX * 0.5;  // Bottom left
 
-        corners.add(new SimpleEntry<>(x1, y1));
-        corners.add(new SimpleEntry<>(x2, y2));
-        corners.add(new SimpleEntry<>(x3, y3));
-        corners.add(new SimpleEntry<>(x4, y4));
-        corners.add(new SimpleEntry<>(x5, y5));
-        corners.add(new SimpleEntry<>(x6, y6));
+        // Assign the coordinates to the edges list
+        edges.add(new Vector(x1, y1, x2, y2));
+        edges.add(new Vector(x2, y2, x3, y3));
+        edges.add(new Vector(x4, y4, x5, y5));
+        edges.add(new Vector(x5, y5, x6, y6));
 
-        // // Initialize formula list
-        // List<SimpleEntry<Double, Double>> corners = new ArrayList<>();
+        return edges;
+    }
 
-        // double x1 = 0;
-        // double y1 = screenX * 0.5;
-        // double x2 = screenX * 0.5;
-        // double y2 = screenY * 0.09;
-        // double dy = y2 - y1;
-        // double dx = x2 - x1;
-        // double a = dy / dx;
-        // double b = y1 - a * x1;
+    // Determine corner vectors with corner coordinates
+    private double[][] determineCornerVectors(double[][] corners) {
+        // Initialize corner vectors array
+        double[][] cornerVectors = new double[4][2];
 
-        // // Create the SimpleEntry to store (a, b) as the formula
-        // SimpleEntry<Double, Double> formula1 = new SimpleEntry<>(a, b);
+        // Define the corner pairs explicitly
+        int[][] cornerPairs = {
+                {0, 1}, // corner0 to corner1
+                {1, 2}, // corner1 to corner2
+                {3, 4}, // corner3 to corner4
+                {4, 5}  // corner4 to corner5
+        };
 
-        // // Add the formula to the list
-        // corners.add(formula1);
+        // Loop through the corner pairs to populate the corner vectors
+        for (int i = 0; i < 4; i++) {
+            int cornerStart = cornerPairs[i][0];
+            int cornerEnd = cornerPairs[i][1];
 
+            // Calculate vector between cornerStart and cornerEnd
+            cornerVectors[i][0] = corners[cornerEnd][0] - corners[cornerStart][0];  // x coordinate
+            cornerVectors[i][1] = corners[cornerEnd][1] - corners[cornerStart][1];  // y coordinate
+        }
 
-        // // Top-right corner
-        // x1 = screenX * 0.5;
-        // y1 = screenY * 0.09;
-        // x2 = screenX;
-        // y2 = screenX * 0.5;
-        // dy = y2 - y1;
-        // dx = x2 - x1;
-        // a = dy / dx;
-        // b = y1 - a * x1;
-
-        // // Create the SimpleEntry to store (a, b) as the formula
-        // SimpleEntry<Double, Double> formula2 = new SimpleEntry<>(a, b);
-
-        // // Add the formula to the list
-        // corners.add(formula2);
-
-
-        // Bottom-right corner
-//        x1 = screenX;
-//        y1 = screenY - screenX * 0.5;
-//        x2 = screenX * 0.5;
-//        y2 = screenY * 0.91;
-//        dy = y2 - y1;
-//        dx = x2 - x1;
-//        a = dy / dx;
-//        b = y1 - a * x1;
-//
-//        // Create the SimpleEntry to store (a, b) as the formula
-//        SimpleEntry<Double, Double> formula3 = new SimpleEntry<>(a, b);
-//
-//        // Add the formula to the list
-//        corners.add(formula3);
-
-
-        // Bottom-left corner
-//        x1 = screenX * 0.5;
-//        y1 = screenY * 0.91;
-//        x2 = 0;
-//        y2 = screenY - screenX * 0.5;
-//        dy = y2 - y1;
-//        dx = x2 - x1;
-//        a = dy / dx;
-//        b = y1 - a * x1;
-
-//        // Create the SimpleEntry to store (a, b) as the formula
-//        SimpleEntry<Double, Double> formula4 = new SimpleEntry<>(a, b);
-//
-//        // Add the formula to the list
-//        corners.add(formula4);
-
-        return corners;
+        return cornerVectors;
     }
 
     private void update() {
@@ -225,12 +176,6 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            // Draw the balls
-            synchronized (balls) {
-                for (Ball ball : balls) {
-                    ball.draw(canvas);
-                }
-            }
             // Draw the joysticks
             synchronized (joysticks) {
                 for (Joystick joystick : joysticks) {
@@ -242,6 +187,13 @@ public class GameView extends SurfaceView implements Runnable {
             synchronized (shootButtons) {
                 for (ShootButton button : shootButtons) {
                     button.draw(canvas);
+                }
+            }
+
+            // Draw the balls
+            synchronized (balls) {
+                for (Ball ball : balls) {
+                    ball.draw(canvas);
                 }
             }
 
@@ -532,31 +484,31 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void drawGoals(Canvas canvas) {
         // Top-left goal
-        Vector<Float> A = new Vector<>();
+        java.util.Vector<Float> A = new java.util.Vector<>();
         A.add(0f);
         A.add(screenX * 0.5f);
 
-        Vector<Float> B = new Vector<>();
+        java.util.Vector<Float> B = new java.util.Vector<>();
         B.add(screenX * 0.5f);
         B.add(screenY * 0.09f);
 
-        Vector<Float> AB = new Vector<>();
+        java.util.Vector<Float> AB = new java.util.Vector<>();
         AB.add(B.get(0) - A.get(0));  // X-component
         AB.add(B.get(1) - A.get(1));  // Y-component
 
-        Vector<Float> C = new Vector<>();
+        java.util.Vector<Float> C = new java.util.Vector<>();
         C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
         C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
 
-        Vector<Float> CB = new Vector<>();
+        java.util.Vector<Float> CB = new java.util.Vector<>();
         CB.add(B.get(0) - C.get(0));  // X-component
         CB.add(B.get(1) - C.get(1));  // Y-component
 
-        Vector<Float> CD = new Vector<>();
+        java.util.Vector<Float> CD = new java.util.Vector<>();
         CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
         CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
 
-        Vector<Float> CE = new Vector<>();
+        java.util.Vector<Float> CE = new java.util.Vector<>();
         CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
         CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
 
@@ -566,93 +518,93 @@ public class GameView extends SurfaceView implements Runnable {
         canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
 
         // Top-right goal
-        A = new Vector<>();
+        A = new java.util.Vector<>();
         A.add(screenX * 0.5f);
         A.add(screenY * 0.09f);
 
-        B = new Vector<>();
+        B = new java.util.Vector<>();
         B.add((float) screenX);
         B.add(screenX * 0.5f);
 
-        AB = new Vector<>();
+        AB = new java.util.Vector<>();
         AB.add(B.get(0) - A.get(0));  // X-component
         AB.add(B.get(1) - A.get(1));  // Y-component
 
-        C = new Vector<>();
+        C = new java.util.Vector<>();
         C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
         C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
 
-        CB = new Vector<>();
+        CB = new java.util.Vector<>();
         CB.add(B.get(0) - C.get(0));  // X-component
         CB.add(B.get(1) - C.get(1));  // Y-component
 
-        CD = new Vector<>();
+        CD = new java.util.Vector<>();
         CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
         CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
 
-        CE = new Vector<>();
+        CE = new java.util.Vector<>();
         CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
         CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
 
         canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
 
         // Bottom-right goal
-        A = new Vector<>();
+        A = new java.util.Vector<>();
         A.add((float) screenX);
         A.add(screenY - screenX * 0.5f);
 
-        B = new Vector<>();
+        B = new java.util.Vector<>();
         B.add(screenX * 0.5f);
         B.add(screenY * 0.91f);
 
-        AB = new Vector<>();
+        AB = new java.util.Vector<>();
         AB.add(B.get(0) - A.get(0));  // X-component
         AB.add(B.get(1) - A.get(1));  // Y-component
 
-        C = new Vector<>();
+        C = new java.util.Vector<>();
         C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
         C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
 
-        CB = new Vector<>();
+        CB = new java.util.Vector<>();
         CB.add(B.get(0) - C.get(0));  // X-component
         CB.add(B.get(1) - C.get(1));  // Y-component
 
-        CD = new Vector<>();
+        CD = new java.util.Vector<>();
         CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
         CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
 
-        CE = new Vector<>();
+        CE = new java.util.Vector<>();
         CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
         CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
 
         canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
 
         // Bottom-left goal
-        A = new Vector<>();
+        A = new java.util.Vector<>();
         A.add(screenX * 0.5f);
         A.add(screenY * 0.91f);
 
-        B = new Vector<>();
+        B = new java.util.Vector<>();
         B.add(0f);
         B.add(screenY - screenX * 0.5f);
 
-        AB = new Vector<>();
+        AB = new java.util.Vector<>();
         AB.add(B.get(0) - A.get(0));  // X-component
         AB.add(B.get(1) - A.get(1));  // Y-component
 
-        C = new Vector<>();
+        C = new java.util.Vector<>();
         C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
         C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
 
-        CB = new Vector<>();
+        CB = new java.util.Vector<>();
         CB.add(B.get(0) - C.get(0));  // X-component
         CB.add(B.get(1) - C.get(1));  // Y-component
 
-        CD = new Vector<>();
+        CD = new java.util.Vector<>();
         CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
         CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
 
-        CE = new Vector<>();
+        CE = new java.util.Vector<>();
         CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
         CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
 

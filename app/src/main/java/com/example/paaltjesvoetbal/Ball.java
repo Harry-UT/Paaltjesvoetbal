@@ -3,17 +3,11 @@ package com.example.paaltjesvoetbal;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RectF;
-import android.graphics.Region;
 import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Ball {
     private float x;
@@ -22,17 +16,18 @@ public class Ball {
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.985F;
     private Player player;
-    private final List<AbstractMap.SimpleEntry<Double, Double>> corners;
-    private long lastBounceTime = 0;
-    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
+    private List<Vector> edges;
 
-    public Ball(float x, float y, float radius, List<AbstractMap.SimpleEntry<Double, Double>> corners) {
+//    private long lastBounceTime = 0;
+//    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
+
+    public Ball(float x, float y, float radius, List<Vector> edges) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.velocityX = 0;
         this.velocityY = 0;
-        this.corners = corners;
+        this.edges = edges;
     }
 
     public void draw(Canvas canvas) {
@@ -53,6 +48,37 @@ public class Ball {
 
         // Draw the ball with the gradient effect
         canvas.drawCircle(x, y, radius, paint);
+
+        paint = new Paint();
+        // Draw normal vectors of the edges from the middle of screen
+        paint.setColor(Color.RED);
+        paint.setStrokeWidth(5);
+
+        for (Vector edge : edges) {
+            // Calculate normal vector of edge
+            float edgeX = (float) (edge.getX2() - edge.getX1());
+            float edgeY = (float) (edge.getY2() - edge.getY1());
+            float edgeLength = (float) Math.sqrt(edgeX * edgeX + edgeY * edgeY);
+            float normalX = -edgeY / edgeLength;
+            float normalY = edgeX / edgeLength;
+
+            // Draw normal vector from the middle of the edge
+            float startX = (float) (edge.getX1() + edgeX / 2);
+            float startY = (float) (edge.getY1() + edgeY / 2);
+
+            float endX = startX + normalX;
+            float endY = startY + normalY;
+
+            canvas.drawLine(startX, startY, endX, endY, paint);
+        }
+        paint = new Paint();
+        for (Vector edge : edges) {
+            // Draw the normal vector or the edge * 50 length for visibility
+            Vector normalVector = getNormalVector(edge);
+            paint.setColor(Color.RED);
+            paint.setStrokeWidth(5);
+            canvas.drawLine((float) normalVector.getX1(), (float) normalVector.getY1(), (float) (normalVector.getX1() + (normalVector.getX2() - normalVector.getX1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), (float) (normalVector.getY1() + (normalVector.getY2() - normalVector.getY1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), paint);
+        }
     }
 
     public void update(int screenX, int screenY) {
@@ -82,46 +108,117 @@ public class Ball {
     }
 
     private void checkBounce(float screenX, float screenY) {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastBounceTime < BOUNCE_TIMEOUT) {
-            return;
-        }
-
-        // If x or y is too far out of screen bounds, put it in the middle of the screen
-        if (x < -50) {
-            x = screenX / 2;
-            y = screenY / 2;
-            return;
-        } else if (x > screenX + 50) {
-            x = screenX / 2;
-            y = screenY / 2;
-            return;
-        } else if (y < -50) {
-            x = screenX / 2;
-            y = screenY / 2;
-            return;
-        } else if (y > screenY + 50) {
-            x = screenX / 2;
-            y = screenY / 2;
-            return;
-        }
-
         // Check for collisions with left and right edges
         if (x - radius <= 0 || x + radius >= screenX) {
-            setVelocityX(-getVelocityX());  // Reverse horizontal direction
-            lastBounceTime = currentTime;   // Update last bounce time
+            if (getVelocityX() != 0) {
+                setVelocityX(-getVelocityX());  // Reverse horizontal direction
+            }
         }
 
         // Check for collisions with top and bottom edges
         if (y - radius <= 0 || y + radius >= screenY) {
             setVelocityY(-getVelocityY());  // Reverse vertical direction
-            lastBounceTime = currentTime;   // Update last bounce time
         }
 
-        // Check for collisions with corner sides
-        // Each corner is represented as a pair of (a, b) meaning y = a*x + b
-        // Check for collisions with the corner sides
+        // Check for collisions with the specific polygon edges (4 edges only)
+        for (int i = 0; i < 4; i++) {
+            checkEdgeCollision(i);
+        }
+    }
 
+    // Check for collision with the ball and the passed polygon edge
+    public void checkEdgeCollision(int edgeIndex) {
+        Vector edge = edges.get(edgeIndex);
+
+        // Get the edge's start and end points
+        double x1 = edge.getX1();
+        double y1 = edge.getY1();
+        double x2 = edge.getX2();
+        double y2 = edge.getY2();
+
+        Vector normalVector = getNormalVector(edge);
+
+        // Calculate the vector from the ball's center to the line
+        double dx = getX() - x1;
+        double dy = getY() - y1;
+
+        // Calculate the perpendicular distance from the ball to the line
+        double lineLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        double distance = Math.abs(dy * (x2 - x1) - dx * (y2 - y1)) / lineLength;
+
+        // If the distance is less than or equal to the ball's radius, we have a collision
+        if (distance <= radius) {
+            if (isDeviationGreaterThan90(normalVector, getUnitDirectionVector(getVelocityX(), getVelocityY()))) {
+                // Reflect the ball's velocity off the line
+                double normalX = (y2 - y1) / lineLength;
+                double normalY = (x1 - x2) / lineLength;
+
+                // Get current velocity components
+                double velocityX = getVelocityX();
+                double velocityY = getVelocityY();
+
+                // Calculate the dot product of the ball's velocity and the line's normal
+                double dotProduct = velocityX * normalX + velocityY * normalY;
+
+                // Reflect velocity along x-axis and y-axis using set methods
+                setVelocityX((float) (velocityX - 2 * dotProduct * normalX)); // Reflect along x-axis
+                setVelocityY((float) (velocityY - 2 * dotProduct * normalY)); // Reflect along y-axis
+
+                // Optionally, adjust the ball's position to prevent overlap (correct position)
+                double overlap = radius - distance;
+                setX((float) (getX() + normalX * overlap)); // Adjust X position
+                setY((float) (getY() + normalY * overlap)); // Adjust Y position
+            }
+        }
+    }
+
+    public Vector getUnitDirectionVector(double dx, double dy) {
+        return new Vector(0, 0, dx, dy);
+    }
+
+    // Method to check if the deviation between two vectors is greater than 90 degrees
+    public static boolean isDeviationGreaterThan90(Vector v1, Vector v2) {
+        // Get the direction components of the vectors
+        double dx1 = v1.getX2() - v1.getX1();
+        double dy1 = v1.getY2() - v1.getY1();
+
+        double dx2 = v2.getX2() - v2.getX1();
+        double dy2 = v2.getY2() - v2.getY1();
+
+        // Calculate the dot product of the two direction vectors
+        double dotProduct = dx1 * dx2 + dy1 * dy2;
+
+        // If the dot product is negative, the angle is greater than 90 degrees
+        return dotProduct < 0;
+    }
+
+    private Vector getNormalVector(Vector vector) {
+        float edgeX = (float) (vector.getX2() - vector.getX1());
+        float edgeY = (float) (vector.getY2() - vector.getY1());
+        float edgeLength = (float) Math.sqrt(edgeX * edgeX + edgeY * edgeY);
+        float normalX = -edgeY / edgeLength;
+        float normalY = edgeX / edgeLength;
+
+        // Draw normal vector from the middle of the edge
+        float startX = (float) (vector.getX1() + edgeX / 2);
+        float startY = (float) (vector.getY1() + edgeY / 2);
+        float endX = startX + normalX;
+        float endY = startY + normalY;
+        return new Vector(startX, startY, endX, endY);
+    }
+
+    // Normalize a vector
+    private void normalize(double[] vector) {
+        double length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+        vector[0] /= length;
+        vector[1] /= length;
+    }
+
+    // Reflect the ball's velocity based on the normal vector
+    private void reflectVelocity(double[] normal) {
+        double dotProduct = velocityX * normal[0] + velocityY * normal[1];
+        velocityX -= (float) (2 * dotProduct * normal[0]);
+        velocityY -= (float) (2 * dotProduct * normal[1]);
     }
 
     public float getX() {
@@ -152,11 +249,11 @@ public class Ball {
         this.velocityX = velocityX;
     }
 
-    public float getVelocityX() {
+    public synchronized float getVelocityX() {
         return this.velocityX;
     }
 
-    public float getVelocityY() {
+    public synchronized float getVelocityY() {
         return this.velocityY;
     }
 

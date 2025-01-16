@@ -42,7 +42,7 @@ public class ShootButton {
         float dx = touchX - x;
         float dy = touchY - y;
         float distanceSquared = dx * dx + dy * dy;
-        return distanceSquared <= (radius * 2.2f) * (radius * 2.2f);
+        return distanceSquared <= (radius * 2.3f) * (radius * 2.3f);
     }
 
     // Perform shoot action
