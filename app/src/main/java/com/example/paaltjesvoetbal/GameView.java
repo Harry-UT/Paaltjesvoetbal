@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Region;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -15,6 +16,7 @@ import android.view.SurfaceView;
 import android.graphics.Matrix;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import android.os.Handler;
@@ -39,7 +41,12 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 2;
-    double[][] cornerVectors;
+    private final double goalWidth = 0.5;
+    private final List<Vector> diagonalEdges = new ArrayList<>();
+    private final List<Vector> bounceEdges = new ArrayList<>();
+    private final List<Vector> goals = new ArrayList<>();
+    private final List<Path> cornerPaths = new ArrayList<>();
+    private final List<Region> cornerRegions = new ArrayList<>();
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -72,14 +79,18 @@ public class GameView extends SurfaceView implements Runnable {
                     break;
             }
         }
-        // Determine corners for ball bounce
-        List<Vector> edges = determineCorners();
-//        double[][] cornerVectors = determineCornerVectors(corners);
-//        this.cornerVectors = cornerVectors;
+        // Determine player corner areas
+        determineCorners();
+
+        // Determine edges for ball bounce
+        determineBounceEdges();
+
+        // Determine the goals
+        determineGoals(goalWidth);
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, edges);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, cornerRegions, goals);
         balls.add(ball);
     }
 
@@ -92,62 +103,50 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-    private List<Vector> determineCorners() {
-        // Initialize the corners array
-        List<Vector> edges = new ArrayList<>();
-
-        // Define the screen corners with meaningful names
-        double x1 = 0;
-        double y1 = screenX * 0.5;  // Left side above
-
-        double x2 = screenX * 0.5;
-        double y2 = screenY * 0.09;  // Top middle of the screen
-
-        double x3 = screenX;
-        double y3 = screenX * 0.5;  // Right side, above
-
-        double x4 = screenX;
-        double y4 = screenY - screenX * 0.5;  // Bottom right
-
-        double x5 = screenX * 0.5;
-        double y5 = screenY * 0.91;  // Bottom middle
-
-        double x6 = 0;
-        double y6 = screenY - screenX * 0.5;  // Bottom left
-
-        // Assign the coordinates to the edges list
-        edges.add(new Vector(x1, y1, x2, y2));
-        edges.add(new Vector(x2, y2, x3, y3));
-        edges.add(new Vector(x4, y4, x5, y5));
-        edges.add(new Vector(x5, y5, x6, y6));
-
-        return edges;
-    }
-
-    // Determine corner vectors with corner coordinates
-    private double[][] determineCornerVectors(double[][] corners) {
-        // Initialize corner vectors array
-        double[][] cornerVectors = new double[4][2];
-
-        // Define the corner pairs explicitly
-        int[][] cornerPairs = {
-                {0, 1}, // corner0 to corner1
-                {1, 2}, // corner1 to corner2
-                {3, 4}, // corner3 to corner4
-                {4, 5}  // corner4 to corner5
-        };
-
-        // Loop through the corner pairs to populate the corner vectors
-        for (int i = 0; i < 4; i++) {
-            int cornerStart = cornerPairs[i][0];
-            int cornerEnd = cornerPairs[i][1];
-
-            // Calculate vector between cornerStart and cornerEnd
-            cornerVectors[i][0] = corners[cornerEnd][0] - corners[cornerStart][0];  // x coordinate
-            cornerVectors[i][1] = corners[cornerEnd][1] - corners[cornerStart][1];  // y coordinate
+    private void determineBounceEdges() {
+        for (Vector edge : diagonalEdges) {
+            Vector[] bounceVectors = edge.split(goalWidth);
+            bounceEdges.addAll(Arrays.asList(bounceVectors));
         }
 
-        return cornerVectors;
+        // Initialize the corners array
+//        List<Vector> edges = new ArrayList<>();
+//
+//        // Define the screen corners with meaningful names
+//        double x1 = 0;
+//        double y1 = screenX * 0.5;  // Left side above
+//
+//        double x2 = screenX * 0.5;
+//        double y2 = screenY * 0.09;  // Top middle of the screen
+//
+//        double x3 = screenX;
+//        double y3 = screenX * 0.5;  // Right side, above
+//
+//        double x4 = screenX;
+//        double y4 = screenY - screenX * 0.5;  // Bottom right
+//
+//        double x5 = screenX * 0.5;
+//        double y5 = screenY * 0.91;  // Bottom middle
+//
+//        double x6 = 0;
+//        double y6 = screenY - screenX * 0.5;  // Bottom left
+//
+//        // Assign the coordinates to the edges list
+////        edges.add(new Vector(x1, y1, x2, y2));
+////        edges.add(new Vector(x2, y2, x3, y3));
+//        edges.add(new Vector(x4, y4, x5, y5));
+//        edges.add(new Vector(x5, y5, x6, y6));
+
+//        this.diagonalEdges = edges;
+    }
+
+    private void determineGoals(double goalWidth) {
+        // Iterate over all diagonal edges to determine the goals
+        for (Vector edge : diagonalEdges) {
+            // Get scaled vector
+            Vector scaledEdge = edge.getCenteredAndScaledVector(goalWidth);
+            goals.add(scaledEdge);
+        }
     }
 
     private void update() {
@@ -187,6 +186,46 @@ public class GameView extends SurfaceView implements Runnable {
             synchronized (shootButtons) {
                 for (ShootButton button : shootButtons) {
                     button.draw(canvas);
+                }
+            }
+
+            synchronized (goals) {
+                for (Vector goal : goals) {
+                    goal.draw(canvas);
+                }
+            }
+
+            synchronized (cornerPaths) {
+                Paint paint = new Paint();
+                for (int i = 0; i < cornerPaths.size(); i++) {
+                    switch(i) {
+                        case 0:
+                            paint.setColor(Color.argb(128, 255, 0, 0)); // Light red
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                        case 1:
+                            paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                        case 2:
+                            paint.setColor(Color.argb(140, 0, 0, 255)); // Light blue
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                        case 3:
+                            paint.setColor(Color.rgb(140, 238, 144)); // Light green
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                    }
+                }
+            }
+
+            synchronized (bounceEdges) {
+                // Draw the bounce edges orange
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(255, 165, 0));  // Orange color
+                paint.setStrokeWidth(5);
+                for (Vector edge : bounceEdges) {
+                    canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
                 }
             }
 
@@ -415,14 +454,11 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the background
         canvas.drawColor(Color.parseColor("#FFEBCD"));
 
-        // Draw the side lines
-        Paint paint = new Paint();
-        drawCorners(canvas, paint);
-
         // Draw settings icon in the middle
         drawSettingsIcon(canvas);
 
         // Draw the bottom UI bar (black)
+        Paint paint = new Paint();
         paint.setColor(Color.BLACK);
         canvas.drawRect(0, screenY, screenX, screenY + 40, paint);
 
@@ -438,177 +474,61 @@ public class GameView extends SurfaceView implements Runnable {
 //        canvas.drawLine(0, 0, screenX, 0, paint);
     }
 
-    private void drawCorners(Canvas canvas, Paint paint) {
+    private void determineCorners() {
         // Top-left corner (triangle)
         Path topLeftPath = new Path();
-        paint.setColor(Color.argb(128, 255, 0, 0)); // Light red
         topLeftPath.moveTo(0, 0);
         topLeftPath.lineTo(screenX * 0.5f, 0);
         topLeftPath.lineTo(screenX * 0.5f, screenY * 0.09f);
         topLeftPath.lineTo(0, screenX * 0.5f);
         topLeftPath.close();
-        canvas.drawPath(topLeftPath, paint);
+        // Draw the path on the canvas
+        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
 
         // Top-right corner (triangle)
         Path topRightPath = new Path();
-        paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
         topRightPath.moveTo(screenX * 0.5f, 0);
         topRightPath.lineTo(screenX, 0);
         topRightPath.lineTo(screenX, screenX * 0.5f);
         topRightPath.lineTo(screenX * 0.5f, screenY * 0.09f);
         topRightPath.close();
-        canvas.drawPath(topRightPath, paint);
+        diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.09, screenX, screenX * 0.5));
 
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
-        paint.setColor(Color.argb(140, 0, 0, 255)); // Light blue
         bottomRightPath.moveTo(screenX, screenY - screenX * 0.5f);
         bottomRightPath.lineTo(screenX, screenY);
         bottomRightPath.lineTo(screenX * 0.5f, screenY);
         bottomRightPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomRightPath.close();
-        canvas.drawPath(bottomRightPath, paint);
+        diagonalEdges.add(new Vector(screenX, screenY - screenX * 0.5, screenX * 0.5, screenY * 0.91));
 
         // Bottom-left corner (triangle)
         Path bottomLeftPath = new Path();
-        paint.setColor(Color.rgb(140, 238, 144)); // Light green
         bottomLeftPath.moveTo(screenX * 0.5f, screenY);
         bottomLeftPath.lineTo(0, screenY);
         bottomLeftPath.lineTo(0, screenY - screenX * 0.5f);
         bottomLeftPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomLeftPath.close();
-        canvas.drawPath(bottomLeftPath, paint);
+        diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.91, 0, screenY - screenX * 0.5));
 
-        drawGoals(canvas);
-    }
+        // Add the corner paths to the paths list
+        cornerPaths.add(topLeftPath);
+        cornerPaths.add(topRightPath);
+        cornerPaths.add(bottomRightPath);
+        cornerPaths.add(bottomLeftPath);
 
-    private void drawGoals(Canvas canvas) {
-        // Top-left goal
-        java.util.Vector<Float> A = new java.util.Vector<>();
-        A.add(0f);
-        A.add(screenX * 0.5f);
+        // Initialize a region with the screen dimensions
+        Region region = new Region(0, 0, screenX, screenY);
 
-        java.util.Vector<Float> B = new java.util.Vector<>();
-        B.add(screenX * 0.5f);
-        B.add(screenY * 0.09f);
-
-        java.util.Vector<Float> AB = new java.util.Vector<>();
-        AB.add(B.get(0) - A.get(0));  // X-component
-        AB.add(B.get(1) - A.get(1));  // Y-component
-
-        java.util.Vector<Float> C = new java.util.Vector<>();
-        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
-        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
-
-        java.util.Vector<Float> CB = new java.util.Vector<>();
-        CB.add(B.get(0) - C.get(0));  // X-component
-        CB.add(B.get(1) - C.get(1));  // Y-component
-
-        java.util.Vector<Float> CD = new java.util.Vector<>();
-        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
-        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
-
-        java.util.Vector<Float> CE = new java.util.Vector<>();
-        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
-        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
-
-        Paint paint = new Paint();
-        paint.setColor(Color.BLACK);
-        paint.setStrokeWidth(5);
-        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
-
-        // Top-right goal
-        A = new java.util.Vector<>();
-        A.add(screenX * 0.5f);
-        A.add(screenY * 0.09f);
-
-        B = new java.util.Vector<>();
-        B.add((float) screenX);
-        B.add(screenX * 0.5f);
-
-        AB = new java.util.Vector<>();
-        AB.add(B.get(0) - A.get(0));  // X-component
-        AB.add(B.get(1) - A.get(1));  // Y-component
-
-        C = new java.util.Vector<>();
-        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
-        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
-
-        CB = new java.util.Vector<>();
-        CB.add(B.get(0) - C.get(0));  // X-component
-        CB.add(B.get(1) - C.get(1));  // Y-component
-
-        CD = new java.util.Vector<>();
-        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
-        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
-
-        CE = new java.util.Vector<>();
-        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
-        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
-
-        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
-
-        // Bottom-right goal
-        A = new java.util.Vector<>();
-        A.add((float) screenX);
-        A.add(screenY - screenX * 0.5f);
-
-        B = new java.util.Vector<>();
-        B.add(screenX * 0.5f);
-        B.add(screenY * 0.91f);
-
-        AB = new java.util.Vector<>();
-        AB.add(B.get(0) - A.get(0));  // X-component
-        AB.add(B.get(1) - A.get(1));  // Y-component
-
-        C = new java.util.Vector<>();
-        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
-        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
-
-        CB = new java.util.Vector<>();
-        CB.add(B.get(0) - C.get(0));  // X-component
-        CB.add(B.get(1) - C.get(1));  // Y-component
-
-        CD = new java.util.Vector<>();
-        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
-        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
-
-        CE = new java.util.Vector<>();
-        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
-        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
-
-        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
-
-        // Bottom-left goal
-        A = new java.util.Vector<>();
-        A.add(screenX * 0.5f);
-        A.add(screenY * 0.91f);
-
-        B = new java.util.Vector<>();
-        B.add(0f);
-        B.add(screenY - screenX * 0.5f);
-
-        AB = new java.util.Vector<>();
-        AB.add(B.get(0) - A.get(0));  // X-component
-        AB.add(B.get(1) - A.get(1));  // Y-component
-
-        C = new java.util.Vector<>();
-        C.add(A.get(0) + 0.5f * AB.get(0));  // X-component
-        C.add(A.get(1) + 0.5f * AB.get(1));  // Y-component
-
-        CB = new java.util.Vector<>();
-        CB.add(B.get(0) - C.get(0));  // X-component
-        CB.add(B.get(1) - C.get(1));  // Y-component
-
-        CD = new java.util.Vector<>();
-        CD.add(C.get(0) + 0.5f * (B.get(0) - C.get(0)));  // X-component
-        CD.add(C.get(1) + 0.5f * (B.get(1) - C.get(1)));  // Y-component
-
-        CE = new java.util.Vector<>();
-        CE.add(C.get(0) + 0.5f * (A.get(0) - C.get(0)));  // X-component
-        CE.add(C.get(1) + 0.5f * (A.get(1) - C.get(1)));  // Y-component
-
-        canvas.drawLine(CD.get(0), CD.get(1), CE.get(0), CE.get(1), paint);
+        // Loop through the list of corner paths and add each as a region
+        for (Path path : cornerPaths) {
+            Region cornerRegion = new Region();
+            // Set the path within the bounding region
+            cornerRegion.setPath(path, region);
+            // Add the corner region to the list
+            cornerRegions.add(cornerRegion);
+        }
     }
     
     private void drawMiddle(Canvas canvas) {
