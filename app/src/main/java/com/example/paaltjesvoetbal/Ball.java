@@ -23,6 +23,7 @@ public class Ball {
     private List<Region> goalRegions = new ArrayList<>();
     private List<Vector> goals = new ArrayList<>();
     private boolean scored = false;
+    private Player shooter = null;
 
 //    private long lastBounceTime = 0;
 //    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
@@ -129,8 +130,14 @@ public class Ball {
         paint.setColor(Color.RED);
         paint.setTextSize(100);
         canvas.drawText("GOAL!", 100, 100, paint);
-        // Reset scored
+        // Reset scored variable
         this.scored = false;
+        if (shooter != null) {
+            int color = shooter.getColor();
+            canvas.drawText("Player " + color + " scored!", 100, 200, paint);
+        }
+        // Reset shooter
+        this.shooter = null;
     }
 
     private void checkBounce(float screenX, float screenY) {
@@ -314,6 +321,7 @@ public class Ball {
     public void shoot() {
         Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player");
         if (player != null) {
+            shooter = player;
             // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
             float dx = this.x - player.getX();  // Ball's position minus Player's position (shoot away from player)
             float dy = this.y - player.getY();  // Ball's position minus Player's position (shoot away from player)

@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class MainActivity extends Activity implements SettingsDialog.OnSettingsChangedListener {
 
     private GameView gameView;
@@ -20,7 +22,7 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
 
         // Get screen resolution
         int screenX = getResources().getDisplayMetrics().widthPixels;
-        int screenY = getResources().getDisplayMetrics().heightPixels;
+        int screenY = getResources().getDisplayMetrics().heightPixels + 30;
 
         // Initialize the GameView with the Activity context
         gameView = new GameView(this, screenX, screenY);
@@ -53,6 +55,17 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
         super.onResume();
         if (gameView != null) {
             gameView.resume(); // Resume the game
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
     }
 }

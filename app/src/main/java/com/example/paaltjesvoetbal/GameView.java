@@ -175,13 +175,6 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            // Draw the joysticks
-            synchronized (joysticks) {
-                for (Joystick joystick : joysticks) {
-                    joystick.draw(canvas);  // Call the draw method for each joystick
-                }
-            }
-
             // Draw the shoot buttons
             synchronized (shootButtons) {
                 for (ShootButton button : shootButtons) {
@@ -226,6 +219,13 @@ public class GameView extends SurfaceView implements Runnable {
                 paint.setStrokeWidth(5);
                 for (Vector edge : bounceEdges) {
                     canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
+                }
+            }
+
+            // Draw the joysticks
+            synchronized (joysticks) {
+                for (Joystick joystick : joysticks) {
+                    joystick.draw(canvas);  // Call the draw method for each joystick
                 }
             }
 
@@ -647,7 +647,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, Color.BLUE);
-        newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.1f, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.BLUE);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
@@ -677,7 +677,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, Color.GREEN);
-        newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.1f, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.GREEN);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
