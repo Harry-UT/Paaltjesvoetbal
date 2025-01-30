@@ -32,17 +32,6 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
     }
 
     @Override
-    public void onSettingsChanged(int playerCount) {
-        // Handle the updated player count (or any other settings you want to change)
-        updateGameSettings(playerCount);
-    }
-
-    private void updateGameSettings(int playerCount) {
-        // Update the game based on the selected player count
-        gameView.changePlayerCount(playerCount);
-    }
-
-    @Override
     protected void onPause() {
         super.onPause();
         if (gameView != null) {
@@ -67,5 +56,10 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
                             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
+    }
+
+    @Override
+    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed) {
+        gameView.changeSettings(playerCount, playerSpeed, ballSpeed);
     }
 }

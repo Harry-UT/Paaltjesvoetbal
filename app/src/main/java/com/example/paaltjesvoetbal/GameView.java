@@ -34,8 +34,8 @@ public class GameView extends SurfaceView implements Runnable {
     private List<Player> players;
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
-    private final int PLAYERSPEED = 5;
-    private final int BALL_SPEED = 20;
+    private int PLAYERSPEED = 6;
+    private int BALL_SPEED = 20;
     private final int PLAYERRADIUS = 40;
     private final int BALLRADIUS = 20;
     private final int JOYSTICKRADIUS = 95;
@@ -180,7 +180,7 @@ public class GameView extends SurfaceView implements Runnable {
                 if (lastGoal == i && ball.getShooter() != null) {
                     if (System.currentTimeMillis() - lastGoalTime < 200) {
                         // A goal has been scored in this region by the shooter
-                        if (i != ball.getShooter().getNumber()) {
+                        if (i != ball.getShooter().getNumber() && i <= players.size() - 1) {
                             scored(i, ball.getShooter());
                         }
                         lastGoal = -1; // Reset the last goal
@@ -364,7 +364,7 @@ public class GameView extends SurfaceView implements Runnable {
                     float bottom = top + scaledHeight;
                     // Check if the touch event is within the icon's bounding box
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
-                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size());
+                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size(), PLAYERSPEED, BALL_SPEED);
                         settingsDialog.show();
                     }
 
@@ -651,7 +651,7 @@ public class GameView extends SurfaceView implements Runnable {
         canvas.drawBitmap(settingsIcon, matrix, null);
     }
 
-    public void changePlayerCount(int playerCount) {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed) {
         switch (playerCount) {
             case 2:
                 if (players.size() == 2) {
@@ -683,6 +683,15 @@ public class GameView extends SurfaceView implements Runnable {
             default:
                 break;
         }
+        changePlayerSpeed(playerSpeed);
+        changeBallSpeed(ballSpeed);
+    }
+    private void changePlayerSpeed(int playerSpeed) {
+        this.PLAYERSPEED = playerSpeed;
+    }
+
+    private void changeBallSpeed(int ballSpeed) {
+        this.BALL_SPEED = ballSpeed;
     }
 
     private void clearLists() {

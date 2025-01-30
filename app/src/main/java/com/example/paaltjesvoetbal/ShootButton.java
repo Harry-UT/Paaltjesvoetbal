@@ -1,7 +1,5 @@
 package com.example.paaltjesvoetbal;
 
-import static java.lang.Math.sqrt;
-
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;

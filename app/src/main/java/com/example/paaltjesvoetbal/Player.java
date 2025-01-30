@@ -8,12 +8,11 @@ public class Player {
     private final int radius;  // Player's radius
     private int color;  // Player's color
     private int score = 0;  // Player's score
-    private Ball ball;  // Reference to the ball the player is controlling
     private Joystick joystick;
     private ShootButton shootButton;
     private static final int CONTROL_TIMEOUT = 200;  // Time in milliseconds for collision timeout
     private long lastShootTime;  // Last time the ball was shot
-    private int number;
+    private final int number;
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color, int playerNumber) {
@@ -21,7 +20,6 @@ public class Player {
         this.y = y;
         this.radius = radius;
         this.color = color;
-        this.ball = null;  // Initially, the player is not controlling any ball
         this.lastShootTime = 0;
         this.number = playerNumber;
     }

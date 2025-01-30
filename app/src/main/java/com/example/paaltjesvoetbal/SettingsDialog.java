@@ -4,74 +4,159 @@ import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
+import android.widget.Button;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import java.util.Objects;
 
 public class SettingsDialog extends Dialog {
 
-    private OnSettingsChangedListener listener;
+    private final OnSettingsChangedListener listener;
+    private final int initialPlayerCount;
+    private final int initialPlayerSpeed;
+    private final int initialBallSpeed;
+
+    // Mapping functions
+    private int mapPlayerSpeed(int progress) {
+        return 1 + (progress * 14) / 100; // Maps 0–100 to 1–15
+    }
+
+    private int mapBallSpeed(int progress) {
+        return 5 + (progress * 25) / 100; // Maps 0–100 to 5–30
+    }
 
     // Callback interface
     public interface OnSettingsChangedListener {
-        void onSettingsChanged(int playerCount);  // Notify MainActivity of the player count
+        void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed);
     }
 
-    // Constructor with listener and initial player count
-    public SettingsDialog(Context context, OnSettingsChangedListener listener, int playerCount) {
+    // Constructor with listener and initial settings
+    public SettingsDialog(Context context, OnSettingsChangedListener listener, int playerCount, int playerSpeed, int ballSpeed) {
         super(context);
-        this.listener = listener;  // Set the listener
-        setContentView(R.layout.settings_dialog); // Set the layout for the settings dialog
+        this.listener = listener;
+        this.initialPlayerCount = playerCount;
+        this.initialPlayerSpeed = playerSpeed;
+        this.initialBallSpeed = ballSpeed;
+    }
 
-        // Apply the rounded corners background to the dialog window
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.settings_dialog);
+
+        // Apply the rounded corners background
         Objects.requireNonNull(getWindow()).setBackgroundDrawableResource(R.drawable.rounded_dialog_background);
 
-        // Get references to the SeekBar element
+        // Get references to UI elements
         SeekBar playerCountSeekBar = findViewById(R.id.playerCount);
+        SeekBar playerSpeedSeekBar = findViewById(R.id.playerSpeed);
+        SeekBar ballSpeedSeekBar = findViewById(R.id.ballSpeed);
+        TextView playerSpeedText = findViewById(R.id.currentPlayerSpeed);
+        TextView ballSpeedText = findViewById(R.id.currentBallSpeed);
+        Button resetButton = findViewById(R.id.resetButton);
 
-        // Initialize the SeekBar progress to reflect the current player count
-        playerCountSeekBar.setProgress(playerCount - 2); // Map 2 -> 0 players, 3 -> 1 players, 4 -> 2 players
+        // Initialize SeekBars
+        playerCountSeekBar.setProgress(initialPlayerCount - 2);
+        playerSpeedSeekBar.setProgress((initialPlayerSpeed - 1) * 100 / 14); // Reverse map to SeekBar range
+        ballSpeedSeekBar.setProgress((initialBallSpeed - 5) * 100 / 25); // Reverse map to SeekBar range
 
-        // Set a listener to handle the SeekBar changes
+        playerSpeedText.setText(String.valueOf(initialPlayerSpeed));
+        ballSpeedText.setText(String.valueOf(initialBallSpeed));
+
+        // SeekBar Listeners
         playerCountSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // Pass the selected player count back to the listener
-                if (listener != null) {
-                    listener.onSettingsChanged(progress + 2); // Map 0 -> 2 players, 1 -> 3 players, 2 -> 4 players
-                }
+                notifySettingsChanged(progress + 2, mapPlayerSpeed(playerSpeedSeekBar.getProgress()), mapBallSpeed(ballSpeedSeekBar.getProgress()));
             }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
+        playerSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int mappedSpeed = mapPlayerSpeed(progress);
+                playerSpeedText.setText(String.valueOf(mappedSpeed));
+                notifySettingsChanged(playerCountSeekBar.getProgress() + 2, mappedSpeed, mapBallSpeed(ballSpeedSeekBar.getProgress()));
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        ballSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int mappedSpeed = mapBallSpeed(progress);
+                ballSpeedText.setText(String.valueOf(mappedSpeed));
+                notifySettingsChanged(playerCountSeekBar.getProgress() + 2, mapPlayerSpeed(playerSpeedSeekBar.getProgress()), mappedSpeed);
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        // Reset Button Listener
+        // Reset Button Listener
+        resetButton.setOnClickListener(v -> {
+            // Hardcoded values
+            int resetPlayerCount = 2;
+            int resetPlayerSpeed = 6;
+            int resetBallSpeed = 20;
+
+            // Reset SeekBars to match hardcoded values
+            playerCountSeekBar.setProgress(0);
+            playerSpeedSeekBar.setProgress((resetPlayerSpeed - 1) * 100 / 14);
+            ballSpeedSeekBar.setProgress((resetBallSpeed - 5) * 100 / 25);
+
+            // Update TextViews
+            playerSpeedText.setText(String.valueOf(resetPlayerSpeed));
+            ballSpeedText.setText(String.valueOf(resetBallSpeed));
+
+            // Notify listener with hardcoded values
+            notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed);
         });
     }
 
-    // Override the show method to apply the scale-up animation
+    private void notifySettingsChanged(int playerCount, int playerSpeed, int ballSpeed) {
+        if (listener != null) {
+            listener.onSettingsChanged(playerCount, playerSpeed, ballSpeed);
+        }
+    }
+
     @Override
     public void show() {
         super.show();
 
-        // Make the content of the dialog initially INVISIBLE
-        findViewById(android.R.id.content).setVisibility(View.INVISIBLE);
+        View contentView = findViewById(android.R.id.content);
+        contentView.setVisibility(View.INVISIBLE);
 
-        // Apply the scale animation to the dialog's content view
         ScaleAnimation scaleAnimation = new ScaleAnimation(
-                0f, 1f,  // From 0 (invisible) to 1 (full size)
-                0f, 1f,  // Scale both X and Y axis
-                ScaleAnimation.RELATIVE_TO_SELF, 0.5f,  // Pivot point (center of dialog)
-                ScaleAnimation.RELATIVE_TO_SELF, 0.5f);
-        scaleAnimation.setDuration(300);  // Set the duration of the animation (in milliseconds)
-        scaleAnimation.setFillAfter(true);  // Maintain the final state of the animation (i.e., full size)
+                0f, 1f,
+                0f, 1f,
+                ScaleAnimation.RELATIVE_TO_SELF, 0.5f,
+                ScaleAnimation.RELATIVE_TO_SELF, 0.5f
+        );
+        scaleAnimation.setDuration(300);
+        scaleAnimation.setFillAfter(true);
+        scaleAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
 
-        // Set the content view to VISIBLE after the animation starts
-        findViewById(android.R.id.content).setVisibility(View.VISIBLE);
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                contentView.setVisibility(View.VISIBLE);
+            }
 
-        // Apply the animation to the dialog's content view
-        findViewById(android.R.id.content).startAnimation(scaleAnimation);
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+
+        contentView.startAnimation(scaleAnimation);
     }
 }
