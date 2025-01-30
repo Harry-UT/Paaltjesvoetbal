@@ -25,8 +25,7 @@ import android.os.Looper;
 @SuppressLint("ViewConstructor")
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
-    private Thread updateThread;
-    Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
+    private final Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
     private boolean isPlaying;
     private final SurfaceHolder holder;
     private final int screenX;
@@ -35,7 +34,8 @@ public class GameView extends SurfaceView implements Runnable {
     private List<Player> players;
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
-    private final int PLAYERSPEED = 10;
+    private final int PLAYERSPEED = 5;
+    private final int BALL_SPEED = 20;
     private final int PLAYERRADIUS = 40;
     private final int BALLRADIUS = 20;
     private final int JOYSTICKRADIUS = 95;
@@ -47,9 +47,9 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> goals = new ArrayList<>();
     private final List<Path> cornerPaths = new ArrayList<>();
     private final List<Region> goalRegions = new ArrayList<>();
-    private float lastDrawTime;
     private float lastGoalTime;
     private int lastGoal;
+    private final int TARGET_FPS = 60; // Target FPS is 30
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -98,13 +98,43 @@ public class GameView extends SurfaceView implements Runnable {
 
     @Override
     public void run() {
+        final long OPTIMAL_TIME = 1000000000 / TARGET_FPS; // Time per frame in nanoseconds (1 second / 30 FPS)
+
+        long lastLoopTime = System.nanoTime();
+        long lastTime = System.nanoTime();
+        int frames = 0;
+
         while (isPlaying) {
-            update();
-            while (System.nanoTime() - lastDrawTime < 16_666_667) {
-                // Wait until ~16.67ms have passed
+            long now = System.nanoTime();
+            long updateLength = now - lastLoopTime;
+            long sleepTime = OPTIMAL_TIME - updateLength; // Time to sleep to maintain the target FPS
+
+            if (sleepTime > 0) {
+                // Convert sleep time to milliseconds and sleep to maintain FPS
+                try {
+                    Thread.sleep(sleepTime / 1000000); // Sleep in milliseconds
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            draw();
-            lastDrawTime = System.nanoTime();
+
+            // Busy-wait to sync the loop without overshooting the target FPS
+            while (System.nanoTime() - lastLoopTime < OPTIMAL_TIME) {
+                // Empty loop for busy-wait, ensuring frame time is as close to optimal as possible
+            }
+
+            lastLoopTime = System.nanoTime();
+
+            update(); // Update game state
+            draw();   // Render game frame
+            frames++; // Count frames
+
+            // Calculate and log real FPS every second
+            if (System.nanoTime() - lastTime >= 1_000_000_000) {
+                Log.d("FPSTRACK", "Real FPS: " + frames); // Log the real FPS
+                frames = 0; // Reset frame count
+                lastTime = System.nanoTime();
+            }
         }
     }
 
@@ -385,7 +415,7 @@ public class GameView extends SurfaceView implements Runnable {
                             for (ShootButton button : shootButtons) {
                                 if (button.wasTouchedBy(pointerId)) {
                                     if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
-                                        button.shoot();
+                                        button.shoot(BALL_SPEED);
                                         button.resetBall();
                                     }
                                     button.resetTouchID();

@@ -3,7 +3,6 @@ package com.example.paaltjesvoetbal;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Region;
 import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
@@ -17,12 +16,9 @@ public class Ball {
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.985F;
     private Player player;
-    private List<Vector> bounceEdges;
+    private final List<Vector> bounceEdges;
     private Paint ballPaint;
     private Player shooter = null;
-
-//    private long lastBounceTime = 0;
-//    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
 
     public Ball(float x, float y, float radius, List<Vector> bounceEdges) {
         this.x = x;
@@ -39,15 +35,16 @@ public class Ball {
         ballPaint = new Paint();
         ballPaint.setAntiAlias(true);
 
-        // Create a shader to fill the ball with two colors (black and white)
-        // Adjust the gradient's positions to favor more white area
+        // Create a shader to fill the ball with a gradient from black to white
         Shader shader = new LinearGradient(
-                x - radius, y, // Start at the left side of the circle
-                x + radius * 0.5f, y, // End at the mid-point of the circle (more white)
-                Color.BLACK, // Color on the left half
-                Color.WHITE, // Color on the right half
-                Shader.TileMode.CLAMP
+                x - radius, y,           // Start at the left side of the circle
+                x + radius, y,           // End at the right side of the circle
+                Color.BLACK,             // Left side color (black)
+                Color.WHITE,             // Right side color (white)
+                Shader.TileMode.CLAMP    // The gradient will not repeat, it will clamp the color at the edges
         );
+
+        // Apply the shader to the paint
         ballPaint.setShader(shader);
     }
 
@@ -297,7 +294,7 @@ public class Ball {
     public void setPlayer(Player player) {
         this.player = player;
     }
-    public void shoot() {
+    public void shoot(int shootSpeed) {
         Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player");
         if (player != null) {
             shooter = player;
@@ -319,7 +316,6 @@ public class Ball {
             }
 
             // Set the ball's velocity to move away from the player
-            float shootSpeed = 30;  // Adjust this value to control how fast the ball shoots
             this.velocityX = dx * shootSpeed;
             this.velocityY = dy * shootSpeed;
 

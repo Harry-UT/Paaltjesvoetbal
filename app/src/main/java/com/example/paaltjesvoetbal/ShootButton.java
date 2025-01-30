@@ -46,9 +46,9 @@ public class ShootButton {
     }
 
     // Perform shoot action
-    public void shoot() {
+    public void shoot(int shootSpeed) {
         if (ball != null) {
-            ball.shoot();
+            ball.shoot(shootSpeed);
             Log.d("Shoot", "Ball shooter set!");
         } else {
             Log.d("Shoot", "Ball null for button");
