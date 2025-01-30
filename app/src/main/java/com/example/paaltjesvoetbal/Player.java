@@ -7,20 +7,23 @@ public class Player {
     private float x, y;  // Position of the player
     private final int radius;  // Player's radius
     private int color;  // Player's color
+    private int score = 0;  // Player's score
     private Ball ball;  // Reference to the ball the player is controlling
     private Joystick joystick;
     private ShootButton shootButton;
-    private static final int COLLISION_TIMEOUT = 200;  // Time in milliseconds for collision timeout
+    private static final int CONTROL_TIMEOUT = 200;  // Time in milliseconds for collision timeout
     private long lastShootTime;  // Last time the ball was shot
+    private int number;
 
     // Constructor to initialize the player
-    public Player(float x, float y, int radius, int color) {
+    public Player(float x, float y, int radius, int color, int playerNumber) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.color = color;
         this.ball = null;  // Initially, the player is not controlling any ball
-        this.lastShootTime = 0;  // No ball has been shot yet
+        this.lastShootTime = 0;
+        this.number = playerNumber;
     }
 
     public float getX() {
@@ -58,19 +61,17 @@ public class Player {
 
     // Set the ball that the player is controlling
     public void setBall(Ball ball) {
-        this.ball = ball;
         this.shootButton.setBall(ball);
         lastShootTime = System.currentTimeMillis();
     }
 
     // Method to release the ball (after shooting it)
     public void releaseBall() {
-        this.ball = null;
         this.lastShootTime = System.currentTimeMillis();
     }
 
     public boolean canTakeBall() {
-        return System.currentTimeMillis() - lastShootTime >= COLLISION_TIMEOUT;
+        return System.currentTimeMillis() - lastShootTime >= CONTROL_TIMEOUT;
     }
 
     // Draw method for rendering the player
@@ -87,5 +88,21 @@ public class Player {
 
     public void setShootButton(ShootButton shootButton) {
         this.shootButton = shootButton;
+    }
+
+    public void scored() {
+        score++;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void resetScore() {
+        score = 0;
+    }
+
+    public int getNumber() {
+        return number;
     }
 }

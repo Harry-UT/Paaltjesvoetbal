@@ -32,7 +32,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int screenX;
     private final int screenY;
     private final List<Joystick> joysticks;
-    private final List<Player> players;
+    private List<Player> players;
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int PLAYERSPEED = 10;
@@ -46,7 +46,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> bounceEdges = new ArrayList<>();
     private final List<Vector> goals = new ArrayList<>();
     private final List<Path> cornerPaths = new ArrayList<>();
-    private final List<Region> cornerRegions = new ArrayList<>();
+    private final List<Region> goalRegions = new ArrayList<>();
+    private float lastDrawTime;
+    private float lastGoalTime;
+    private int lastGoal;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -55,13 +58,12 @@ public class GameView extends SurfaceView implements Runnable {
         this.screenY = screenY;
         holder = getHolder();
 
-        // Initialize players and joysticks
+        // Initialize players, joysticks and shoot buttons
         players = new ArrayList<>();
         joysticks = new ArrayList<>();
         shootButtons = new ArrayList<>();
 
         for (int i = 0; i < PLAYERCOUNT; i++) {
-            if (i >= 4) break;
             switch (i) {
                 case 0: // Bottom-right
                     initializePlayer1();
@@ -90,7 +92,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, cornerRegions, goals);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges);
         balls.add(ball);
     }
 
@@ -98,8 +100,11 @@ public class GameView extends SurfaceView implements Runnable {
     public void run() {
         while (isPlaying) {
             update();
+            while (System.nanoTime() - lastDrawTime < 16_666_667) {
+                // Wait until ~16.67ms have passed
+            }
             draw();
-            sleep();
+            lastDrawTime = System.nanoTime();
         }
     }
 
@@ -108,36 +113,6 @@ public class GameView extends SurfaceView implements Runnable {
             Vector[] bounceVectors = edge.split(goalWidth);
             bounceEdges.addAll(Arrays.asList(bounceVectors));
         }
-
-        // Initialize the corners array
-//        List<Vector> edges = new ArrayList<>();
-//
-//        // Define the screen corners with meaningful names
-//        double x1 = 0;
-//        double y1 = screenX * 0.5;  // Left side above
-//
-//        double x2 = screenX * 0.5;
-//        double y2 = screenY * 0.09;  // Top middle of the screen
-//
-//        double x3 = screenX;
-//        double y3 = screenX * 0.5;  // Right side, above
-//
-//        double x4 = screenX;
-//        double y4 = screenY - screenX * 0.5;  // Bottom right
-//
-//        double x5 = screenX * 0.5;
-//        double y5 = screenY * 0.91;  // Bottom middle
-//
-//        double x6 = 0;
-//        double y6 = screenY - screenX * 0.5;  // Bottom left
-//
-//        // Assign the coordinates to the edges list
-////        edges.add(new Vector(x1, y1, x2, y2));
-////        edges.add(new Vector(x2, y2, x3, y3));
-//        edges.add(new Vector(x4, y4, x5, y5));
-//        edges.add(new Vector(x5, y5, x6, y6));
-
-//        this.diagonalEdges = edges;
     }
 
     private void determineGoals(double goalWidth) {
@@ -150,16 +125,71 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void update() {
-        updateThread = new Thread(() -> {
-            synchronized (balls) {
-                for (Ball ball : balls) {
-                    ball.update(screenX, screenY);
-                }
+        synchronized (balls) {
+            for (Ball ball : balls) {
+                ball.update(screenX, screenY);
+                // Log presence of shooter for ball
+                Log.d("Ball", "Ball shooter: " + ball.getShooter());
+                checkGoal(ball);
             }
-        });
-        updateThread.start();
+        }
         checkPlayerBallCollision();
         updatePlayers();
+    }
+
+    // Check if the ball went into a goal
+    private void checkGoal(Ball ball) {
+        // Loop through all goal regions to check if the ball is within any of them
+        for (int i = 0; i < goalRegions.size(); i++) {
+            Region region = goalRegions.get(i);
+
+            // Check if the ball's current position is inside the goal region
+            if (region.contains((int) ball.getX(), (int) ball.getY())) {
+
+                // Check if it's the same region as the last goal and scored quickly
+                if (lastGoal == i && ball.getShooter() != null) {
+                    if (System.currentTimeMillis() - lastGoalTime < 200) {
+                        // A goal has been scored in this region by the shooter
+                        if (i != ball.getShooter().getNumber()) {
+                            scored(i, ball.getShooter());
+                        }
+                        lastGoal = -1; // Reset the last goal
+                        ball.resetShooter(); // Reset the shooter information
+                        break;
+                    }
+                } else {
+                    // A different region has been scored, so update the goal region and time
+                    lastGoalTime = System.currentTimeMillis();
+                    lastGoal = i;
+                }
+            }
+        }
+    }
+
+    private void scored(int goal, Player player) {
+        // Scored in goal by player
+        player.scored();
+        switch (player.getColor()) {
+            case Color.BLUE:
+                Log.d("Goal", "Player 0 scored in goal " + goal);
+                break;
+            case Color.RED:
+                Log.d("Goal", "Player 1 scored in goal " + goal);
+                break;
+            case Color.GREEN:
+                Log.d("Goal", "Player 2 scored in goal " + goal);
+                break;
+            case Color.YELLOW:
+                Log.d("Goal", "Player 3 scored in goal " + goal);
+                break;
+            default:
+                break;
+        }
+        Log.d("Goal", "Player " + player + " scored in goal " + goal);
+    }
+
+    private void displayGoalAnimation(int goal, int player) {
+
     }
 
     private void draw() {
@@ -167,20 +197,6 @@ public class GameView extends SurfaceView implements Runnable {
             Canvas canvas = holder.lockCanvas();
 
             drawPlayground(canvas);
-
-            // Draw the players
-            synchronized (players) {
-                for (Player player : players) {
-                    player.draw(canvas);
-                }
-            }
-
-            // Draw the shoot buttons
-            synchronized (shootButtons) {
-                for (ShootButton button : shootButtons) {
-                    button.draw(canvas);
-                }
-            }
 
             synchronized (goals) {
                 for (Vector goal : goals) {
@@ -193,19 +209,19 @@ public class GameView extends SurfaceView implements Runnable {
                 for (int i = 0; i < cornerPaths.size(); i++) {
                     switch(i) {
                         case 0:
-                            paint.setColor(Color.argb(128, 255, 0, 0)); // Light red
-                            canvas.drawPath(cornerPaths.get(i), paint);
-                            break;
-                        case 1:
-                            paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
-                            canvas.drawPath(cornerPaths.get(i), paint);
-                            break;
-                        case 2:
                             paint.setColor(Color.argb(140, 0, 0, 255)); // Light blue
                             canvas.drawPath(cornerPaths.get(i), paint);
                             break;
-                        case 3:
+                        case 1:
+                            paint.setColor(Color.argb(128, 255, 0, 0)); // Light red
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                        case 2:
                             paint.setColor(Color.rgb(140, 238, 144)); // Light green
+                            canvas.drawPath(cornerPaths.get(i), paint);
+                            break;
+                        case 3:
+                            paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
                             canvas.drawPath(cornerPaths.get(i), paint);
                             break;
                     }
@@ -229,6 +245,8 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            drawScores(canvas);
+
             // Draw the balls
             synchronized (balls) {
                 for (Ball ball : balls) {
@@ -236,7 +254,52 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            // Draw the shoot buttons
+            synchronized (shootButtons) {
+                for (ShootButton button : shootButtons) {
+                    button.draw(canvas);
+                }
+            }
+
+            // Draw the players
+            synchronized (players) {
+                for (Player player : players) {
+                    player.draw(canvas);
+                }
+            }
+
             holder.unlockCanvasAndPost(canvas);
+        }
+    }
+
+    private void drawScores(Canvas canvas) {
+        Paint paint = new Paint();
+        paint.setTextSize(50);
+        int xText = 0;
+        int yText = 0;
+        for (Player player : players) {
+            paint.setColor(player.getColor());
+            switch (players.indexOf(player)) {
+                case 0:
+                    xText = (int) (0.7 * screenX);
+                    yText = (int) (screenY * 0.7);
+                    break;
+                case 1:
+                    xText = (int) (0.3 * screenX);
+                    yText = (int) (screenY * 0.3);
+                    break;
+                case 2:
+                    xText = (int) (0.3 * screenX);
+                    yText = (int) (0.7 * screenY);
+                    break;
+                case 3:
+                    xText = (int) (0.7 * screenX);
+                    yText = (int) (0.3 * screenY);
+                    break;
+                default:
+                    break;
+            }
+            canvas.drawText(""+player.getScore(), xText, yText, paint);
         }
     }
 
@@ -271,7 +334,7 @@ public class GameView extends SurfaceView implements Runnable {
                     float bottom = top + scaledHeight;
                     // Check if the touch event is within the icon's bounding box
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
-                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext());
+                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size());
                         settingsDialog.show();
                     }
 
@@ -376,21 +439,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-    private void sleep() {
-        long currentTime = System.nanoTime();
-        long frameTime = 16_666_667;  // Target frame time for 60 FPS
-        long elapsedTime = System.nanoTime() - currentTime;
-        long sleepTime = frameTime - elapsedTime;
-
-        if (sleepTime > 0) {
-            try {
-                Thread.sleep(sleepTime / 1_000_000, (int) (sleepTime % 1_000_000));
-            } catch (InterruptedException e) {
-                Log.e("Error", "Error in sleep");
-            }
-        }
-    }
-
     public void resume() {
         isPlaying = true;
         thread = new Thread(this);
@@ -431,6 +479,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
             player.setBall(ball);
             ball.setPlayer(player);
+            ball.resetShooter();
 
             float deltaX = ball.getX() - player.getX();
             float deltaY = ball.getY() - player.getY();
@@ -465,7 +514,7 @@ public class GameView extends SurfaceView implements Runnable {
         paint.setStrokeWidth(5);
 
         // Draw circle in the middle
-        drawMiddle(canvas);
+        drawMiddleCircle(canvas);
 
         // Draw the side lines
 //        canvas.drawLine(screenX * 0.95f, screenY * 0.2f, screenX * 0.95f, screenY * 0.8f, paint);
@@ -513,10 +562,10 @@ public class GameView extends SurfaceView implements Runnable {
         diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.91, 0, screenY - screenX * 0.5));
 
         // Add the corner paths to the paths list
-        cornerPaths.add(topLeftPath);
-        cornerPaths.add(topRightPath);
         cornerPaths.add(bottomRightPath);
+        cornerPaths.add(topLeftPath);
         cornerPaths.add(bottomLeftPath);
+        cornerPaths.add(topRightPath);
 
         // Initialize a region with the screen dimensions
         Region region = new Region(0, 0, screenX, screenY);
@@ -527,11 +576,11 @@ public class GameView extends SurfaceView implements Runnable {
             // Set the path within the bounding region
             cornerRegion.setPath(path, region);
             // Add the corner region to the list
-            cornerRegions.add(cornerRegion);
+            goalRegions.add(cornerRegion);
         }
     }
     
-    private void drawMiddle(Canvas canvas) {
+    private void drawMiddleCircle(Canvas canvas) {
         // Set up the paint for the circle (donut shape)
         Paint paint = new Paint();
         paint.setColor(Color.BLACK);  // Set the circle's outline color
@@ -608,7 +657,7 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void clearLists() {
         synchronized (players) {
-            players.clear();
+            players = new ArrayList<>();
         }
         synchronized (joysticks) {
             joysticks.clear();
@@ -646,7 +695,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, Color.BLUE);
+        newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, Color.BLUE, 0);
         newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.BLUE);
         newPlayer.setJoystick(newJoystick);
@@ -661,7 +710,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, Color.RED);
+        newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, Color.RED, 1);
         newJoystick = new Joystick(screenX * 0.22f, JOYSTICKRADIUS, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.RED);
         newPlayer.setJoystick(newJoystick);
@@ -676,7 +725,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, Color.GREEN);
+        newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, Color.GREEN, 2);
         newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.GREEN);
         newPlayer.setJoystick(newJoystick);
@@ -691,7 +740,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, Color.YELLOW);
+        newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, Color.YELLOW, 3);
         newJoystick = new Joystick(screenX * 0.78f, JOYSTICKRADIUS, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.YELLOW);
         newPlayer.setJoystick(newJoystick);

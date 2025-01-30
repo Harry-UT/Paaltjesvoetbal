@@ -49,7 +49,7 @@ public class ShootButton {
     public void shoot() {
         if (ball != null) {
             ball.shoot();
-            Log.d("Shoot", "Ball shot!");
+            Log.d("Shoot", "Ball shooter set!");
         } else {
             Log.d("Shoot", "Ball null for button");
         }

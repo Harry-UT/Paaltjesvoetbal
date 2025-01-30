@@ -8,7 +8,6 @@ import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Ball {
@@ -20,15 +19,12 @@ public class Ball {
     private Player player;
     private List<Vector> bounceEdges;
     private Paint ballPaint;
-    private List<Region> goalRegions = new ArrayList<>();
-    private List<Vector> goals = new ArrayList<>();
-    private boolean scored = false;
     private Player shooter = null;
 
 //    private long lastBounceTime = 0;
 //    private final long BOUNCE_TIMEOUT = 100; // 100 milliseconds timeout
 
-    public Ball(float x, float y, float radius, List<Vector> bounceEdges, List<Region> goalRegions, List<Vector> goals) {
+    public Ball(float x, float y, float radius, List<Vector> bounceEdges) {
         this.x = x;
         this.y = y;
         this.radius = radius;
@@ -36,8 +32,6 @@ public class Ball {
         this.velocityY = 0;
         this.bounceEdges = bounceEdges;
         initializePaint();
-        this.goalRegions = goalRegions;
-        this.goals = goals;
     }
 
     private void initializePaint() {
@@ -60,9 +54,10 @@ public class Ball {
     public void draw(Canvas canvas) {
         // Draw the ball with the gradient effect
         canvas.drawCircle(x, y, radius, ballPaint);
-        drawNormalVectors(canvas);
-        if (scored) {
-            scored(canvas);
+//        drawNormalVectors(canvas);
+        // Log presence of shooter
+        if (shooter != null) {
+            Log.d("Shoot", "Ball has a shooter");
         }
     }
 
@@ -84,9 +79,6 @@ public class Ball {
 
     public void update(int screenX, int screenY) {
         if (this.player == null) {
-            // Check for goal
-            checkGoal();
-
             // Check for screen boundary collisions
             checkBounce(screenX, screenY);
 
@@ -111,53 +103,40 @@ public class Ball {
         }
     }
 
-    private void checkGoal() {
-        for (Region region : goalRegions) {
-            if (region.contains((int) getX(), (int) getY())) {
-                onScore();
-            }
-        }
+    public Player getShooter() {
+        return this.shooter;
     }
 
-    private void onScore() {
-        // Set scored variable
-        this.scored = true;
-    }
-
-    private void scored(Canvas canvas) {
-        // Draw scored on canvas
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
-        paint.setTextSize(100);
-        canvas.drawText("GOAL!", 100, 100, paint);
-        // Reset scored variable
-        this.scored = false;
-        if (shooter != null) {
-            int color = shooter.getColor();
-            canvas.drawText("Player " + color + " scored!", 100, 200, paint);
-        }
-        // Reset shooter
+    public void resetShooter() {
         this.shooter = null;
     }
 
     private void checkBounce(float screenX, float screenY) {
         // Check for collision with the left edge
-        if (x - radius <= 0) {
+        if (getX() - radius < 0) {
             if (getVelocityX() < 0) {
                 setVelocityX(-getVelocityX());  // Reverse horizontal direction
             }
         }
 
         // Check for collision with the right edge
-        if (x + radius >= screenX) {
+        if (getX() + radius > screenX) {
             if (getVelocityX() > 0) {
                 setVelocityX(-getVelocityX());  // Reverse horizontal direction
             }
         }
 
         // Check for collisions with top and bottom edges
-        if (y - radius <= 0 || y + radius >= screenY) {
-            setVelocityY(-getVelocityY());  // Reverse vertical direction
+        if (getY() - radius < 0) {
+            if (getVelocityY() < 0) {
+                setVelocityY(-getVelocityY());  // Reverse vertical direction
+            }
+        }
+
+        if (getY() + radius > screenY) {
+            if (getVelocityY() > 0) {
+                setVelocityY(-getVelocityY());  // Reverse vertical direction
+            }
         }
 
         // Check for collisions with the specific polygon edges (4 edges only)
