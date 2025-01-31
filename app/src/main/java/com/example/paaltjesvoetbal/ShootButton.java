@@ -36,11 +36,17 @@ public class ShootButton {
         canvas.drawCircle(x, y, innerRadius, paint);
     }
 
+    /**
+     * Check if the button was touched
+     * @param touchX touch x-coordinate
+     * @param touchY touch y-coordinate
+     * @return true if the button was touched, false otherwise
+     */
     public boolean isTouched(float touchX, float touchY) {
         float dx = touchX - x;
         float dy = touchY - y;
         float distanceSquared = dx * dx + dy * dy;
-        return distanceSquared <= (radius * 2.3f) * (radius * 2.3f);
+        return distanceSquared <= (radius * 5f) * (radius * 5f);
     }
 
     // Perform shoot action

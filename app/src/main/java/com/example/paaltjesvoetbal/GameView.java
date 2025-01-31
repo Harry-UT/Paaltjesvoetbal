@@ -222,6 +222,9 @@ public class GameView extends SurfaceView implements Runnable {
 
     }
 
+    /**
+     * Draw the game elements on the canvas
+     */
     private void draw() {
         if (holder.getSurface().isValid()) {
             Canvas canvas = holder.lockCanvas();
@@ -302,6 +305,10 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Draw the scores of the players on the screen
+     * @param canvas the canvas to draw on
+     */
     private void drawScores(Canvas canvas) {
         Paint paint = new Paint();
         paint.setTextSize(50);
@@ -333,6 +340,11 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Handle touch events on the screen
+     * @param event the touch event
+     * @return true if the event was handled, false otherwise
+     */
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -368,30 +380,31 @@ public class GameView extends SurfaceView implements Runnable {
                         settingsDialog.show();
                     }
 
-                    // Check for shoot button touch
-                    synchronized (shootButtons) {
-                        for (ShootButton button : shootButtons) {
-                            if (button.isTouched(touchX, touchY)) {
-                                button.setTouchID(pointerId);
-                                button.setPressed(true);
+                    // Check for joystick touch if no button was pressed
+                    synchronized (joysticks) {
+                        for (Joystick joystick : joysticks) {
+                            if (joystick.isTouched(touchX, touchY) && joystick.getTouchID() == -1) {
+                                joystick.setPointerID(pointerId);
+                                joystick.onTouch(touchX, touchY);
                                 touchAssigned = true;
                                 break;
                             }
                         }
                     }
 
-                    // Check for joystick touch if no button was pressed
                     if (!touchAssigned) {
-                        synchronized (joysticks) {
-                            for (Joystick joystick : joysticks) {
-                                if (joystick.isTouched(touchX, touchY) && joystick.getTouchID() == -1) {
-                                    joystick.setPointerID(pointerId);
-                                    joystick.onTouch(touchX, touchY);
+                        // Check for shoot button touch
+                        synchronized (shootButtons) {
+                            for (ShootButton button : shootButtons) {
+                                if (button.isTouched(touchX, touchY)) {
+                                    button.setTouchID(pointerId);
+                                    button.setPressed(true);
                                     break;
                                 }
                             }
                         }
                     }
+
                     break;
 
                 case MotionEvent.ACTION_UP:
@@ -449,6 +462,9 @@ public class GameView extends SurfaceView implements Runnable {
         return true;
     }
 
+    /**
+     * Update the player positions based on joystick input
+     */
     private void updatePlayers() {
         for (Player player : players) {
             float direction = player.getDirection();  // The direction set by joystick
@@ -469,12 +485,18 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Start the game thread
+     */
     public void resume() {
         isPlaying = true;
         thread = new Thread(this);
         thread.start();
     }
 
+    /**
+     * Pause the game thread
+     */
     public void pause() {
         try {
             isPlaying = false;
@@ -484,6 +506,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Check for collisions between players and balls
+     */
     private void checkPlayerBallCollision() {
         synchronized (players) {
             for (Player player : players) {
@@ -502,6 +527,11 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Handle the collision between a player and a ball
+     * @param player the player object
+     * @param ball the ball object
+     */
     private void onPlayerHitBall(Player player, Ball ball) {
         if (player.canTakeBall()) {
             if (ball.getPlayer() != null) {
@@ -529,6 +559,10 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Draw the game playground on the canvas
+     * @param canvas the canvas to draw on
+     */
     private void drawPlayground(Canvas canvas) {
         // Draw the background
         canvas.drawColor(Color.parseColor("#FFEBCD"));
@@ -553,6 +587,9 @@ public class GameView extends SurfaceView implements Runnable {
 //        canvas.drawLine(0, 0, screenX, 0, paint);
     }
 
+    /**
+     * Determine the corner areas of the screen
+     */
     private void determineCorners() {
         // Top-left corner (triangle)
         Path topLeftPath = new Path();
