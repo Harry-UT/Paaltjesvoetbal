@@ -131,6 +131,7 @@ public class GameView extends SurfaceView implements Runnable {
 
             update(); // Update game state
             draw();   // Render game frame
+
             frames++; // Count frames
 
             // Calculate and log real FPS every second
@@ -242,12 +243,13 @@ public class GameView extends SurfaceView implements Runnable {
 
             drawPlayground(canvas);
 
-            synchronized (goals) {
-                for (Vector goal : goals) {
-                    goal.draw(canvas);
-                }
-            }
+//            synchronized (goals) {
+//                for (Vector goal : goals) {
+//                    goal.draw(canvas);
+//                }
+//            }
 
+            // Draw the corner paths
             synchronized (cornerPaths) {
                 Paint paint = new Paint();
                 for (int i = 0; i < cornerPaths.size(); i++) {
@@ -272,19 +274,23 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            // Draw the bounce edges orange
+            // Draw the bounce edges black
             synchronized (bounceEdges) {
                 Paint paint = new Paint();
-                paint.setColor(Color.rgb(255, 165, 0));  // Orange color
+//                paint.setColor(Color.rgb(255, 165, 0));  // Orange color
+//                paint.setColor(Color.rgb(255, 255, 255));  // White color
+                paint.setColor(Color.BLACK);
                 paint.setStrokeWidth(5);
                 for (Vector edge : bounceEdges) {
                     canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
                 }
             }
 
+            // Draw the vertical goal edges black
             synchronized (verticalGoalEdges) {
                 Paint paint = new Paint();
-                paint.setColor(Color.rgb(255, 255, 255));  // White color
+//                paint.setColor(Color.rgb(255, 255, 255));  // White color
+                paint.setColor(Color.BLACK);
                 paint.setStrokeWidth(5);
                 for (Vector edge : verticalGoalEdges) {
                     canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
