@@ -138,6 +138,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Determine the edges for ball bounce based on the screen dimensions
+     */
     private void determineBounceEdges() {
         for (Vector edge : diagonalEdges) {
             Vector[] bounceVectors = edge.split(goalWidth);
@@ -145,6 +148,10 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Determine the goal regions based on the screen dimensions
+     * @param goalWidth the width of the goal region
+     */
     private void determineGoals(double goalWidth) {
         // Iterate over all diagonal edges to determine the goals
         for (Vector edge : diagonalEdges) {
