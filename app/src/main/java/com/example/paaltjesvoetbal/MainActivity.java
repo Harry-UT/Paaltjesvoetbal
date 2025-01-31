@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class MainActivity extends Activity implements SettingsDialog.OnSettingsChangedListener {
 
     private GameView gameView;
