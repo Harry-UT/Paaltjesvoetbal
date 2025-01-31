@@ -22,6 +22,9 @@ import java.util.List;
 import android.os.Handler;
 import android.os.Looper;
 
+/**
+ * The GameView class is responsible for updating and rendering the game elements on the screen
+ */
 @SuppressLint("ViewConstructor")
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
@@ -43,13 +46,14 @@ public class GameView extends SurfaceView implements Runnable {
     private final int PLAYERCOUNT = 2;
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
+    private final List<Vector> verticalGoalEdges = new ArrayList<>();
     private final List<Vector> bounceEdges = new ArrayList<>();
     private final List<Vector> goals = new ArrayList<>();
     private final List<Path> cornerPaths = new ArrayList<>();
     private final List<Region> goalRegions = new ArrayList<>();
     private float lastGoalTime;
     private int lastGoal;
-    private final int TARGET_FPS = 60; // Target FPS is 30
+    private final int TARGET_FPS = 65;
 
     public GameView(Context context, int screenX, int screenY) {
         super(context);
@@ -82,7 +86,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
         // Determine player corner areas
-        determineCorners();
+        determineGoalEdges();
 
         // Determine edges for ball bounce
         determineBounceEdges();
@@ -92,7 +96,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
         balls.add(ball);
     }
 
@@ -268,12 +272,21 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            // Draw the bounce edges orange
             synchronized (bounceEdges) {
-                // Draw the bounce edges orange
                 Paint paint = new Paint();
                 paint.setColor(Color.rgb(255, 165, 0));  // Orange color
                 paint.setStrokeWidth(5);
                 for (Vector edge : bounceEdges) {
+                    canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
+                }
+            }
+
+            synchronized (verticalGoalEdges) {
+                Paint paint = new Paint();
+                paint.setColor(Color.rgb(255, 255, 255));  // White color
+                paint.setStrokeWidth(5);
+                for (Vector edge : verticalGoalEdges) {
                     canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
                 }
             }
@@ -597,7 +610,7 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Determine the corner areas of the screen
      */
-    private void determineCorners() {
+    private void determineGoalEdges() {
         // Top-left corner (triangle)
         Path topLeftPath = new Path();
         topLeftPath.moveTo(0, 0);
@@ -607,6 +620,8 @@ public class GameView extends SurfaceView implements Runnable {
         topLeftPath.close();
         // Draw the path on the canvas
         diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
+
+        verticalGoalEdges.add(new Vector(screenX * 0.5, 0, screenX * 0.5, screenY * 0.09));
 
         // Top-right corner (triangle)
         Path topRightPath = new Path();
@@ -625,6 +640,8 @@ public class GameView extends SurfaceView implements Runnable {
         bottomRightPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomRightPath.close();
         diagonalEdges.add(new Vector(screenX, screenY - screenX * 0.5, screenX * 0.5, screenY * 0.91));
+
+        verticalGoalEdges.add(new Vector(screenX * 0.5, screenY * 0.91, screenX * 0.5, screenY));
 
         // Bottom-left corner (triangle)
         Path bottomLeftPath = new Path();
