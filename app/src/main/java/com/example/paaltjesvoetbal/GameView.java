@@ -29,6 +29,8 @@ import android.os.Looper;
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private final Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
+
+    private Bitmap[] starTypes = new Bitmap[4]; // Array to store the 4 star PNGs
     private boolean isPlaying;
     private final SurfaceHolder holder;
     private final int screenX;
@@ -98,6 +100,11 @@ public class GameView extends SurfaceView implements Runnable {
         balls = new ArrayList<>();
         Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
         balls.add(ball);
+
+        starTypes[0] = BitmapFactory.decodeResource(getResources(), R.drawable.yellow_star);
+        starTypes[1] = BitmapFactory.decodeResource(getResources(), R.drawable.green_star);
+        starTypes[2] = BitmapFactory.decodeResource(getResources(), R.drawable.blue_star);
+        starTypes[3] = BitmapFactory.decodeResource(getResources(), R.drawable.red_star);
     }
 
     @Override
