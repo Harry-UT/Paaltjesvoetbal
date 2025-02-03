@@ -1,7 +1,5 @@
 package com.example.paaltjesvoetbal;
 
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -23,8 +21,6 @@ import java.util.List;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 
 /**
