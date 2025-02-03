@@ -1,5 +1,7 @@
 package com.example.paaltjesvoetbal;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -21,6 +23,9 @@ import java.util.List;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.ImageView;
 
 /**
  * The GameView class is responsible for updating and rendering the game elements on the screen
@@ -29,8 +34,8 @@ import android.os.Looper;
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private final Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
-
     private Bitmap[] starTypes = new Bitmap[4]; // Array to store the 4 star PNGs
+    private List<ImageView> stars = new ArrayList<>(); // List to store stars
     private boolean isPlaying;
     private final SurfaceHolder holder;
     private final int screenX;
@@ -100,11 +105,6 @@ public class GameView extends SurfaceView implements Runnable {
         balls = new ArrayList<>();
         Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
         balls.add(ball);
-
-        starTypes[0] = BitmapFactory.decodeResource(getResources(), R.drawable.yellow_star);
-        starTypes[1] = BitmapFactory.decodeResource(getResources(), R.drawable.green_star);
-        starTypes[2] = BitmapFactory.decodeResource(getResources(), R.drawable.blue_star);
-        starTypes[3] = BitmapFactory.decodeResource(getResources(), R.drawable.red_star);
     }
 
     @Override
@@ -235,11 +235,10 @@ public class GameView extends SurfaceView implements Runnable {
                 break;
         }
         Log.d("Goal", "Player " + player + " scored in goal " + goal);
+        displayGoalAnimation();
     }
 
-    private void displayGoalAnimation(int goal, int player) {
-
-    }
+    public void displayGoalAnimation() {}
 
     /**
      * Draw the game elements on the canvas
