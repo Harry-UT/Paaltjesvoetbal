@@ -11,11 +11,13 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)  // Ensure it prefers settings repositories
     repositories {
         google()
         mavenCentral()
+        // jcenter() // Uncomment if necessary
     }
 }
 

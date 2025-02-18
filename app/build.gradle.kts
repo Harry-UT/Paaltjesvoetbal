@@ -72,11 +72,4 @@ dependencies {
 
     // Release Dependencies
     releaseImplementation(libs.material)
-
-    // Box2D - jBox2D Library (add a proper dependency here)
-    implementation(libs.jbox2d.library) // Correct Box2D dependency for Android
-
-    // LibGDX dependencies
-    implementation(libs.gdx.backend.android) // Use the correct version
-    implementation(libs.gdx.box2d) // LibGDX Box2D support
 }
