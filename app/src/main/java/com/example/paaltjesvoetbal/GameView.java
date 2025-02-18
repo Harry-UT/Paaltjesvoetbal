@@ -9,11 +9,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Region;
+import android.graphics.Typeface;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Matrix;
+import androidx.core.content.res.ResourcesCompat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +24,8 @@ import java.util.List;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.ImageView;
+import android.widget.TextView;
+
 
 /**
  * The GameView class is responsible for updating and rendering the game elements on the screen
@@ -109,6 +113,9 @@ public class GameView extends SurfaceView implements Runnable {
         balls.add(ball);
     }
 
+    /**
+     * Run method for the game thread
+     */
     @Override
     public void run() {
         final long OPTIMAL_TIME = 1000000000 / TARGET_FPS; // Time per frame in nanoseconds (1 second / 30 FPS)
@@ -191,7 +198,10 @@ public class GameView extends SurfaceView implements Runnable {
         updatePlayers();
     }
 
-    // Check if the ball went into a goal
+    /**
+     * Check if a goal has been scored by a player
+     * @param ball the ball object
+     */
     private void checkGoal(Ball ball) {
         // Loop through all goal regions to check if the ball is within any of them
         for (int i = 0; i < goalRegions.size(); i++) {
@@ -248,6 +258,9 @@ public class GameView extends SurfaceView implements Runnable {
         displayGoalAnimation();
     }
 
+    /**
+     * Display the goal animation on the screen
+     */
     public void displayGoalAnimation() {}
 
     /**
@@ -354,31 +367,71 @@ public class GameView extends SurfaceView implements Runnable {
     private void drawScores(Canvas canvas) {
         Paint paint = new Paint();
         paint.setTextSize(50);
+        paint.setAntiAlias(true); // Smooth text edges
+
+        Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
+        paint.setTypeface(typeface); // Set custom font
+
         int xText = 0;
         int yText = 0;
+        float rotationAngle = 0;
+
         for (Player player : players) {
-            paint.setColor(player.getColor());
-            switch (players.indexOf(player)) {
-                case 0:
-                    xText = (int) (0.7 * screenX);
-                    yText = (int) (screenY * 0.7);
+            int index = players.indexOf(player);
+
+            // Calculate rotation angle
+            Vector diagonal = diagonalEdges.get(index);
+            float dx = (float) (diagonal.getX2() - diagonal.getX1());
+            float dy = (float) (diagonal.getY2() - diagonal.getY1());
+            rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+
+            switch (index) {
+                case 0: // Bottom-right (blue)
+                    xText = (int) (0.63 * screenX);
+                    yText = (int) (screenY * 0.75);
+                    if (rotationAngle > 0) {
+                        rotationAngle -= 180;
+                    }
                     break;
-                case 1:
-                    xText = (int) (0.3 * screenX);
-                    yText = (int) (screenY * 0.3);
+                case 1: // Top-left (red)
+                    xText = (int) (0.30 * screenX);
+                    yText = (int) (screenY * 0.35);
+                    if (rotationAngle < 0) {
+                        rotationAngle += 180;
+                    }
                     break;
-                case 2:
+                case 2: // Bottom-left (green)
                     xText = (int) (0.3 * screenX);
                     yText = (int) (0.7 * screenY);
+                    if (rotationAngle < 0) {
+                        rotationAngle += 180;
+                    }
                     break;
-                case 3:
+                case 3: // Top-right (yellow)
                     xText = (int) (0.7 * screenX);
                     yText = (int) (0.3 * screenY);
+                    if (rotationAngle > 0) {
+                        rotationAngle -= 180;
+                    }
                     break;
                 default:
-                    break;
+                    return;
             }
-            canvas.drawText(""+player.getScore(), xText, yText, paint);
+
+            // Set text color
+            paint.setColor(player.getColor());
+
+            // Save the current canvas state
+            canvas.save();
+
+            // Rotate around the text position
+            canvas.rotate(rotationAngle, xText, yText);
+
+            // Draw the text
+            canvas.drawText(String.valueOf(player.getScore()), xText, yText, paint);
+
+            // Restore canvas to avoid affecting other drawings
+            canvas.restore();
         }
     }
 
@@ -633,27 +686,6 @@ public class GameView extends SurfaceView implements Runnable {
      * Determine the corner areas of the screen
      */
     private void determineGoalEdges() {
-        // Top-left corner (triangle)
-        Path topLeftPath = new Path();
-        topLeftPath.moveTo(0, 0);
-        topLeftPath.lineTo(screenX * 0.5f, 0);
-        topLeftPath.lineTo(screenX * 0.5f, screenY * 0.09f);
-        topLeftPath.lineTo(0, screenX * 0.5f);
-        topLeftPath.close();
-        // Draw the path on the canvas
-        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
-
-        verticalGoalEdges.add(new Vector(screenX * 0.5, 0, screenX * 0.5, screenY * 0.09));
-
-        // Top-right corner (triangle)
-        Path topRightPath = new Path();
-        topRightPath.moveTo(screenX * 0.5f, 0);
-        topRightPath.lineTo(screenX, 0);
-        topRightPath.lineTo(screenX, screenX * 0.5f);
-        topRightPath.lineTo(screenX * 0.5f, screenY * 0.09f);
-        topRightPath.close();
-        diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.09, screenX, screenX * 0.5));
-
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
         bottomRightPath.moveTo(screenX, screenY - screenX * 0.5f);
@@ -665,6 +697,17 @@ public class GameView extends SurfaceView implements Runnable {
 
         verticalGoalEdges.add(new Vector(screenX * 0.5, screenY * 0.91, screenX * 0.5, screenY));
 
+        // Top-left corner (triangle)
+        Path topLeftPath = new Path();
+        topLeftPath.moveTo(0, 0);
+        topLeftPath.lineTo(screenX * 0.5f, 0);
+        topLeftPath.lineTo(screenX * 0.5f, screenY * 0.09f);
+        topLeftPath.lineTo(0, screenX * 0.5f);
+        topLeftPath.close();
+        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
+
+        verticalGoalEdges.add(new Vector(screenX * 0.5, 0, screenX * 0.5, screenY * 0.09));
+
         // Bottom-left corner (triangle)
         Path bottomLeftPath = new Path();
         bottomLeftPath.moveTo(screenX * 0.5f, screenY);
@@ -673,6 +716,15 @@ public class GameView extends SurfaceView implements Runnable {
         bottomLeftPath.lineTo(screenX * 0.5f, screenY * 0.91f);
         bottomLeftPath.close();
         diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.91, 0, screenY - screenX * 0.5));
+
+        // Top-right corner (triangle)
+        Path topRightPath = new Path();
+        topRightPath.moveTo(screenX * 0.5f, 0);
+        topRightPath.lineTo(screenX, 0);
+        topRightPath.lineTo(screenX, screenX * 0.5f);
+        topRightPath.lineTo(screenX * 0.5f, screenY * 0.09f);
+        topRightPath.close();
+        diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.09, screenX, screenX * 0.5));
 
         // Add the corner paths to the paths list
         cornerPaths.add(bottomRightPath);
