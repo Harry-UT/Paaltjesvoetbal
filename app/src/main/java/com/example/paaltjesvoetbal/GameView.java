@@ -56,8 +56,14 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Region> goalRegions = new ArrayList<>();
     private float lastGoalTime;
     private int lastGoal;
-    private final int TARGET_FPS = 65;
+    private final int TARGET_FPS = 60;
 
+    /**
+     * Constructor for the GameView class
+     * @param context the context of the game
+     * @param screenX the width of the screen
+     * @param screenY the height of the screen
+     */
     public GameView(Context context, int screenX, int screenY) {
         super(context);
         setKeepScreenOn(true);
@@ -72,16 +78,16 @@ public class GameView extends SurfaceView implements Runnable {
 
         for (int i = 0; i < PLAYERCOUNT; i++) {
             switch (i) {
-                case 0: // Bottom-right
+                case 0: // Bottom-right (blue)
                     initializePlayer1();
                     break;
-                case 1: // Top-left
+                case 1: // Top-left (red)
                     initializePlayer2();
                     break;
-                case 2: // Bottom-left
+                case 2: // Bottom-left (green)
                     initializePlayer3();
                     break;
-                case 3: // Top-right
+                case 3: // Top-right (yellow)
                     initializePlayer4();
                     break;
                 default:
@@ -169,6 +175,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Update the game state
+     */
     private void update() {
         synchronized (balls) {
             for (Ball ball : balls) {
@@ -211,6 +220,11 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Handle the scoring of a goal by a player
+     * @param goal the goal number
+     * @param player the player object
+     */
     private void scored(int goal, Player player) {
         // Scored in goal by player
         player.scored();
@@ -678,7 +692,11 @@ public class GameView extends SurfaceView implements Runnable {
             goalRegions.add(cornerRegion);
         }
     }
-    
+
+    /**
+     * Draw the middle circle on the canvas
+     * @param canvas the canvas to draw on
+     */
     private void drawMiddleCircle(Canvas canvas) {
         // Set up the paint for the circle (donut shape)
         Paint paint = new Paint();
@@ -697,6 +715,10 @@ public class GameView extends SurfaceView implements Runnable {
         canvas.drawCircle(centerX, centerY, outerRadius, paint);
     }
 
+    /**
+     * Draw the settings icon in the middle of the screen
+     * @param canvas the canvas to draw on
+     */
     private void drawSettingsIcon(Canvas canvas) {
         // Create a new matrix for scaling and translation
         Matrix matrix = new Matrix();
@@ -720,6 +742,12 @@ public class GameView extends SurfaceView implements Runnable {
         canvas.drawBitmap(settingsIcon, matrix, null);
     }
 
+    /**
+     * Change the settings of the game
+     * @param playerCount the number of players
+     * @param playerSpeed the speed of the players
+     * @param ballSpeed the speed of the ball
+     */
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed) {
         switch (playerCount) {
             case 2:
@@ -755,14 +783,26 @@ public class GameView extends SurfaceView implements Runnable {
         changePlayerSpeed(playerSpeed);
         changeBallSpeed(ballSpeed);
     }
+
+    /**
+     * Change the speed of the players
+     * @param playerSpeed the new player speed
+     */
     private void changePlayerSpeed(int playerSpeed) {
         this.PLAYERSPEED = playerSpeed;
     }
 
+    /**
+     * Change the speed of the ball
+     * @param ballSpeed the new ball speed
+     */
     private void changeBallSpeed(int ballSpeed) {
         this.BALL_SPEED = ballSpeed;
     }
 
+    /**
+     * Clear the lists of players, joysticks and shoot buttons
+     */
     private void clearLists() {
         synchronized (players) {
             players = new ArrayList<>();
@@ -775,30 +815,49 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Add a player to the list of players
+     * @param player the player to add
+     */
     private void addPlayer(Player player) {
         synchronized (players) {
             players.add(player);
         }
     }
 
+    /**
+     * Add a joystick to the list of joysticks
+     * @param joystick the joystick to add
+     */
     private void addJoystick(Joystick joystick) {
         synchronized (joysticks) {
             joysticks.add(joystick);
         }
     }
 
+    /**
+     * Add a ball to the list of balls
+     * @param ball the ball to add
+     */
     public void addBall(Ball ball) {
         synchronized (balls) {
             balls.add(ball);
         }
     }
 
+    /**
+     * Add a shoot button to the list of shoot buttons
+     * @param shootButton the shoot button to add
+     */
     public void addShootButton(ShootButton shootButton) {
         synchronized (shootButtons) {
             shootButtons.add(shootButton);
         }
     }
 
+    /**
+     * Initialize player 1 with a joystick and shoot button
+     */
     public void initializePlayer1() {
         Player newPlayer;
         Joystick newJoystick;
@@ -813,6 +872,10 @@ public class GameView extends SurfaceView implements Runnable {
         addJoystick(newJoystick);
         addShootButton(shootButton);
     }
+
+    /**
+     * Initialize player 2 with a joystick and shoot button
+     */
 
     public void initializePlayer2() {
         Player newPlayer;
@@ -829,6 +892,9 @@ public class GameView extends SurfaceView implements Runnable {
         addShootButton(shootButton);
     }
 
+    /**
+     * Initialize player 3 with a joystick and shoot button
+     */
     public void initializePlayer3() {
         Player newPlayer;
         Joystick newJoystick;
@@ -844,6 +910,9 @@ public class GameView extends SurfaceView implements Runnable {
         addShootButton(shootButton);
     }
 
+    /**
+     * Initialize player 4 with a joystick and shoot button
+     */
     public void initializePlayer4() {
         Player newPlayer;
         Joystick newJoystick;
