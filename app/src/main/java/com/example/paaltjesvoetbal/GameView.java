@@ -272,11 +272,7 @@ public class GameView extends SurfaceView implements Runnable {
 
             drawPlayground(canvas);
 
-//            synchronized (goals) {
-//                for (Vector goal : goals) {
-//                    goal.draw(canvas);
-//                }
-//            }
+
 
             // Draw the corner paths
             synchronized (cornerPaths) {
@@ -356,6 +352,12 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            synchronized (goals) {
+                for (Vector goal : goals) {
+                    goal.draw(canvas);
+                }
+            }
+
             holder.unlockCanvasAndPost(canvas);
         }
     }
@@ -372,57 +374,56 @@ public class GameView extends SurfaceView implements Runnable {
         Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
         paint.setTypeface(typeface); // Set custom font
 
-        int xText = 0;
-        int yText = 0;
-        float rotationAngle = 0;
+        int xText;
+        int yText;
+        float rotationAngle;
 
         for (Player player : players) {
             int index = players.indexOf(player);
 
-            // Calculate rotation angle
+            // Calculate text rotation angle
             Vector goal = goals.get(index);
+
             float dx = (float) (goal.getX2() - goal.getX1());
             float dy = (float) (goal.getY2() - goal.getY1());
-            float middleX = (float) (goal.getX1() + goal.getX2()) / 2;
-            float middleY = (float) (goal.getY1() + goal.getY2()) / 2;
+            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
+            dx *= scale;
+            dy *= scale;
+
+            float middleX = goal.getMidX();
+            float middleY = goal.getMidY();
             rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
-            float dxPerpendicular = dy;
-            float dyPerpendicular = -dx;
+
+            float dxPerpendicular = -dy;
+            float dyPerpendicular = dx;
 
             switch (index) {
                 case 0: // Bottom-right (blue)
                     if (rotationAngle > 0) {
                         rotationAngle -= 180;
                     }
-                    xText = (int) (middleY);
-                    yText = (int) (middleX);
                     break;
                 case 1: // Top-left (red)
                     if (rotationAngle < 0) {
                         rotationAngle += 180;
                     }
-                    xText = (int) (middleY);
-                    yText = (int) (middleX);
                     break;
                 case 2: // Bottom-left (green)
                     if (rotationAngle < 0) {
                         rotationAngle += 180;
                     }
-                    xText = (int) (middleY);
-                    yText = (int) (middleX);
                     break;
                 case 3: // Top-right (yellow)
                     if (rotationAngle > 0) {
                         rotationAngle -= 180;
                     }
-//                    xText = (int) (middleY - 2 * dxPerpendicular);
-//                    yText = (int) (middleX + 2 * dyPerpendicular);
-                    xText = (int) middleX;
-                    yText = (int) middleY;
                     break;
                 default:
                     return;
             }
+
+            xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
+            yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
 
             // Set text color
             paint.setColor(player.getColor());

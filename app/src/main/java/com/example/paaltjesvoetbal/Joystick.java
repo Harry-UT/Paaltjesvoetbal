@@ -67,6 +67,7 @@ public class Joystick {
         paint.setColor(Color.GRAY);  // Joystick base color
         paint.setAlpha(100);  // Slight transparency for the base
         canvas.drawCircle(baseCenterX, baseCenterY, radius, paint);
+        paint.setAntiAlias(true);
 
         // Draw the stick of the joystick (smaller circle)
         paint.setColor(Color.WHITE);  // Joystick stick color

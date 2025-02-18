@@ -76,6 +76,7 @@ public class Player {
     public void draw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setColor(color);
+        paint.setAntiAlias(true);
         canvas.drawCircle(x, y, radius, paint);  // Draw the player as a circle
     }
 

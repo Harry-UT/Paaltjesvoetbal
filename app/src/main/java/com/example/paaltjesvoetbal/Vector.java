@@ -55,6 +55,9 @@ public class Vector {
 
     public void draw(Canvas canvas) {
         // Draw the line on the canvas
+        Paint paint = new Paint();
+        paint.setColor(Color.MAGENTA);
+        paint.setStrokeWidth(5);
         canvas.drawLine((float) x1, (float) y1, (float) x2, (float) y2, paint);
     }
 
@@ -84,5 +87,13 @@ public class Vector {
         double projY = y1 + t * dy;
 
         return Math.sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY));
+    }
+
+    public float getMidX() {
+        return (float) ((x1 + x2) / 2);
+    }
+
+    public float getMidY() {
+        return (float) ((y1 + y2) / 2);
     }
 }
