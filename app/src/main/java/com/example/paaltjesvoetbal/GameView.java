@@ -380,39 +380,45 @@ public class GameView extends SurfaceView implements Runnable {
             int index = players.indexOf(player);
 
             // Calculate rotation angle
-            Vector diagonal = diagonalEdges.get(index);
-            float dx = (float) (diagonal.getX2() - diagonal.getX1());
-            float dy = (float) (diagonal.getY2() - diagonal.getY1());
+            Vector goal = goals.get(index);
+            float dx = (float) (goal.getX2() - goal.getX1());
+            float dy = (float) (goal.getY2() - goal.getY1());
+            float middleX = (float) (goal.getX1() + goal.getX2()) / 2;
+            float middleY = (float) (goal.getY1() + goal.getY2()) / 2;
             rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+            float dxPerpendicular = dy;
+            float dyPerpendicular = -dx;
 
             switch (index) {
                 case 0: // Bottom-right (blue)
-                    xText = (int) (0.63 * screenX);
-                    yText = (int) (screenY * 0.75);
                     if (rotationAngle > 0) {
                         rotationAngle -= 180;
                     }
+                    xText = (int) (middleY);
+                    yText = (int) (middleX);
                     break;
                 case 1: // Top-left (red)
-                    xText = (int) (0.30 * screenX);
-                    yText = (int) (screenY * 0.35);
                     if (rotationAngle < 0) {
                         rotationAngle += 180;
                     }
+                    xText = (int) (middleY);
+                    yText = (int) (middleX);
                     break;
                 case 2: // Bottom-left (green)
-                    xText = (int) (0.3 * screenX);
-                    yText = (int) (0.7 * screenY);
                     if (rotationAngle < 0) {
                         rotationAngle += 180;
                     }
+                    xText = (int) (middleY);
+                    yText = (int) (middleX);
                     break;
                 case 3: // Top-right (yellow)
-                    xText = (int) (0.7 * screenX);
-                    yText = (int) (0.3 * screenY);
                     if (rotationAngle > 0) {
                         rotationAngle -= 180;
                     }
+//                    xText = (int) (middleY - 2 * dxPerpendicular);
+//                    yText = (int) (middleX + 2 * dyPerpendicular);
+                    xText = (int) middleX;
+                    yText = (int) middleY;
                     break;
                 default:
                     return;
