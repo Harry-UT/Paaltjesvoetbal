@@ -13,10 +13,9 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
         super.onCreate(savedInstanceState);
 
         // Make the app fullscreen (hides status and navigation bars)
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_FULLSCREEN |
-                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        this.getWindow().setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         // Get screen resolution
         int screenX = getResources().getDisplayMetrics().widthPixels;
@@ -49,6 +48,7 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
+            // Enable immersive mode to hide status and navigation bars
             getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_FULLSCREEN |
                             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |

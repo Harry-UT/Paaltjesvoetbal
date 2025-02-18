@@ -1,3 +1,6 @@
 <resources>
+    <style name="Theme.Minimal" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+    </style>
     <!-- Minimal theme file to extend AppCompat theme -->
 </resources>

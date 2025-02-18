@@ -18,15 +18,9 @@ public class SettingsDialog extends Dialog {
     private final int initialPlayerCount;
     private final int initialPlayerSpeed;
     private final int initialBallSpeed;
-
-    // Mapping functions
-    private int mapPlayerSpeed(int progress) {
-        return 1 + (progress * 14) / 100; // Maps 0–100 to 1–15
-    }
-
-    private int mapBallSpeed(int progress) {
-        return 5 + (progress * 25) / 100; // Maps 0–100 to 5–30
-    }
+    private final int resetPlayerCount = 2;
+    private final int resetPlayerSpeed = 6;
+    private final int resetBallSpeed = 20;
 
     // Callback interface
     public interface OnSettingsChangedListener {
@@ -56,21 +50,23 @@ public class SettingsDialog extends Dialog {
         SeekBar ballSpeedSeekBar = findViewById(R.id.ballSpeed);
         TextView playerSpeedText = findViewById(R.id.currentPlayerSpeed);
         TextView ballSpeedText = findViewById(R.id.currentBallSpeed);
+        TextView playerCountText = findViewById(R.id.currentPlayerCount);
         Button resetButton = findViewById(R.id.resetButton);
 
         // Initialize SeekBars
-        playerCountSeekBar.setProgress(initialPlayerCount - 2);
-        playerSpeedSeekBar.setProgress((initialPlayerSpeed - 1) * 100 / 14); // Reverse map to SeekBar range
-        ballSpeedSeekBar.setProgress((initialBallSpeed - 5) * 100 / 25); // Reverse map to SeekBar range
+        playerCountSeekBar.setProgress(initialPlayerCount);
+        playerSpeedSeekBar.setProgress(initialPlayerSpeed);
+        ballSpeedSeekBar.setProgress(initialBallSpeed);
 
         playerSpeedText.setText(String.valueOf(initialPlayerSpeed));
         ballSpeedText.setText(String.valueOf(initialBallSpeed));
+        playerCountText.setText(String.valueOf(initialPlayerCount));
 
         // SeekBar Listeners
         playerCountSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                notifySettingsChanged(progress + 2, mapPlayerSpeed(playerSpeedSeekBar.getProgress()), mapBallSpeed(ballSpeedSeekBar.getProgress()));
+            public void onProgressChanged(SeekBar seekBar, int playerCount, boolean fromUser) {
+                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -79,10 +75,9 @@ public class SettingsDialog extends Dialog {
 
         playerSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int mappedSpeed = mapPlayerSpeed(progress);
-                playerSpeedText.setText(String.valueOf(mappedSpeed));
-                notifySettingsChanged(playerCountSeekBar.getProgress() + 2, mappedSpeed, mapBallSpeed(ballSpeedSeekBar.getProgress()));
+            public void onProgressChanged(SeekBar seekBar, int playerSpeed, boolean fromUser) {
+                playerSpeedText.setText(String.valueOf(playerSpeed));
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeed, ballSpeedSeekBar.getProgress());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -91,10 +86,20 @@ public class SettingsDialog extends Dialog {
 
         ballSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int mappedSpeed = mapBallSpeed(progress);
-                ballSpeedText.setText(String.valueOf(mappedSpeed));
-                notifySettingsChanged(playerCountSeekBar.getProgress() + 2, mapPlayerSpeed(playerSpeedSeekBar.getProgress()), mappedSpeed);
+            public void onProgressChanged(SeekBar seekBar, int ballSpeed, boolean fromUser) {
+                ballSpeedText.setText(String.valueOf(ballSpeed));
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeed);
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        playerCountSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int playerCount, boolean fromUser) {
+                playerCountText.setText(String.valueOf(playerCount));
+                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -104,19 +109,15 @@ public class SettingsDialog extends Dialog {
         // Reset Button Listener
         // Reset Button Listener
         resetButton.setOnClickListener(v -> {
-            // Hardcoded values
-            int resetPlayerCount = 2;
-            int resetPlayerSpeed = 6;
-            int resetBallSpeed = 20;
-
             // Reset SeekBars to match hardcoded values
-            playerCountSeekBar.setProgress(0);
-            playerSpeedSeekBar.setProgress((resetPlayerSpeed - 1) * 100 / 14);
-            ballSpeedSeekBar.setProgress((resetBallSpeed - 5) * 100 / 25);
+            playerCountSeekBar.setProgress(resetPlayerCount);
+            playerSpeedSeekBar.setProgress(resetPlayerSpeed);
+            ballSpeedSeekBar.setProgress(resetBallSpeed);
 
             // Update TextViews
             playerSpeedText.setText(String.valueOf(resetPlayerSpeed));
             ballSpeedText.setText(String.valueOf(resetBallSpeed));
+            playerCountText.setText(String.valueOf(resetPlayerCount));
 
             // Notify listener with hardcoded values
             notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed);
