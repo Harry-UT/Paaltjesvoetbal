@@ -38,16 +38,17 @@ public class Ball {
         ballPaint.setAntiAlias(true);
 
         // Create a shader to fill the ball with a gradient from black to white
-        Shader shader = new LinearGradient(
-                x - radius, y,       // Start at the left side of the circle
-                x + radius, y,           // End at the right side of the circle
-                Color.BLACK,             // Left side color (black)
-                Color.WHITE,             // Right side color (white)
-                Shader.TileMode.CLAMP    // The gradient will not repeat, it will clamp the color at the edges
-        );
+//        Shader shader = new LinearGradient(
+//                x - radius, y,       // Start at the left side of the circle
+//                x + radius, y,           // End at the right side of the circle
+//                Color.BLACK,             // Left side color (black)
+//                Color.WHITE,             // Right side color (white)
+//                Shader.TileMode.CLAMP    // The gradient will not repeat, it will clamp the color at the edges
+//        );
 
         // Apply the shader to the paint
-        ballPaint.setShader(shader);
+//        ballPaint.setShader(shader);
+        ballPaint.setColor(Color.BLACK);
     }
 
     public void draw(Canvas canvas) {

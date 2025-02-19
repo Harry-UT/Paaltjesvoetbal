@@ -83,7 +83,7 @@
         android:layout_height="23dp"
         android:layout_marginStart="112dp"
         android:layout_marginTop="92dp"
-        android:max="15"
+        android:max="10"
         android:min="1"
         android:stepSize="1"
         app:layout_constraintStart_toStartOf="parent"
@@ -115,7 +115,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="305dp"
         android:layout_marginTop="92dp"
-        android:text="15"
+        android:text="10"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

@@ -13,12 +13,11 @@ public class SplashBall {
     private int y;
     private int xSpeed;
     private int ySpeed;
-    private final int ballSize;
+    private final int ballSize = 20;
     private int color;
     private boolean started = false;
 
     public SplashBall() {
-        ballSize = 30;
         Random random = new Random();
         xSpeed = random.nextInt(10) - 5;
         if (xSpeed == 0) {
@@ -49,14 +48,13 @@ public class SplashBall {
         x += xSpeed;
         y += ySpeed;
         draw(canvas);
-        bounce();
     }
 
-    private void bounce() {
-        if (x < 0 || x > 1080) {
+    public void bounce(int screenWidth, int screenHeight) {
+        if (x < 0 || x > screenWidth) {
             xSpeed = -xSpeed;
         }
-        if (y < 0 || y > 1920) {
+        if (y < 0 || y > screenHeight) {
             ySpeed = -ySpeed;
         }
     }

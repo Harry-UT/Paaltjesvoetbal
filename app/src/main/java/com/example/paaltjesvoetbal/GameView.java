@@ -41,13 +41,14 @@ public class GameView extends SurfaceView implements Runnable {
     private List<Player> players;
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
-    private int PLAYERSPEED = 6;
-    private int BALL_SPEED = 20;
-    private final int PLAYERRADIUS = 40;
-    private final int BALLRADIUS = 20;
+    private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
+    private int PLAYERSPEED = 4;
+    private int BALL_SPEED = 18;
+    private final int PLAYERRADIUS = 30;
+    private final int BALLRADIUS = 15;
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
-    private final int PLAYERCOUNT = 2;
+    private final int PLAYERCOUNT = 4;
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
@@ -59,7 +60,7 @@ public class GameView extends SurfaceView implements Runnable {
     private Player lastShooter;
     private int lastGoal;
     private boolean scored;
-    private SplashBall[] splashBalls = new SplashBall[7];
+    private final SplashBall[] splashBalls = new SplashBall[8];
     private long splashStartTime = 0;
     private FloatingText goalText;
     private FloatingText scoreIncrementText;
@@ -293,22 +294,21 @@ public class GameView extends SurfaceView implements Runnable {
     private void scored(int goal, Player player) {
         // Scored in goal by player
         player.scored();
-        switch (player.getColor()) {
-            case Color.BLUE:
-                Log.d("Goal", "Player 0 scored in goal " + goal);
-                break;
-            case Color.RED:
-                Log.d("Goal", "Player 1 scored in goal " + goal);
-                break;
-            case Color.GREEN:
-                Log.d("Goal", "Player 2 scored in goal " + goal);
-                break;
-            case Color.YELLOW:
-                Log.d("Goal", "Player 3 scored in goal " + goal);
-                break;
-            default:
-                break;
+
+        int playerColor = player.getColor();
+
+        if (playerColor == playerColors[0]) {
+            Log.d("Goal", "Player 0 scored in goal " + goal);
+        } else if (playerColor == playerColors[1]) {
+            Log.d("Goal", "Player 1 scored in goal " + goal);
+        } else if (playerColor == playerColors[2]) {
+            Log.d("Goal", "Player 2 scored in goal " + goal);
+        } else if (playerColor == playerColors[3]) {
+            Log.d("Goal", "Player 3 scored in goal " + goal);
+        } else {
+            Log.d("Goal", "Unknown player color");
         }
+
         Log.d("Goal", "Player " + player + " scored in goal " + goal);
         scored = true;
     }
@@ -325,6 +325,7 @@ public class GameView extends SurfaceView implements Runnable {
             for (int i = 0; i < splashBalls.length; i++) {
                 SplashBall splashBall = splashBalls[i];
                 splashBall.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
+                splashBall.bounce(screenX, screenY);
             }
         } else {
             splashStartTime = 0;
@@ -445,7 +446,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void drawScores(Canvas canvas) {
         Paint paint = new Paint();
-        paint.setTextSize(50);
+        paint.setTextSize(60);
         paint.setAntiAlias(true); // Smooth text edges
 
         Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
@@ -474,13 +475,13 @@ public class GameView extends SurfaceView implements Runnable {
             float dxPerpendicular = -dy;
             float dyPerpendicular = dx;
 
-            float lineLength = 500; // Length of the perpendicular line
-            float startX = middleX;
-            float startY = middleY;
-            float endX = middleX + (dxPerpendicular * lineLength / 2);
-            float endY = middleY + (dyPerpendicular * lineLength / 2);
-
-            canvas.drawLine(startX, startY, endX, endY, paint);
+//            float lineLength = 500; // Length of the perpendicular line
+//            float startX = middleX;
+//            float startY = middleY;
+//            float endX = middleX + (dxPerpendicular * lineLength / 2);
+//            float endY = middleY + (dyPerpendicular * lineLength / 2);
+//
+//            canvas.drawLine(startX, startY, endX, endY, paint);
 
             switch (index) {
                 case 0: // Bottom-right (blue)
@@ -526,6 +527,11 @@ public class GameView extends SurfaceView implements Runnable {
                     // Use ascend and descent to center text vertically
                     yText += (int) ((paint.descent() + paint.ascent()) / 2);
                     xText -= (int) (textWidth / 4);
+                    break;
+                case 3:
+                    // Use ascend and descent to center text vertically
+                    yText += (int) ((paint.descent() + paint.ascent()) / 2 + (int) (0.029f * screenY));
+                    xText += (int) (textWidth / 4);
                     break;
                 default:
                     break;
@@ -809,7 +815,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void drawPlayground(Canvas canvas) {
         // Draw the background
-        canvas.drawColor(Color.parseColor("#FFEBCD"));
+        canvas.drawColor(Color.parseColor("#FFF1E9"));
 
         // Draw settings icon in the middle
         drawSettingsIcon(canvas);
@@ -1054,9 +1060,9 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, Color.BLUE, 0);
+        newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, playerColors[0], 0);
         newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
-        shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.BLUE);
+        shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[0]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
 
@@ -1073,9 +1079,9 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, Color.RED, 1);
+        newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, playerColors[1], 1);
         newJoystick = new Joystick(screenX * 0.22f, JOYSTICKRADIUS, JOYSTICKRADIUS);
-        shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.RED);
+        shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[1]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
 
@@ -1091,9 +1097,9 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, Color.GREEN, 2);
+        newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, playerColors[2], 2);
         newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
-        shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, Color.GREEN);
+        shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[2]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
 
@@ -1109,9 +1115,9 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, Color.YELLOW, 3);
+        newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, playerColors[3], 3);
         newJoystick = new Joystick(screenX * 0.78f, JOYSTICKRADIUS, JOYSTICKRADIUS);
-        shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, Color.YELLOW);
+        shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[3]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
 
