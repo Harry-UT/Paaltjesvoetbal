@@ -39,7 +39,7 @@ public class Ball {
 
         // Create a shader to fill the ball with a gradient from black to white
         Shader shader = new LinearGradient(
-                x - radius, y,           // Start at the left side of the circle
+                x - radius, y,       // Start at the left side of the circle
                 x + radius, y,           // End at the right side of the circle
                 Color.BLACK,             // Left side color (black)
                 Color.WHITE,             // Right side color (white)
@@ -337,5 +337,14 @@ public class Ball {
             this.player = null;
             Log.d("Shoot", "Ball was shot");
         }
+    }
+
+    public void reset(int resetX, int resetY) {
+        this.x = resetX;
+        this.y = resetY;
+        this.velocityX = 0;
+        this.velocityY = 0;
+        this.player = null;
+        this.shooter = null;
     }
 }

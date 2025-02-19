@@ -24,7 +24,6 @@ import java.util.List;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 
 /**
@@ -59,7 +58,13 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Path> cornerPaths = new ArrayList<>();
     private final List<Region> goalRegions = new ArrayList<>();
     private float lastGoalTime;
+    private Player lastShooter;
     private int lastGoal;
+    private boolean scored;
+    private SplashBall[] splashBalls = new SplashBall[7];
+    private long splashStartTime = 0;
+    private FloatingText goalText;
+    private FloatingText scoreIncrementText;
     private final int TARGET_FPS = 60;
 
     /**
@@ -73,6 +78,8 @@ public class GameView extends SurfaceView implements Runnable {
         setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
+        this.goalText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
+        this.scoreIncrementText = new FloatingText(0,0, 40, 0);
         holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
@@ -107,10 +114,18 @@ public class GameView extends SurfaceView implements Runnable {
         // Determine the goals
         determineGoals(goalWidth);
 
+        // Determine score text positions
+        determineScorePositions();
+
         // Initialize ball(s)
         balls = new ArrayList<>();
         Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
         balls.add(ball);
+
+        // Initialize balls for goal animation
+        for (int i = 0; i < splashBalls.length; i++) {
+            splashBalls[i] = new SplashBall();
+        }
     }
 
     /**
@@ -183,6 +198,34 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
+     * Determine the positions for the score text based on the screen dimensions
+     */
+    private void determineScorePositions() {
+        for (Player player : players) {
+            int index = players.indexOf(player);
+
+            // Calculate text rotation angle
+            Vector goal = goals.get(index);
+
+            float dx = (float) (goal.getX2() - goal.getX1());
+            float dy = (float) (goal.getY2() - goal.getY1());
+            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
+            dx *= scale;
+            dy *= scale;
+
+            float middleX = goal.getMidX();
+            float middleY = goal.getMidY();
+
+            float dxPerpendicular = -dy;
+            float dyPerpendicular = dx;
+
+            int xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
+            int yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+            player.setScorePosition(xText, yText);
+        }
+    }
+
+    /**
      * Update the game state
      */
     private void update() {
@@ -191,7 +234,9 @@ public class GameView extends SurfaceView implements Runnable {
                 ball.update(screenX, screenY);
                 // Log presence of shooter for ball
                 Log.d("Ball", "Ball shooter: " + ball.getShooter());
-                checkGoal(ball);
+                if (!scored) {
+                    checkGoal(ball);
+                }
             }
         }
         checkPlayerBallCollision();
@@ -215,7 +260,20 @@ public class GameView extends SurfaceView implements Runnable {
                     if (System.currentTimeMillis() - lastGoalTime < 200) {
                         // A goal has been scored in this region by the shooter
                         if (i != ball.getShooter().getNumber() && i <= players.size() - 1) {
+                            // Log something
                             scored(i, ball.getShooter());
+                            lastShooter = ball.getShooter();
+                            int rotation = 0;
+                            if (players.indexOf(lastShooter) == 1 || players.indexOf(lastShooter) == 3) {
+                                rotation = 180;
+                            }
+                            this.scoreIncrementText = new FloatingText(ball.getShooter().getScorePosition()[0], ball.getShooter().getScorePosition()[1], 40, rotation);
+                            // Log text coordinates from Floatint text
+                            Log.d("FloatingText", "X: " + scoreIncrementText.getX() + " Y: " + scoreIncrementText.getY());
+
+                            for (SplashBall splashBall : splashBalls) {
+                                splashBall.setColor(ball.getShooter().getColor());
+                            }
                         }
                         lastGoal = -1; // Reset the last goal
                         ball.resetShooter(); // Reset the shooter information
@@ -255,13 +313,33 @@ public class GameView extends SurfaceView implements Runnable {
                 break;
         }
         Log.d("Goal", "Player " + player + " scored in goal " + goal);
-        displayGoalAnimation();
+        scored = true;
     }
 
     /**
      * Display the goal animation on the screen
      */
-    public void displayGoalAnimation() {}
+    public void displayGoalAnimation(int lastGoal, Canvas canvas) {
+        // Save time
+        if (splashStartTime == 0) {
+            splashStartTime = System.currentTimeMillis();
+        }
+        if (System.currentTimeMillis() - splashStartTime < 1500) {
+            for (int i = 0; i < splashBalls.length; i++) {
+                SplashBall splashBall = splashBalls[i];
+                splashBall.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
+            }
+        } else {
+            splashStartTime = 0;
+            scored = false;
+            lastShooter = null;
+            for (SplashBall splashBall : splashBalls) {
+                splashBall.reset();
+            }
+            balls.get(0).reset((int) (screenX / 2f), (int) (screenY / 2f));
+        }
+    }
+
 
     /**
      * Draw the game elements on the canvas
@@ -271,8 +349,6 @@ public class GameView extends SurfaceView implements Runnable {
             Canvas canvas = holder.lockCanvas();
 
             drawPlayground(canvas);
-
-
 
             // Draw the corner paths
             synchronized (cornerPaths) {
@@ -358,6 +434,10 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            if (scored) {
+                displayGoalAnimation(lastGoal, canvas);
+            }
+
             holder.unlockCanvasAndPost(canvas);
         }
     }
@@ -439,6 +519,41 @@ public class GameView extends SurfaceView implements Runnable {
 
             // Restore canvas to avoid affecting other drawings
             canvas.restore();
+        }
+
+        if (scored) {
+            // Set text size
+            paint.setTextSize(goalText.getSize());
+            paint.setColor(lastShooter.getColor());
+            goalText.increment(2, 1, 1);
+
+            // Measure the width of the text
+            float textWidth = paint.measureText("GOAL!");
+
+            // Calculate the x position for centering the text
+            float x = (screenX - textWidth) / 2;
+
+            // Calculate the y position for centering the text vertically
+            // Adjusting based on text ascent and descent
+            float y = ((float) screenY / 2) - ((paint.descent() + paint.ascent()) / 2);
+
+            // Draw the centered text
+            canvas.drawText("GOAL!", x, y, paint);
+
+            paint.setColor(lastShooter.getColor());
+            paint.setTextSize(scoreIncrementText.getSize());
+            // Draw a score increment animation above the last shooter score position
+            canvas.save();
+            canvas.rotate(scoreIncrementText.getRotation(), scoreIncrementText.getX(), scoreIncrementText.getY());
+            canvas.drawText("+1", scoreIncrementText.getX(), scoreIncrementText.getY(), paint);
+            canvas.restore();
+            if (scoreIncrementText.getRotation() == 180) {
+                scoreIncrementText.increment(0, 0, 1);
+            } else {
+                scoreIncrementText.increment(0, 0, -1);
+            }
+            } else {
+            goalText.reset(screenX, screenY);
         }
     }
 
@@ -585,6 +700,7 @@ public class GameView extends SurfaceView implements Runnable {
                 player.setY(newY);
             }
         }
+        determineScorePositions();
     }
 
     /**
