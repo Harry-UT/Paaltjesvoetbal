@@ -428,11 +428,11 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            synchronized (goals) {
-                for (Vector goal : goals) {
-                    goal.draw(canvas);
-                }
-            }
+//            synchronized (goals) {
+//                for (Vector goal : goals) {
+//                    goal.draw(canvas);
+//                }
+//            }
 
             if (scored) {
                 displayGoalAnimation(lastGoal, canvas);
@@ -994,6 +994,7 @@ public class GameView extends SurfaceView implements Runnable {
      * Add a player to the list of players
      * @param player the player to add
      */
+
     private void addPlayer(Player player) {
         synchronized (players) {
             players.add(player);
@@ -1007,16 +1008,6 @@ public class GameView extends SurfaceView implements Runnable {
     private void addJoystick(Joystick joystick) {
         synchronized (joysticks) {
             joysticks.add(joystick);
-        }
-    }
-
-    /**
-     * Add a ball to the list of balls
-     * @param ball the ball to add
-     */
-    public void addBall(Ball ball) {
-        synchronized (balls) {
-            balls.add(ball);
         }
     }
 

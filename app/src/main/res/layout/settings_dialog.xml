@@ -16,9 +16,9 @@
         android:id="@+id/playerCountLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="156dp"
+        android:layout_marginStart="160dp"
         android:layout_marginTop="216dp"
-        android:text="Player count:"
+        android:text="Player count: "
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -51,11 +51,9 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="168dp"
+        android:layout_marginStart="156dp"
         android:layout_marginTop="128dp"
-        android:text="Ball speed:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:text="Ball speed: "
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -95,10 +93,9 @@
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="156dp"
         android:layout_marginTop="56dp"
-        android:text="Player speed:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        android:text="Player speed: "
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -126,7 +123,7 @@
         android:id="@+id/currentPlayerSpeed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="263dp"
+        android:layout_marginStart="244dp"
         android:layout_marginTop="56dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -135,20 +132,22 @@
         android:id="@+id/currentBallSpeed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="252dp"
+        android:layout_marginStart="228dp"
         android:layout_marginTop="128dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/resetButton"
+        style="@android:style/Widget.Material.Light.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="164dp"
+        android:layout_marginStart="161dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="159dp"
         android:text="Reset"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -156,17 +155,19 @@
         android:id="@+id/group2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="206dp"
         app:constraint_referenced_ids="textView4,currentPlayerSpeed"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/currentPlayerCount"
-        android:layout_width="39dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="248dp"
-        android:layout_marginTop="217dp"
+        android:layout_width="0dp"
+        android:layout_height="19dp"
+        android:layout_marginStart="244dp"
+        android:layout_marginTop="216dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
