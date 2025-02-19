@@ -18,7 +18,9 @@ public class Ball {
     private final List<Vector> verticalGoalEdges;
     private Paint ballPaint;
     private Player shooter = null;
-
+    private int lastBouncedEdgeIndex = -1;
+    private long lastBounceTime = 0;
+    private static final long BOUNCE_COOLDOWN_MS = 100; // 100ms cooldown
     public Ball(float x, float y, float radius, List<Vector> bounceEdges, List<Vector> verticalGoalEdges) {
         this.x = x;
         this.y = y;
@@ -75,7 +77,7 @@ public class Ball {
         }
     }
 
-    public void update(int screenX, int screenY) {
+    public long update(int screenX, int screenY) {
         if (this.player == null) {
             // Check for screen boundary collisions
             bounce(screenX, screenY);
@@ -99,6 +101,7 @@ public class Ball {
                 setY((float) (this.player.getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
             }
         }
+        return lastBounceTime;
     }
 
     public Player getShooter() {
@@ -114,6 +117,8 @@ public class Ball {
         if (getX() - radius < 0) {
             if (getVelocityX() < 0) {
                 setVelocityX(-getVelocityX());  // Reverse horizontal direction
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with left edge");
             }
         }
 
@@ -121,6 +126,8 @@ public class Ball {
         if (getX() + radius > screenX) {
             if (getVelocityX() > 0) {
                 setVelocityX(-getVelocityX());  // Reverse horizontal direction
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with right edge");
             }
         }
 
@@ -128,16 +135,20 @@ public class Ball {
         if (getY() - radius < 0) {
             if (getVelocityY() < 0) {
                 setVelocityY(-getVelocityY());  // Reverse vertical direction
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with top edge");
             }
         }
 
         if (getY() + radius > screenY) {
             if (getVelocityY() > 0) {
                 setVelocityY(-getVelocityY());  // Reverse vertical direction
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with bottom edge");
             }
         }
 
-        // Check for collisions with the specific polygon edges (4 edges only)
+        // Check for collisions with the diagonal edges
         for (int i = 0; i < bounceEdges.size(); i++) {
             checkEdgeCollision(i);
         }
@@ -149,12 +160,96 @@ public class Ball {
             if (distance <= radius) {
                 // Invert ball velocity
                 setVelocityX(-getVelocityX());
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
             }
         }
     }
 
     // Check for collision with the ball and the passed polygon edge
+//    public void checkEdgeCollision(int edgeVectorIndex) {
+//        Vector edge = bounceEdges.get(edgeVectorIndex);
+//
+//        // Get the edge's start and end points
+//        double x1 = edge.getX1();
+//        double y1 = edge.getY1();
+//        double x2 = edge.getX2();
+//        double y2 = edge.getY2();
+//
+//        // Calculate the vector representing the edge
+//        double edgeDX = x2 - x1;
+//        double edgeDY = y2 - y1;
+//
+//        // Calculate the vector from the ball's center to the start of the edge
+//        double ballDX = getX() - x1;
+//        double ballDY = getY() - y1;
+//
+//        // Project the ball's position onto the edge line
+//        double dotProduct = ballDX * edgeDX + ballDY * edgeDY;
+//        double edgeLengthSquared = edgeDX * edgeDX + edgeDY * edgeDY;
+//        double projection = dotProduct / edgeLengthSquared;
+//
+//        // If the projection falls outside the edge, use the closest endpoint
+//        double closestX, closestY;
+//        if (projection < 0) {
+//            closestX = x1;
+//            closestY = y1;
+//        } else if (projection > 1) {
+//            closestX = x2;
+//            closestY = y2;
+//        } else {
+//            closestX = x1 + projection * edgeDX;
+//            closestY = y1 + projection * edgeDY;
+//        }
+//
+//        // Calculate the distance from the ball to the closest point on the edge
+//        double distanceToEdge = Math.sqrt(Math.pow(getX() - closestX, 2) + Math.pow(getY() - closestY, 2));
+//
+//        // If the distance is less than or equal to the ball's radius, we have a collision
+//        if (distanceToEdge <= radius) {
+//            // Get the normal vector of the edge (perpendicular to the edge)
+//            double normalX = -edgeDY;  // Perpendicular to the edge
+//            double normalY = edgeDX;
+//
+//            // Normalize the normal vector
+//            double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
+//            normalX /= normalLength;
+//            normalY /= normalLength;
+//
+//            // Ensure normal vector points **towards** the ball
+//            double ballToEdgeX = getX() - closestX;
+//            double ballToEdgeY = getY() - closestY;
+//            double dotProductNormal = ballToEdgeX * normalX + ballToEdgeY * normalY;
+//
+//            if (dotProductNormal < 0) {
+//                // Flip the normal direction
+//                normalX = -normalX;
+//                normalY = -normalY;
+//            }
+//
+//            // Reflect the ball's velocity using the normal vector
+//            double velocityX = getVelocityX();
+//            double velocityY = getVelocityY();
+//            double dotProductVelocity = velocityX * normalX + velocityY * normalY;
+//
+//            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX)); // Reflect along x-axis
+//            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY)); // Reflect along y-axis
+//
+//            // Adjust ball position to prevent it from getting stuck inside the edge
+//            double overlap = radius - distanceToEdge;
+//            setX((float) (getX() + normalX * overlap));
+//            setY((float) (getY() + normalY * overlap));
+//        }
+//    }
+
     public void checkEdgeCollision(int edgeVectorIndex) {
+        long currentTime = System.currentTimeMillis();
+        double postRadius = 10; // Radius of the goalpost
+
+        // If still within the cooldown period, don't allow another bounce
+        if (lastBouncedEdgeIndex == edgeVectorIndex || (currentTime - lastBounceTime < BOUNCE_COOLDOWN_MS)) {
+            return;
+        }
+
         Vector edge = bounceEdges.get(edgeVectorIndex);
 
         // Get the edge's start and end points
@@ -163,20 +258,59 @@ public class Ball {
         double x2 = edge.getX2();
         double y2 = edge.getY2();
 
-        // Calculate the vector representing the edge
         double edgeDX = x2 - x1;
         double edgeDY = y2 - y1;
 
-        // Calculate the vector from the ball's center to the start of the edge
         double ballDX = getX() - x1;
         double ballDY = getY() - y1;
-
-        // Project the ball's position onto the edge line
         double dotProduct = ballDX * edgeDX + ballDY * edgeDY;
         double edgeLengthSquared = edgeDX * edgeDX + edgeDY * edgeDY;
         double projection = dotProduct / edgeLengthSquared;
 
-        // If the projection falls outside the edge, use the closest endpoint
+        // Handle goalpost collision (if near the endpoints)
+        double distanceToStart = Math.sqrt(Math.pow(getX() - x1, 2) + Math.pow(getY() - y1, 2));
+        double distanceToEnd = Math.sqrt(Math.pow(getX() - x2, 2) + Math.pow(getY() - y2, 2));
+
+        if (distanceToStart <= postRadius || distanceToEnd <= postRadius) {
+            lastBouncedEdgeIndex = edgeVectorIndex;
+            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+
+            lastBounceTime = System.currentTimeMillis(); // Update bounce timestamp
+
+            Log.d("Bounce", "Ball collided with goalpost");
+
+            // Simulate circular reflection at the goalpost
+            double normalX, normalY;
+            if (distanceToStart <= postRadius) {
+                normalX = getX() - x1;
+                normalY = getY() - y1;
+            } else {
+                normalX = getX() - x2;
+                normalY = getY() - y2;
+            }
+
+            // Normalize normal vector
+            double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
+            normalX /= normalLength;
+            normalY /= normalLength;
+
+            // Reflect the ball
+            double velocityX = getVelocityX();
+            double velocityY = getVelocityY();
+            double dotProductVelocity = velocityX * normalX + velocityY * normalY;
+
+            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
+            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
+
+            // Adjust position slightly to avoid getting stuck
+            double overlap = postRadius - (distanceToStart <= postRadius ? distanceToStart : distanceToEnd);
+            setX((float) (getX() + normalX * overlap));
+            setY((float) (getY() + normalY * overlap));
+
+            return; // Stop further collision checks
+        }
+
+        // Normal edge collision
         double closestX, closestY;
         if (projection < 0) {
             closestX = x1;
@@ -189,43 +323,47 @@ public class Ball {
             closestY = y1 + projection * edgeDY;
         }
 
-        // Calculate the distance from the ball to the closest point on the edge
         double distanceToEdge = Math.sqrt(Math.pow(getX() - closestX, 2) + Math.pow(getY() - closestY, 2));
 
-        // If the distance is less than or equal to the ball's radius, we have a collision
-        if (distanceToEdge <= radius) {
-            // Get the normal vector of the edge (perpendicular to the edge)
-            double normalX = -edgeDY;  // Perpendicular to the edge
-            double normalY = edgeDX;
+        if (distanceToEdge <= radius && (System.currentTimeMillis() - lastBounceTime > BOUNCE_COOLDOWN_MS || lastBouncedEdgeIndex != edgeVectorIndex)) {
 
-            // Normalize the normal vector
+            // Log edge number where it collided
+            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+            Log.d("Bounce", "Last bounced edge: " + lastBouncedEdgeIndex);
+            Log.d("Bounce", "Ball collided with edge " + edgeVectorIndex);
+
+
+            lastBouncedEdgeIndex = edgeVectorIndex;
+            lastBounceTime = System.currentTimeMillis(); // Update bounce timestamp
+
+            // Calculate the normal
+            double normalX = -edgeDY;
+            double normalY = edgeDX;
             double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
             normalX /= normalLength;
             normalY /= normalLength;
 
-            // Ensure normal vector points **towards** the ball
-            double ballToEdgeX = getX() - closestX;
-            double ballToEdgeY = getY() - closestY;
-            double dotProductNormal = ballToEdgeX * normalX + ballToEdgeY * normalY;
-
-            if (dotProductNormal < 0) {
-                // Flip the normal direction
-                normalX = -normalX;
-                normalY = -normalY;
-            }
-
-            // Reflect the ball's velocity using the normal vector
+            // Reflect the ball
             double velocityX = getVelocityX();
             double velocityY = getVelocityY();
             double dotProductVelocity = velocityX * normalX + velocityY * normalY;
 
-            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX)); // Reflect along x-axis
-            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY)); // Reflect along y-axis
+            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
+            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
 
-            // Adjust ball position to prevent it from getting stuck inside the edge
+            // Check if the ball is stuck and adjust its position to slide it out
             double overlap = radius - distanceToEdge;
-            setX((float) (getX() + normalX * overlap));
-            setY((float) (getY() + normalY * overlap));
+
+            if (overlap > 0) {
+                // Move ball along the normal vector to avoid sticking inside
+                setX((float) (getX() + normalX * overlap));
+                setY((float) (getY() + normalY * overlap));
+            }
+
+            // Apply additional sliding if the velocity is very high
+            double slideDistance = Math.min(overlap, Math.max(velocityX, velocityY) * 0.1); // Adjust sliding factor
+            setX((float) (getX() + normalX * slideDistance));
+            setY((float) (getY() + normalY * slideDistance));
         }
     }
 

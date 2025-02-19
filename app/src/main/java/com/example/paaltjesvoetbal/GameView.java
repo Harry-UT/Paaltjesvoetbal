@@ -56,10 +56,11 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> goals = new ArrayList<>();
     private final List<Path> cornerPaths = new ArrayList<>();
     private final List<Region> goalRegions = new ArrayList<>();
+    private long lastBounceTime = 0;
     private float lastGoalTime;
     private Player lastShooter;
     private int lastGoal;
-    private boolean scored;
+    private boolean scored = false;
     private final Star[] stars = new Star[50];
     private long splashStartTime = 0;
     private FloatingText goalText;
@@ -232,16 +233,43 @@ public class GameView extends SurfaceView implements Runnable {
     private void update() {
         synchronized (balls) {
             for (Ball ball : balls) {
-                ball.update(screenX, screenY);
+                lastBounceTime = ball.update(screenX, screenY);
                 // Log presence of shooter for ball
                 Log.d("Ball", "Ball shooter: " + ball.getShooter());
-                if (!scored) {
+                if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
                     checkGoal(ball);
                 }
             }
         }
         checkPlayerBallCollision();
         updatePlayers();
+    }
+
+    /**
+     * Handle the scoring of a goal by a player
+     * @param goal the goal number
+     * @param player the player object
+     */
+    private void scored(int goal, Player player) {
+        // Scored in goal by player
+        player.scored();
+
+        int playerColor = player.getColor();
+
+        if (playerColor == playerColors[0]) {
+            Log.d("Goal", "Player 0 scored in goal " + goal);
+        } else if (playerColor == playerColors[1]) {
+            Log.d("Goal", "Player 1 scored in goal " + goal);
+        } else if (playerColor == playerColors[2]) {
+            Log.d("Goal", "Player 2 scored in goal " + goal);
+        } else if (playerColor == playerColors[3]) {
+            Log.d("Goal", "Player 3 scored in goal " + goal);
+        } else {
+            Log.d("Goal", "Unknown player color");
+        }
+
+        Log.d("Goal", "Player " + player + " scored in goal " + goal);
+        scored = true;
     }
 
     /**
@@ -289,33 +317,6 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
-     * Handle the scoring of a goal by a player
-     * @param goal the goal number
-     * @param player the player object
-     */
-    private void scored(int goal, Player player) {
-        // Scored in goal by player
-        player.scored();
-
-        int playerColor = player.getColor();
-
-        if (playerColor == playerColors[0]) {
-            Log.d("Goal", "Player 0 scored in goal " + goal);
-        } else if (playerColor == playerColors[1]) {
-            Log.d("Goal", "Player 1 scored in goal " + goal);
-        } else if (playerColor == playerColors[2]) {
-            Log.d("Goal", "Player 2 scored in goal " + goal);
-        } else if (playerColor == playerColors[3]) {
-            Log.d("Goal", "Player 3 scored in goal " + goal);
-        } else {
-            Log.d("Goal", "Unknown player color");
-        }
-
-        Log.d("Goal", "Player " + player + " scored in goal " + goal);
-        scored = true;
-    }
-
-    /**
      * Display the goal animation on the screen
      */
     public void displayGoalAnimation(Canvas canvas) {
@@ -323,17 +324,17 @@ public class GameView extends SurfaceView implements Runnable {
         if (splashStartTime == 0) {
             splashStartTime = System.currentTimeMillis();
         }
-        if (System.currentTimeMillis() - splashStartTime < 1500) {
+        if (System.currentTimeMillis() - splashStartTime < 1200) {
             for (Star star : stars) {
-                star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
+                star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), false);
                 star.bounce(screenX, screenY);
             }
         } else {
-            splashStartTime = 0;
             scored = false;
+            splashStartTime = 0;
             lastShooter = null;
             for (Star star : stars) {
-                star.reset();
+                star.resetStartTime();
             }
             balls.get(0).reset((int) (screenX / 2f), (int) (screenY / 2f));
             for (int i = 0; i < players.size(); i++) {
@@ -399,6 +400,9 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
+            // Draw goalposts
+            drawGoalPosts(canvas);
+
             // Draw the joysticks
             synchronized (joysticks) {
                 for (Joystick joystick : joysticks) {
@@ -437,6 +441,22 @@ public class GameView extends SurfaceView implements Runnable {
 
             if (scored) {
                 displayGoalAnimation(canvas);
+            } else {
+                // Check if all scores are 0
+                boolean allZero = true;
+                for (Player player : players) {
+                    if (player.getScore() != 0) {
+                        allZero = false;
+                        break;
+                    }
+                }
+                if (!allZero) {
+                    for (Star star : stars) {
+                        // Fade stars out
+                        star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), true);
+                        star.bounce(screenX, screenY);
+                    }
+                }
             }
 
             // Draw fps
@@ -446,6 +466,28 @@ public class GameView extends SurfaceView implements Runnable {
             canvas.drawText("FPS: " + fps, 10, 50, paint);
 
             holder.unlockCanvasAndPost(canvas);
+        }
+    }
+
+    private void drawGoalPosts(Canvas canvas) {
+        // Use mod 2 to alternate between first or second coordinate of edge
+        int postSide = 1;
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        for (Vector bounceEdge : bounceEdges) {
+            // Get the goalpost coordinates
+            if (postSide % 2 == 0) {
+                float x1 = (float) bounceEdge.getX1();
+                float y1 = (float) bounceEdge.getY1();
+                // Draw a little black dot
+                canvas.drawCircle(x1, y1, 6, paint);
+            } else {
+                float x2 = (float) bounceEdge.getX2();
+                float y2 = (float) bounceEdge.getY2();
+                // Draw a little black dot
+                canvas.drawCircle(x2, y2, 6, paint);
+            }
+            postSide++;
         }
     }
 
@@ -568,7 +610,7 @@ public class GameView extends SurfaceView implements Runnable {
             // Set text size
             paint.setTextSize(goalText.getSize());
             paint.setColor(lastShooter.getColor());
-            goalText.increment(2, 1, 1);
+            goalText.increment(3, 0, 0);
 
             // Measure the width of the text
             float textWidth = paint.measureText("GOAL!");
