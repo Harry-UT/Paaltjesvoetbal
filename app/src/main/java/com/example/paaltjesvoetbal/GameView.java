@@ -60,7 +60,7 @@ public class GameView extends SurfaceView implements Runnable {
     private Player lastShooter;
     private int lastGoal;
     private boolean scored;
-    private final SplashBall[] splashBalls = new SplashBall[8];
+    private final Star[] stars = new Star[50];
     private long splashStartTime = 0;
     private FloatingText goalText;
     private FloatingText scoreIncrementText;
@@ -124,8 +124,8 @@ public class GameView extends SurfaceView implements Runnable {
         balls.add(ball);
 
         // Initialize balls for goal animation
-        for (int i = 0; i < splashBalls.length; i++) {
-            splashBalls[i] = new SplashBall();
+        for (int i = 0; i < stars.length; i++) {
+            stars[i] = new Star();
         }
     }
 
@@ -271,8 +271,8 @@ public class GameView extends SurfaceView implements Runnable {
                             this.scoreIncrementText = new FloatingText(ball.getShooter().getScorePosition()[0], ball.getShooter().getScorePosition()[1], 40, rotation);
                             // Log text coordinates from Floatint text
 
-                            for (SplashBall splashBall : splashBalls) {
-                                splashBall.setColor(ball.getShooter().getColor());
+                            for (Star star : stars) {
+                                star.setColor(ball.getShooter().getColor());
                             }
                         }
                         lastGoal = -1; // Reset the last goal
@@ -324,16 +324,16 @@ public class GameView extends SurfaceView implements Runnable {
             splashStartTime = System.currentTimeMillis();
         }
         if (System.currentTimeMillis() - splashStartTime < 1500) {
-            for (SplashBall splashBall : splashBalls) {
-                splashBall.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
-                splashBall.bounce(screenX, screenY);
+            for (Star star : stars) {
+                star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
+                star.bounce(screenX, screenY);
             }
         } else {
             splashStartTime = 0;
             scored = false;
             lastShooter = null;
-            for (SplashBall splashBall : splashBalls) {
-                splashBall.reset();
+            for (Star star : stars) {
+                star.reset();
             }
             balls.get(0).reset((int) (screenX / 2f), (int) (screenY / 2f));
             for (int i = 0; i < players.size(); i++) {
@@ -847,25 +847,6 @@ public class GameView extends SurfaceView implements Runnable {
 //        canvas.drawLine(screenX, 0, screenX, screenY, paint);
 //        canvas.drawLine(0, 0, screenX, 0, paint);
     }
-
-    private void drawStar(Canvas canvas, float cx, float cy, float radius, Paint paint) {
-        Path path = new Path();
-        double angle = Math.PI / 2; // Start from the top
-
-        for (int i = 0; i < 5; i++) {
-            float x = (float) (cx + Math.cos(angle) * radius);
-            float y = (float) (cy - Math.sin(angle) * radius);
-            if (i == 0) {
-                path.moveTo(x, y);
-            } else {
-                path.lineTo(x, y);
-            }
-            angle += Math.PI * 2 / 5 * 2; // Skip one point for a star shape
-        }
-        path.close();
-        canvas.drawPath(path, paint);
-    }
-
 
     /**
      * Determine the corner areas of the screen

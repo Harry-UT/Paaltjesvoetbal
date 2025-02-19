@@ -1,9 +1,7 @@
 package com.example.paaltjesvoetbal;
 
 import android.graphics.Canvas;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Shader;
 import android.util.Log;
 import android.graphics.Color;
 
