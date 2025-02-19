@@ -23,7 +23,6 @@ import java.util.List;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.ImageView;
 
 
 /**
@@ -42,6 +41,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
+    private int[][] playerPositions;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -65,6 +65,7 @@ public class GameView extends SurfaceView implements Runnable {
     private FloatingText goalText;
     private FloatingText scoreIncrementText;
     private final int TARGET_FPS = 60;
+    private int fps;
 
     /**
      * Constructor for the GameView class
@@ -79,6 +80,7 @@ public class GameView extends SurfaceView implements Runnable {
         this.screenY = screenY;
         this.goalText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
+        playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
         holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
@@ -167,6 +169,7 @@ public class GameView extends SurfaceView implements Runnable {
             // Calculate and log real FPS every second
             if (System.nanoTime() - lastTime >= 1_000_000_000) {
                 Log.d("FPSTRACK", "Real FPS: " + frames); // Log the real FPS
+                fps = frames; // Save the real FPS
                 frames = 0; // Reset frame count
                 lastTime = System.nanoTime();
             }
@@ -267,7 +270,6 @@ public class GameView extends SurfaceView implements Runnable {
                             }
                             this.scoreIncrementText = new FloatingText(ball.getShooter().getScorePosition()[0], ball.getShooter().getScorePosition()[1], 40, rotation);
                             // Log text coordinates from Floatint text
-                            Log.d("FloatingText", "X: " + scoreIncrementText.getX() + " Y: " + scoreIncrementText.getY());
 
                             for (SplashBall splashBall : splashBalls) {
                                 splashBall.setColor(ball.getShooter().getColor());
@@ -316,7 +318,7 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Display the goal animation on the screen
      */
-    public void displayGoalAnimation(int lastGoal, Canvas canvas) {
+    public void displayGoalAnimation(Canvas canvas) {
         // Save time
         if (splashStartTime == 0) {
             splashStartTime = System.currentTimeMillis();
@@ -334,9 +336,11 @@ public class GameView extends SurfaceView implements Runnable {
                 splashBall.reset();
             }
             balls.get(0).reset((int) (screenX / 2f), (int) (screenY / 2f));
+            for (int i = 0; i < players.size(); i++) {
+                players.get(i).resetPosition(playerPositions[i][0], playerPositions[i][1]);
+            }
         }
     }
-
 
     /**
      * Draw the game elements on the canvas
@@ -432,8 +436,14 @@ public class GameView extends SurfaceView implements Runnable {
 //            }
 
             if (scored) {
-                displayGoalAnimation(lastGoal, canvas);
+                displayGoalAnimation(canvas);
             }
+
+            // Draw fps
+            Paint paint = new Paint();
+            paint.setColor(Color.RED);
+            paint.setTextSize(40);
+            canvas.drawText("FPS: " + fps, 10, 50, paint);
 
             holder.unlockCanvasAndPost(canvas);
         }
@@ -454,25 +464,26 @@ public class GameView extends SurfaceView implements Runnable {
         int xText;
         int yText;
 
-        for (Player player : players) {
-            int index = players.indexOf(player);
+        synchronized (players) {
+            for (Player player : players) {
+                int index = players.indexOf(player);
 
-            // Calculate text rotation angle
-            Vector goal = goals.get(index);
+                // Calculate text rotation angle
+                Vector goal = goals.get(index);
 
-            float dx = (float) (goal.getX2() - goal.getX1());
-            float dy = (float) (goal.getY2() - goal.getY1());
-            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
-            dx *= scale;
-            dy *= scale;
+                float dx = (float) (goal.getX2() - goal.getX1());
+                float dy = (float) (goal.getY2() - goal.getY1());
+                float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
+                dx *= scale;
+                dy *= scale;
 
-            float middleX = goal.getMidX();
-            float middleY = goal.getMidY();
-            float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+                float middleX = goal.getMidX();
+                float middleY = goal.getMidY();
+                float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
 
 
-            float dxPerpendicular = -dy;
-            float dyPerpendicular = dx;
+                float dxPerpendicular = -dy;
+                float dyPerpendicular = dx;
 
 //            float lineLength = 500; // Length of the perpendicular line
 //            float startX = middleX;
@@ -482,74 +493,75 @@ public class GameView extends SurfaceView implements Runnable {
 //
 //            canvas.drawLine(startX, startY, endX, endY, paint);
 
-            switch (index) {
-                case 0: // Bottom-right (blue)
-                    if (rotationAngle > 0) {
-                        rotationAngle -= 180;
-                    }
-                    break;
-                case 1: // Top-left (red)
-                    if (rotationAngle < 0) {
-                        rotationAngle += 180;
-                    }
-                    break;
-                case 2: // Bottom-left (green)
-                    if (rotationAngle < 0) {
-                        rotationAngle += 180;
-                    }
-                    break;
-                case 3: // Top-right (yellow)
-                    if (rotationAngle > 0) {
-                        rotationAngle -= 180;
-                    }
-                    break;
-                default:
-                    return;
-            }
+                switch (index) {
+                    case 0: // Bottom-right (blue)
+                        if (rotationAngle > 0) {
+                            rotationAngle -= 180;
+                        }
+                        break;
+                    case 1: // Top-left (red)
+                        if (rotationAngle < 0) {
+                            rotationAngle += 180;
+                        }
+                        break;
+                    case 2: // Bottom-left (green)
+                        if (rotationAngle < 0) {
+                            rotationAngle += 180;
+                        }
+                        break;
+                    case 3: // Top-right (yellow)
+                        if (rotationAngle > 0) {
+                            rotationAngle -= 180;
+                        }
+                        break;
+                    default:
+                        return;
+                }
 
 //            xText = (int) middleX;
 //            yText = (int) middleY;
-            xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
-            yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+                xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
+                yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
 
-            // Center text with textmeasure
-            float textWidth = paint.measureText(String.valueOf(player.getScore()));
+                // Center text with textmeasure
+                float textWidth = paint.measureText(String.valueOf(player.getScore()));
 
-            switch(index) {
-                case 0:
-                    xText -= (int) (textWidth / 2);
-                    break;
-                case 1:
-                    xText += (int) (textWidth / 2);
-                    break;
-                case 2:
-                    // Use ascend and descent to center text vertically
-                    yText += (int) ((paint.descent() + paint.ascent()) / 2);
-                    xText -= (int) (textWidth / 4);
-                    break;
-                case 3:
-                    // Use ascend and descent to center text vertically
-                    yText += (int) ((paint.descent() + paint.ascent()) / 2 + (int) (0.029f * screenY));
-                    xText += (int) (textWidth / 4);
-                    break;
-                default:
-                    break;
+                switch (index) {
+                    case 0:
+                        xText -= (int) (textWidth / 2);
+                        break;
+                    case 1:
+                        xText += (int) (textWidth / 2);
+                        break;
+                    case 2:
+                        // Use ascend and descent to center text vertically
+                        yText += (int) ((paint.descent() + paint.ascent()) / 2);
+                        xText -= (int) (textWidth / 4);
+                        break;
+                    case 3:
+                        // Use ascend and descent to center text vertically
+                        yText += (int) ((paint.descent() + paint.ascent()) / 2 + (int) (0.029f * screenY));
+                        xText += (int) (textWidth / 4);
+                        break;
+                    default:
+                        break;
+                }
+
+                // Set text color
+                paint.setColor(player.getColor());
+
+                // Save the current canvas state
+                canvas.save();
+
+                // Rotate around the text position
+                canvas.rotate(rotationAngle, xText, yText);
+
+                // Draw the text
+                canvas.drawText(String.valueOf(player.getScore()), xText, yText, paint);
+
+                // Restore canvas to avoid affecting other drawings
+                canvas.restore();
             }
-
-            // Set text color
-            paint.setColor(player.getColor());
-
-            // Save the current canvas state
-            canvas.save();
-
-            // Rotate around the text position
-            canvas.rotate(rotationAngle, xText, yText);
-
-            // Draw the text
-            canvas.drawText(String.valueOf(player.getScore()), xText, yText, paint);
-
-            // Restore canvas to avoid affecting other drawings
-            canvas.restore();
         }
 
         if (scored) {
@@ -836,6 +848,25 @@ public class GameView extends SurfaceView implements Runnable {
 //        canvas.drawLine(0, 0, screenX, 0, paint);
     }
 
+    private void drawStar(Canvas canvas, float cx, float cy, float radius, Paint paint) {
+        Path path = new Path();
+        double angle = Math.PI / 2; // Start from the top
+
+        for (int i = 0; i < 5; i++) {
+            float x = (float) (cx + Math.cos(angle) * radius);
+            float y = (float) (cy - Math.sin(angle) * radius);
+            if (i == 0) {
+                path.moveTo(x, y);
+            } else {
+                path.lineTo(x, y);
+            }
+            angle += Math.PI * 2 / 5 * 2; // Skip one point for a star shape
+        }
+        path.close();
+        canvas.drawPath(path, paint);
+    }
+
+
     /**
      * Determine the corner areas of the screen
      */
@@ -908,14 +939,14 @@ public class GameView extends SurfaceView implements Runnable {
         Paint paint = new Paint();
         paint.setColor(Color.BLACK);  // Set the circle's outline color
         paint.setStyle(Paint.Style.STROKE);  // Set it to STROKE to create an open middle circle
-        paint.setStrokeWidth(20);  // Set the width of the stroke
+        paint.setStrokeWidth(15);  // Set the width of the stroke
 
         // Get the center of the screen
         float centerX = screenX / 2f;
         float centerY = screenY / 2f;
 
         // Radius of the circle
-        float outerRadius = screenX * 0.08f;
+        float outerRadius = screenX * 0.07f;
 
         // Draw the outer circle
         canvas.drawCircle(centerX, centerY, outerRadius, paint);
@@ -928,7 +959,7 @@ public class GameView extends SurfaceView implements Runnable {
     private void drawSettingsIcon(Canvas canvas) {
         // Create a new matrix for scaling and translation
         Matrix matrix = new Matrix();
-        float scaleFactor = 0.37f;
+        float scaleFactor = 0.3f;
 
         // Desired position for the icon (center of the screen)
         float centerX = screenX / 2f;
@@ -1059,7 +1090,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.78f, PLAYERRADIUS, playerColors[0], 0);
+        newPlayer = new Player(playerPositions[0][0], playerPositions[0][1], PLAYERRADIUS, playerColors[0], 0);
         newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[0]);
         newPlayer.setJoystick(newJoystick);
@@ -1078,7 +1109,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.22f, PLAYERRADIUS, playerColors[1], 1);
+        newPlayer = new Player(playerPositions[1][0], playerPositions[1][1], PLAYERRADIUS, playerColors[1], 1);
         newJoystick = new Joystick(screenX * 0.22f, JOYSTICKRADIUS, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[1]);
         newPlayer.setJoystick(newJoystick);
@@ -1096,7 +1127,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.25f, screenY * 0.78f, PLAYERRADIUS, playerColors[2], 2);
+        newPlayer = new Player(playerPositions[2][0], playerPositions[2][1], PLAYERRADIUS, playerColors[2], 2);
         newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[2]);
         newPlayer.setJoystick(newJoystick);
@@ -1114,7 +1145,7 @@ public class GameView extends SurfaceView implements Runnable {
         Player newPlayer;
         Joystick newJoystick;
         ShootButton shootButton;
-        newPlayer = new Player(screenX * 0.75f, screenY * 0.22f, PLAYERRADIUS, playerColors[3], 3);
+        newPlayer = new Player(playerPositions[3][0], playerPositions[3][1], PLAYERRADIUS, playerColors[3], 3);
         newJoystick = new Joystick(screenX * 0.78f, JOYSTICKRADIUS, JOYSTICKRADIUS);
         shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[3]);
         newPlayer.setJoystick(newJoystick);

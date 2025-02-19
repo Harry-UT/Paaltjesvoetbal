@@ -13,7 +13,7 @@ public class Player {
     private static final int CONTROL_TIMEOUT = 200;  // Time in milliseconds for collision timeout
     private long lastShootTime;  // Last time the ball was shot
     private final int number;
-    private int[] scorePosition = new int[] { 0, 0 };
+    private final int[] scorePosition = new int[] { 0, 0 };
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color, int playerNumber) {
@@ -113,5 +113,16 @@ public class Player {
 
     public int[] getScorePosition() {
         return scorePosition;
+    }
+
+    public void resetPosition(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void reset(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.score = 0;
     }
 }
