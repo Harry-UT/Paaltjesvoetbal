@@ -25,6 +25,10 @@ public class Star {
         dy = random.nextInt(21) - 10; // Range from -10 to 10 inclusive
     }
 
+    public static int map(int x, int in_min, int in_max, int out_min, int out_max) {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    }
+
     public void setColor(int color) {
         this.color = color;
         paint.setColor(color);
@@ -36,8 +40,11 @@ public class Star {
             y = ballY;
             started = true;
         }
-        x += dx * velocity;
-        y += dy * velocity;
+        // Map final velocity to range 0-10
+        x += map(dx * velocity, -10, 10, 0, 10);
+//        x += dx * velocity;
+//        y += dy * velocity;
+        y += map(dy * velocity, -10, 10, 0, 10);
         if (fade) {
             // Check if alpha of color is not yet fully opacity
             if (paint.getAlpha() == 0) {

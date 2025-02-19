@@ -48,7 +48,7 @@ public class Ball {
 
         // Apply the shader to the paint
 //        ballPaint.setShader(shader);
-        ballPaint.setColor(Color.BLACK);
+        ballPaint.setColor(Color.DKGRAY);
     }
 
     public void draw(Canvas canvas) {
@@ -268,7 +268,11 @@ public class Ball {
         double distanceToStart = Math.sqrt(Math.pow(getX() - x1, 2) + Math.pow(getY() - y1, 2));
         double distanceToEnd = Math.sqrt(Math.pow(getX() - x2, 2) + Math.pow(getY() - y2, 2));
 
+        // Check if the ball is within the goalpost radius
         if (distanceToStart <= postRadius || distanceToEnd <= postRadius) {
+            Log.d("Bounce", "Ball collided with goalpost " + edgeVectorIndex);
+            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+
             lastBouncedEdgeIndex = edgeVectorIndex;
             lastBounceTime = currentTime;
 
@@ -280,6 +284,7 @@ public class Ball {
 
             reflectBall(normalX, normalY);
             resolveOverlap(normalX, normalY, postRadius - Math.min(distanceToStart, distanceToEnd));
+            Log.d("Bounce", "Ball velocity: (" + getVelocityX() + ", " + getVelocityY() + ")");
             return;
         }
 
@@ -299,6 +304,9 @@ public class Ball {
         double distanceToEdge = Math.sqrt(Math.pow(getX() - closestX, 2) + Math.pow(getY() - closestY, 2));
 
         if (distanceToEdge <= radius) {
+            Log.d("Bounce", "Ball collided with edge " + edgeVectorIndex);
+            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+            Log.d("Bounce", "Last bounce edge: " + lastBouncedEdgeIndex);
             lastBouncedEdgeIndex = edgeVectorIndex;
             lastBounceTime = currentTime;
 
@@ -308,7 +316,7 @@ public class Ball {
             normalX /= normalLength;
             normalY /= normalLength;
 
-            // Ensure the ball bounces in the correct direction
+            // Ensure the ball bounces in the correct direction (ball passed through the edge case)
             if ((getVelocityX() * normalX + getVelocityY() * normalY) > 0) {
                 normalX = -normalX;
                 normalY = -normalY;
@@ -333,7 +341,6 @@ public class Ball {
             setY((float) (getY() + normalY * overlap));
         }
     }
-
 
     public Vector getUnitDirectionVector(double dx, double dy) {
         return new Vector(0, 0, dx, dy);

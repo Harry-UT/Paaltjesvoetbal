@@ -61,7 +61,7 @@ public class GameView extends SurfaceView implements Runnable {
     private Player lastShooter;
     private int lastGoal;
     private boolean scored = false;
-    private final Star[] stars = new Star[50];
+    private final Star[] stars = new Star[40];
     private long splashStartTime = 0;
     private FloatingText goalText;
     private FloatingText scoreIncrementText;
