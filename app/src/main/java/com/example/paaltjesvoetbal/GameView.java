@@ -322,8 +322,7 @@ public class GameView extends SurfaceView implements Runnable {
             splashStartTime = System.currentTimeMillis();
         }
         if (System.currentTimeMillis() - splashStartTime < 1500) {
-            for (int i = 0; i < splashBalls.length; i++) {
-                SplashBall splashBall = splashBalls[i];
+            for (SplashBall splashBall : splashBalls) {
                 splashBall.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY());
                 splashBall.bounce(screenX, screenY);
             }
