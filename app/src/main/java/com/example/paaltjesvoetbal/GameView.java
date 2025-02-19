@@ -33,8 +33,6 @@ import android.widget.ImageView;
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private final Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
-    private Bitmap[] starTypes = new Bitmap[4]; // Array to store the 4 star PNGs
-    private List<ImageView> stars = new ArrayList<>(); // List to store stars
     private boolean isPlaying;
     private final SurfaceHolder holder;
     private final int screenX;
@@ -112,7 +110,7 @@ public class GameView extends SurfaceView implements Runnable {
         determineBounceEdges();
 
         // Determine the goals
-        determineGoals(goalWidth);
+        determineGoals();
 
         // Determine score text positions
         determineScorePositions();
@@ -185,10 +183,9 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
-     * Determine the goal regions based on the screen dimensions
-     * @param goalWidth the width of the goal region
+     * Initialize the first player object
      */
-    private void determineGoals(double goalWidth) {
+    private void determineGoals() {
         // Iterate over all diagonal edges to determine the goals
         for (Vector edge : diagonalEdges) {
             // Get scaled vector
@@ -456,7 +453,6 @@ public class GameView extends SurfaceView implements Runnable {
 
         int xText;
         int yText;
-        float rotationAngle;
 
         for (Player player : players) {
             int index = players.indexOf(player);
@@ -466,16 +462,25 @@ public class GameView extends SurfaceView implements Runnable {
 
             float dx = (float) (goal.getX2() - goal.getX1());
             float dy = (float) (goal.getY2() - goal.getY1());
-            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
+            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
             dx *= scale;
             dy *= scale;
 
             float middleX = goal.getMidX();
             float middleY = goal.getMidY();
-            rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+            float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+
 
             float dxPerpendicular = -dy;
             float dyPerpendicular = dx;
+
+            float lineLength = 500; // Length of the perpendicular line
+            float startX = middleX;
+            float startY = middleY;
+            float endX = middleX + (dxPerpendicular * lineLength / 2);
+            float endY = middleY + (dyPerpendicular * lineLength / 2);
+
+            canvas.drawLine(startX, startY, endX, endY, paint);
 
             switch (index) {
                 case 0: // Bottom-right (blue)
@@ -502,8 +507,29 @@ public class GameView extends SurfaceView implements Runnable {
                     return;
             }
 
+//            xText = (int) middleX;
+//            yText = (int) middleY;
             xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
             yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+
+            // Center text with textmeasure
+            float textWidth = paint.measureText(String.valueOf(player.getScore()));
+
+            switch(index) {
+                case 0:
+                    xText -= (int) (textWidth / 2);
+                    break;
+                case 1:
+                    xText += (int) (textWidth / 2);
+                    break;
+                case 2:
+                    // Use ascend and descent to center text vertically
+                    yText += (int) ((paint.descent() + paint.ascent()) / 2);
+                    xText -= (int) (textWidth / 4);
+                    break;
+                default:
+                    break;
+            }
 
             // Set text color
             paint.setColor(player.getColor());
