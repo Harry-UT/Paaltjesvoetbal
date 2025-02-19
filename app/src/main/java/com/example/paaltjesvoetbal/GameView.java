@@ -485,7 +485,7 @@ public class GameView extends SurfaceView implements Runnable {
                 float x2 = (float) bounceEdge.getX2();
                 float y2 = (float) bounceEdge.getY2();
                 // Draw a little black dot
-                canvas.drawCircle(x2, y2, 6, paint);
+                canvas.drawCircle(x2, y2, 5, paint);
             }
             postSide++;
         }

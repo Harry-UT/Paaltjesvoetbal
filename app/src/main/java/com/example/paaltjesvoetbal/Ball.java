@@ -246,18 +246,15 @@ public class Ball {
         double postRadius = 10; // Radius of the goalpost
 
         // If still within the cooldown period, don't allow another bounce
-        if (lastBouncedEdgeIndex == edgeVectorIndex || (currentTime - lastBounceTime < BOUNCE_COOLDOWN_MS)) {
+        if (lastBouncedEdgeIndex == edgeVectorIndex && (currentTime - lastBounceTime < BOUNCE_COOLDOWN_MS)) {
             return;
         }
 
         Vector edge = bounceEdges.get(edgeVectorIndex);
-
-        // Get the edge's start and end points
         double x1 = edge.getX1();
         double y1 = edge.getY1();
         double x2 = edge.getX2();
         double y2 = edge.getY2();
-
         double edgeDX = x2 - x1;
         double edgeDY = y2 - y1;
 
@@ -273,41 +270,17 @@ public class Ball {
 
         if (distanceToStart <= postRadius || distanceToEnd <= postRadius) {
             lastBouncedEdgeIndex = edgeVectorIndex;
-            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+            lastBounceTime = currentTime;
 
-            lastBounceTime = System.currentTimeMillis(); // Update bounce timestamp
-
-            Log.d("Bounce", "Ball collided with goalpost");
-
-            // Simulate circular reflection at the goalpost
-            double normalX, normalY;
-            if (distanceToStart <= postRadius) {
-                normalX = getX() - x1;
-                normalY = getY() - y1;
-            } else {
-                normalX = getX() - x2;
-                normalY = getY() - y2;
-            }
-
-            // Normalize normal vector
+            double normalX = distanceToStart <= postRadius ? getX() - x1 : getX() - x2;
+            double normalY = distanceToStart <= postRadius ? getY() - y1 : getY() - y2;
             double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
             normalX /= normalLength;
             normalY /= normalLength;
 
-            // Reflect the ball
-            double velocityX = getVelocityX();
-            double velocityY = getVelocityY();
-            double dotProductVelocity = velocityX * normalX + velocityY * normalY;
-
-            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
-            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
-
-            // Adjust position slightly to avoid getting stuck
-            double overlap = postRadius - (distanceToStart <= postRadius ? distanceToStart : distanceToEnd);
-            setX((float) (getX() + normalX * overlap));
-            setY((float) (getY() + normalY * overlap));
-
-            return; // Stop further collision checks
+            reflectBall(normalX, normalY);
+            resolveOverlap(normalX, normalY, postRadius - Math.min(distanceToStart, distanceToEnd));
+            return;
         }
 
         // Normal edge collision
@@ -325,47 +298,42 @@ public class Ball {
 
         double distanceToEdge = Math.sqrt(Math.pow(getX() - closestX, 2) + Math.pow(getY() - closestY, 2));
 
-        if (distanceToEdge <= radius && (System.currentTimeMillis() - lastBounceTime > BOUNCE_COOLDOWN_MS || lastBouncedEdgeIndex != edgeVectorIndex)) {
-
-            // Log edge number where it collided
-            Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
-            Log.d("Bounce", "Last bounced edge: " + lastBouncedEdgeIndex);
-            Log.d("Bounce", "Ball collided with edge " + edgeVectorIndex);
-
-
+        if (distanceToEdge <= radius) {
             lastBouncedEdgeIndex = edgeVectorIndex;
-            lastBounceTime = System.currentTimeMillis(); // Update bounce timestamp
+            lastBounceTime = currentTime;
 
-            // Calculate the normal
             double normalX = -edgeDY;
             double normalY = edgeDX;
             double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
             normalX /= normalLength;
             normalY /= normalLength;
 
-            // Reflect the ball
-            double velocityX = getVelocityX();
-            double velocityY = getVelocityY();
-            double dotProductVelocity = velocityX * normalX + velocityY * normalY;
-
-            setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
-            setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
-
-            // Check if the ball is stuck and adjust its position to slide it out
-            double overlap = radius - distanceToEdge;
-
-            if (overlap > 0) {
-                // Move ball along the normal vector to avoid sticking inside
-                setX((float) (getX() + normalX * overlap));
-                setY((float) (getY() + normalY * overlap));
+            // Ensure the ball bounces in the correct direction
+            if ((getVelocityX() * normalX + getVelocityY() * normalY) > 0) {
+                normalX = -normalX;
+                normalY = -normalY;
             }
 
-            // Apply additional sliding if the velocity is very high
-            double slideDistance = Math.min(overlap, Math.max(velocityX, velocityY) * 0.1); // Adjust sliding factor
-            setX((float) (getX() + normalX * slideDistance));
-            setY((float) (getY() + normalY * slideDistance));
+            reflectBall(normalX, normalY);
+            resolveOverlap(normalX, normalY, radius - distanceToEdge);
         }
     }
+
+    private void reflectBall(double normalX, double normalY) {
+        double velocityX = getVelocityX();
+        double velocityY = getVelocityY();
+        double dotProductVelocity = velocityX * normalX + velocityY * normalY;
+        setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
+        setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
+    }
+
+    private void resolveOverlap(double normalX, double normalY, double overlap) {
+        if (overlap > 0) {
+            setX((float) (getX() + normalX * overlap));
+            setY((float) (getY() + normalY * overlap));
+        }
+    }
+
 
     public Vector getUnitDirectionVector(double dx, double dy) {
         return new Vector(0, 0, dx, dy);
