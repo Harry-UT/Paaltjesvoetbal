@@ -40,11 +40,8 @@ public class Star {
             y = ballY;
             started = true;
         }
-        // Map final velocity to range 0-10
-        x += map(dx * velocity, -10, 10, 0, 10);
-//        x += dx * velocity;
-//        y += dy * velocity;
-        y += map(dy * velocity, -10, 10, 0, 10);
+        x += dx * velocity;
+        y += dy * velocity;
         if (fade) {
             // Check if alpha of color is not yet fully opacity
             if (paint.getAlpha() == 0) {
@@ -60,12 +57,26 @@ public class Star {
     }
 
     public void bounce(int screenWidth, int screenHeight) {
-        if (x <= 0 || x >= screenWidth) dx = -dx;
-        if (y <= 0 || y >= screenHeight) dy = -dy;
-
-        // Keep within bounds
-        x = Math.max(0, Math.min(x, screenWidth));
-        y = Math.max(0, Math.min(y, screenHeight));
+        if (x <= 0) {
+            if (dx < 0) {
+                dx = -dx;
+            }
+        }
+        if (x >= screenWidth) {
+            if (dx > 0) {
+                dx = -dx;
+            }
+        }
+        if (y <= 0) {
+            if (dy < 0) {
+                dy = -dy;
+            }
+        }
+        if (y >= screenHeight) {
+            if (dy > 0) {
+                dy = -dy;
+            }
+        }
     }
 
     /**
