@@ -12,9 +12,12 @@ import java.util.Random;
  */
 public class Star {
     private int x, y;
-    private int velocity, dx, dy;
+    private final int velocity;
+    private int dx;
+    private int dy;
     private static final int SIZE = 20;
-    private int color;
+    private int rotation = 0;
+    private static final int rotationSpeed = 8;
     private boolean started = false;
     private final Paint paint = new Paint();
 
@@ -25,13 +28,15 @@ public class Star {
         dy = random.nextInt(21) - 10; // Range from -10 to 10 inclusive
     }
 
-    public static int map(int x, int in_min, int in_max, int out_min, int out_max) {
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    public void setColor(int color) {
+        paint.setColor(color);
     }
 
-    public void setColor(int color) {
-        this.color = color;
-        paint.setColor(color);
+    public void rotate() {
+        rotation += rotationSpeed;
+        if (rotation >= 360) {
+            rotation = 0;
+        }
     }
 
     public void update(Canvas canvas, int ballX, int ballY, boolean fade) {
@@ -84,8 +89,8 @@ public class Star {
      */
     private void draw(Canvas canvas) {
         Path path = new Path();
-        double angle = Math.PI / 2; // Start from the top
-
+        double angle = Math.PI / 2 + Math.toRadians(rotation); // Start from the top with rotation
+        rotate();
         for (int i = 0; i < 5; i++) {
             float px = (float) (x + Math.cos(angle) * SIZE);
             float py = (float) (y - Math.sin(angle) * SIZE);

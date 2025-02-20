@@ -29,10 +29,6 @@ public class FloatingText {
         this.y = y;
     }
 
-    public void setRotation(int rotation) {
-        this.rotation = rotation;
-    }
-
     public int getRotation() {
         return rotation;
     }
