@@ -468,7 +468,6 @@ public class GameView extends SurfaceView implements Runnable {
             holder.unlockCanvasAndPost(canvas);
         }
     }
-
     private void drawGoalPosts(Canvas canvas) {
         // Use mod 2 to alternate between first or second coordinate of edge
         int postSide = 1;
@@ -1127,7 +1126,6 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Initialize player 2 with a joystick and shoot button
      */
-
     public void initializePlayer2() {
         Player newPlayer;
         Joystick newJoystick;
