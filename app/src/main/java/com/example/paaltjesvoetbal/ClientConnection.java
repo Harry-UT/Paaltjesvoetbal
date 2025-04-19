@@ -25,11 +25,11 @@ public class ClientConnection extends SocketConnection {
     }
 
     public boolean sendMessage(String message, String timestamp) {
-        return super.sendMessage(message);
+        return super.sendMessage(message + Protocol.SEPARATOR + timestamp); //TODO:change
     }
 
     public boolean login(String username) {
-        return super.sendMessage(username); //TODO:change
+        return sendUsername(username); //TODO:change
     }
 
     public boolean sendUsername(String username) {

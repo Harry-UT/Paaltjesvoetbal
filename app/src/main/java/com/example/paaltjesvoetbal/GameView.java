@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -54,7 +53,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
-    private int[][] playerPositions;
+    private final int[][] playerPositions;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -76,7 +75,7 @@ public class GameView extends SurfaceView implements Runnable {
     private boolean scored = false;
     private final Star[] stars = new Star[40];
     private long splashStartTime = 0;
-    private FloatingText goalText;
+    private final FloatingText goalText;
     private FloatingText scoreIncrementText;
     public SoundManager soundManager;
     private final int TARGET_FPS = 60;
@@ -1068,6 +1067,7 @@ public class GameView extends SurfaceView implements Runnable {
         } else if (!onlineMode && online) {
             // Reset the game state for online mode
             this.clientConnection = new ClientConnection(server, port);
+            clientConnection.setChatClient(this);
             login();
         }
         this.onlineMode = online;
