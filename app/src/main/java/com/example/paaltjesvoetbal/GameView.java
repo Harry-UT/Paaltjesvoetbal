@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Region;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -17,9 +18,13 @@ import android.view.SurfaceView;
 import android.graphics.Matrix;
 import androidx.core.content.res.ResourcesCompat;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -77,6 +82,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final int TARGET_FPS = 60;
     private int fps;
     private boolean onlineMode = false;
+    private String username;
+    private ClientConnection clientConnection;
+    private InetAddress server;
+    private int port;
 
     /**
      * Constructor for the GameView class
@@ -1020,7 +1029,7 @@ public class GameView extends SurfaceView implements Runnable {
      * @param playerSpeed the speed of the players
      * @param ballSpeed the speed of the ball
      */
-    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) throws IOException {
         if (onlineMode && !online) {
             // Enter offline mode
             switch (playerCount) {
@@ -1058,7 +1067,8 @@ public class GameView extends SurfaceView implements Runnable {
             changeBallSpeed(ballSpeed);
         } else if (!onlineMode && online) {
             // Reset the game state for online mode
-
+            this.clientConnection = new ClientConnection(server, port);
+            login();
         }
         this.onlineMode = online;
     }
@@ -1195,5 +1205,55 @@ public class GameView extends SurfaceView implements Runnable {
         addPlayer(newPlayer);
         addJoystick(newJoystick);
         addShootButton(shootButton);
+    }
+
+    public void handleDisconnect() {
+
+    }
+
+    public void receiveMessage(String message, String sender, String timestamp) {
+        // Handle incoming messages from the server
+        // For example, update player positions or scores based on the message
+    }
+
+    private void login() {
+
+    }
+
+    public void determineUsername() {
+        System.out.print("Enter your username: ");
+        boolean set = false;
+        while (!set) {
+//            String username = input.nextLine();
+            if (username.length() > 1) {
+                if (clientConnection.login(username)) {
+                    set = true;
+                } else {
+                    System.out.print(
+                            "Username already existed or was too short, enter a new one: ");
+                }
+            }
+        }
+    }
+
+    public void sendMessage() {
+        String message = "";
+        System.out.print("Enter desired receiver: ");
+//        String receiver = input.nextLine();
+        System.out.print("Enter message: ");
+//        String message = input.nextLine();
+        System.out.println("Sending message");
+        System.out.println(getUsername());
+        LocalDateTime now = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            now = LocalDateTime.now();
+        }
+        assert now != null;
+        String timestamp = now.toString();  // Converts to ISO format
+        clientConnection.sendMessage(message, timestamp); // gets the current timestamp in ISO format
+    }
+
+    private String getUsername() {
+        return username;
     }
 }
