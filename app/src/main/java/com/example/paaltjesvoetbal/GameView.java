@@ -24,6 +24,14 @@ import java.util.List;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.example.paaltjesvoetbal.model.Ball;
+import com.example.paaltjesvoetbal.model.FloatingText;
+import com.example.paaltjesvoetbal.model.Joystick;
+import com.example.paaltjesvoetbal.model.Player;
+import com.example.paaltjesvoetbal.model.ShootButton;
+import com.example.paaltjesvoetbal.model.Star;
+import com.example.paaltjesvoetbal.model.Vector;
+
 
 /**
  * The GameView class is responsible for updating and rendering the game elements on the screen
@@ -65,8 +73,10 @@ public class GameView extends SurfaceView implements Runnable {
     private long splashStartTime = 0;
     private FloatingText goalText;
     private FloatingText scoreIncrementText;
+    public SoundManager soundManager;
     private final int TARGET_FPS = 60;
     private int fps;
+    private boolean onlineMode = false;
 
     /**
      * Constructor for the GameView class
@@ -76,6 +86,8 @@ public class GameView extends SurfaceView implements Runnable {
      */
     public GameView(Context context, int screenX, int screenY) {
         super(context);
+        soundManager = SoundManager.getInstance(context);
+
         setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
@@ -677,7 +689,7 @@ public class GameView extends SurfaceView implements Runnable {
                     float bottom = top + scaledHeight;
                     // Check if the touch event is within the icon's bounding box
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
-                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size(), PLAYERSPEED, BALL_SPEED);
+                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size(), PLAYERSPEED, BALL_SPEED, onlineMode);
                         settingsDialog.show();
                     }
 
@@ -730,6 +742,7 @@ public class GameView extends SurfaceView implements Runnable {
                                 if (button.wasTouchedBy(pointerId)) {
                                     if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
                                         button.shoot(BALL_SPEED);
+                                        soundManager.playShootSound();
                                         button.resetBall();
                                     }
                                     button.resetTouchID();
@@ -1007,40 +1020,47 @@ public class GameView extends SurfaceView implements Runnable {
      * @param playerSpeed the speed of the players
      * @param ballSpeed the speed of the ball
      */
-    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed) {
-        switch (playerCount) {
-            case 2:
-                if (players.size() == 2) {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+        if (onlineMode && !online) {
+            // Enter offline mode
+            switch (playerCount) {
+                case 2:
+                    if (players.size() == 2) {
+                        break;
+                    }
+                    clearLists();
+                    initializePlayer1();
+                    initializePlayer2();
                     break;
-                }
-                clearLists();
-                initializePlayer1();
-                initializePlayer2();
-                break;
-            case 3:
-                if (players.size() == 3) {
+                case 3:
+                    if (players.size() == 3) {
+                        break;
+                    }
+                    clearLists();
+                    initializePlayer1();
+                    initializePlayer2();
+                    initializePlayer3();
                     break;
-                }
-                clearLists();
-                initializePlayer1();
-                initializePlayer2();
-                initializePlayer3();
-                break;
-            case 4:
-                if (players.size() == 4) {
+                case 4:
+                    if (players.size() == 4) {
+                        break;
+                    }
+                    clearLists();
+                    initializePlayer1();
+                    initializePlayer2();
+                    initializePlayer3();
+                    initializePlayer4();
                     break;
-                }
-                clearLists();
-                initializePlayer1();
-                initializePlayer2();
-                initializePlayer3();
-                initializePlayer4();
-                break;
-            default:
-                break;
+                default:
+                    break;
+            }
+            changePlayerSpeed(playerSpeed);
+            changeBallSpeed(ballSpeed);
+        } else if (!onlineMode && online) {
+            // Reset the game state for online mode
+
         }
-        changePlayerSpeed(playerSpeed);
-        changeBallSpeed(ballSpeed);
+        this.onlineMode = online;
     }
 
     /**

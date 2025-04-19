@@ -8,6 +8,7 @@ import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.widget.Button;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.util.Objects;
@@ -21,19 +22,21 @@ public class SettingsDialog extends Dialog {
     private final int resetPlayerCount = 2;
     private final int resetPlayerSpeed = 4;
     private final int resetBallSpeed = 18;
+    private boolean online;
 
     // Callback interface
     public interface OnSettingsChangedListener {
-        void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed);
+        void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online);
     }
 
     // Constructor with listener and initial settings
-    public SettingsDialog(Context context, OnSettingsChangedListener listener, int playerCount, int playerSpeed, int ballSpeed) {
+    public SettingsDialog(Context context, OnSettingsChangedListener listener, int playerCount, int playerSpeed, int ballSpeed, boolean online) {
         super(context);
         this.listener = listener;
         this.initialPlayerCount = playerCount;
         this.initialPlayerSpeed = playerSpeed;
         this.initialBallSpeed = ballSpeed;
+        this.online = online;
     }
 
     @Override
@@ -62,11 +65,22 @@ public class SettingsDialog extends Dialog {
         ballSpeedText.setText(String.valueOf(initialBallSpeed));
         playerCountText.setText(String.valueOf(initialPlayerCount));
 
+        // Set online mode switch
+        Switch onlineSwitch = findViewById(R.id.onlineSwitch);
+        onlineSwitch.setChecked(online);
+        // Set listener for online switch
+        onlineSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (listener != null) {
+                this.online = onlineSwitch.isChecked();
+                listener.onSettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked);
+            }
+        });
+
         // SeekBar Listeners
         playerCountSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int playerCount, boolean fromUser) {
-                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress());
+                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -77,7 +91,7 @@ public class SettingsDialog extends Dialog {
             @Override
             public void onProgressChanged(SeekBar seekBar, int playerSpeed, boolean fromUser) {
                 playerSpeedText.setText(String.valueOf(playerSpeed));
-                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeed, ballSpeedSeekBar.getProgress());
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeed, ballSpeedSeekBar.getProgress(), online);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -88,7 +102,7 @@ public class SettingsDialog extends Dialog {
             @Override
             public void onProgressChanged(SeekBar seekBar, int ballSpeed, boolean fromUser) {
                 ballSpeedText.setText(String.valueOf(ballSpeed));
-                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeed);
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeed, online);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -99,7 +113,7 @@ public class SettingsDialog extends Dialog {
             @Override
             public void onProgressChanged(SeekBar seekBar, int playerCount, boolean fromUser) {
                 playerCountText.setText(String.valueOf(playerCount));
-                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress());
+                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -120,13 +134,13 @@ public class SettingsDialog extends Dialog {
             playerCountText.setText(String.valueOf(resetPlayerCount));
 
             // Notify listener with hardcoded values
-            notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed);
+            notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed, online);
         });
     }
 
-    private void notifySettingsChanged(int playerCount, int playerSpeed, int ballSpeed) {
+    private void notifySettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
         if (listener != null) {
-            listener.onSettingsChanged(playerCount, playerSpeed, ballSpeed);
+            listener.onSettingsChanged(playerCount, playerSpeed, ballSpeed, online);
         }
     }
 

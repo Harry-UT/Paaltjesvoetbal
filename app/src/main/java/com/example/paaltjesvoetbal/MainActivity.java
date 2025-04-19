@@ -57,7 +57,7 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
     }
 
     @Override
-    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed) {
-        gameView.changeSettings(playerCount, playerSpeed, ballSpeed);
+    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+        gameView.changeSettings(playerCount, playerSpeed, ballSpeed, online);
     }
 }

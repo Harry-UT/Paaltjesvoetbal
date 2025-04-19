@@ -1,4 +1,4 @@
-package com.example.paaltjesvoetbal;
+package com.example.paaltjesvoetbal.model;
 
 
 import android.graphics.Canvas;

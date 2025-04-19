@@ -1,4 +1,4 @@
-package com.example.paaltjesvoetbal;
+package com.example.paaltjesvoetbal.model;
 
 public class FloatingText {
     int x;
