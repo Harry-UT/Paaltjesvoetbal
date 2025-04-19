@@ -133,6 +133,10 @@ public class SettingsDialog extends Dialog {
             ballSpeedText.setText(String.valueOf(resetBallSpeed));
             playerCountText.setText(String.valueOf(resetPlayerCount));
 
+            // Reset online switch
+            onlineSwitch.setChecked(false);
+            online = false;
+
             // Notify listener with hardcoded values
             notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed, online);
         });
