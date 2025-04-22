@@ -17,15 +17,17 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.PaaltjesVoetbal">
+            android:theme="@style/Theme.PaaltjesVoetbal"
+            android:screenOrientation="portrait"
             android:windowFullscreen="true"
             android:windowTranslucentStatus="true">
-            android:screenOrientation="portrait"
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>  <!-- Closing the manifest tag -->
