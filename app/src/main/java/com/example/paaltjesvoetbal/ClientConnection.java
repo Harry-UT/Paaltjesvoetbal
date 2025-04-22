@@ -67,11 +67,11 @@ public class ClientConnection extends SocketConnection {
             case Protocol.INVALIDUSERNAME:
                 // notify gameClient that the username is invalid
                 break;
-            case Protocol.LOGIN:
+            case Protocol.WELCOME:
                 // notify gameClient that the login was successful
                 break;
-            case Protocol.MESSAGE:
-                gameClient.receiveMessage(splitMsg[1], splitMsg[2], splitMsg[3]);
+            case Protocol.UPDATE:
+                gameClient.receiveUpdate(splitMsg[1], splitMsg[2], splitMsg[3]);
                 break;
             case Protocol.SERVER:
                 System.out.println("Message from server: " + splitMsg[1]);

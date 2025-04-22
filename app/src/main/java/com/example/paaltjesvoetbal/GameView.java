@@ -1211,7 +1211,7 @@ public class GameView extends SurfaceView implements Runnable {
 
     }
 
-    public void receiveMessage(String message, String sender, String timestamp) {
+    public void receiveUpdate(String message, String sender, String timestamp) {
         // Handle incoming messages from the server
         // For example, update player positions or scores based on the message
     }
