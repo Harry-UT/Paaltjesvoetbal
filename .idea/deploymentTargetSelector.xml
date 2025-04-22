@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-03-21T12:48:18.653534800Z">
+        <DropdownSelection timestamp="2025-04-22T19:51:57.947924Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Harry\.android\avd\Medium_Tablet.avd" />
+              <DeviceId pluginId="Default" identifier="serial=127.0.0.1:58526;connection=035c4616" />
             </handle>
           </Target>
         </DropdownSelection>

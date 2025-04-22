@@ -84,7 +84,7 @@ public class GameView extends SurfaceView implements Runnable {
     private String username;
     private ClientConnection clientConnection;
     private InetAddress server;
-    private int port;
+    private int port = 3000;
 
     /**
      * Constructor for the GameView class
@@ -1028,7 +1028,7 @@ public class GameView extends SurfaceView implements Runnable {
      * @param playerSpeed the speed of the players
      * @param ballSpeed the speed of the ball
      */
-    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) throws IOException {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
         if (onlineMode && !online) {
             // Enter offline mode
             switch (playerCount) {
@@ -1066,7 +1066,12 @@ public class GameView extends SurfaceView implements Runnable {
             changeBallSpeed(ballSpeed);
         } else if (!onlineMode && online) {
             // Reset the game state for online mode
-            this.clientConnection = new ClientConnection(server, port);
+            try {
+                server = InetAddress.getByName("192.168.188.26");
+                this.clientConnection = new ClientConnection(server, port);
+            } catch (IOException e) {
+                Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
+            }
             clientConnection.setChatClient(this);
             login();
         }
