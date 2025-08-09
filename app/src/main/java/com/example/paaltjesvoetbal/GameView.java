@@ -34,6 +34,7 @@ import com.example.paaltjesvoetbal.model.Joystick;
 import com.example.paaltjesvoetbal.model.Player;
 import com.example.paaltjesvoetbal.model.ShootButton;
 import com.example.paaltjesvoetbal.model.Star;
+import com.example.paaltjesvoetbal.model.Team;
 import com.example.paaltjesvoetbal.model.Vector;
 
 
@@ -50,6 +51,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int screenY;
     private final List<Joystick> joysticks;
     private List<Player> players;
+    private List<Team> teams;
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
