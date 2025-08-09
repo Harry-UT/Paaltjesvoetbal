@@ -81,6 +81,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int TARGET_FPS = 60;
     private int fps;
     private boolean onlineMode = false;
+    private boolean twoVtwoMode = false;
     private String username;
     private ClientConnection clientConnection;
     private InetAddress server;
@@ -305,7 +306,7 @@ public class GameView extends SurfaceView implements Runnable {
             // Check if the ball's current position is inside the goal region
             if (region.contains((int) ball.getX(), (int) ball.getY())) {
 
-                // Check if it's the same region as the last goal and scored quickly
+                // Check if the ball is in the same goal region as the last goal and if it was scored recently
                 if (lastGoal == i && ball.getShooter() != null) {
                     if (System.currentTimeMillis() - lastGoalTime < 200) {
                         // A goal has been scored in this region by the shooter
@@ -318,7 +319,7 @@ public class GameView extends SurfaceView implements Runnable {
                                 rotation = 180;
                             }
                             this.scoreIncrementText = new FloatingText(ball.getShooter().getScorePosition()[0], ball.getShooter().getScorePosition()[1], 40, rotation);
-                            // Log text coordinates from Floatint text
+                            // Log text coordinates for score increment animation
 
                             for (Star star : stars) {
                                 star.setColor(ball.getShooter().getColor());
@@ -387,11 +388,19 @@ public class GameView extends SurfaceView implements Runnable {
                             canvas.drawPath(cornerPaths.get(i), paint);
                             break;
                         case 2:
-                            paint.setColor(Color.rgb(140, 238, 144)); // Light green
+                            if (twoVtwoMode) {
+                                paint.setColor(Color.argb(140, 0, 0, 255)); // Light blue
+                            } else {
+                                paint.setColor(Color.rgb(140, 238, 144)); // Light green
+                            }
                             canvas.drawPath(cornerPaths.get(i), paint);
                             break;
                         case 3:
-                            paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
+                            if (twoVtwoMode) {
+                                paint.setColor(Color.argb(128, 255, 0, 0)); // Light red
+                            } else {
+                                paint.setColor(Color.argb(140, 255, 255, 0)); // Light yellow
+                            }
                             canvas.drawPath(cornerPaths.get(i), paint);
                             break;
                     }
@@ -1029,9 +1038,15 @@ public class GameView extends SurfaceView implements Runnable {
      * @param playerSpeed the speed of the players
      * @param ballSpeed the speed of the ball
      */
-    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo) {
         Log.d("SettingsDialog", "Change settings called");
         if (!online) {
+            if (twoVtwo) {
+                twoVtwoMode = true;
+                playerCount = 4;
+            } else {
+                twoVtwoMode = false;
+            }
             // Enter offline mode
             Log.d("SettingsDialog", "Offline mode");
             switch (playerCount) {
@@ -1070,13 +1085,17 @@ public class GameView extends SurfaceView implements Runnable {
         } else if (!onlineMode && online) {
             // Reset the game state for online mode
             try {
-                server = InetAddress.getByName("192.168.188.26");
+                server = InetAddress.getByName("192.168.56.1");
                 this.clientConnection = new ClientConnection(server, port);
             } catch (IOException e) {
                 Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
             }
-            clientConnection.setChatClient(this);
-            login();
+            if (clientConnection != null) {
+                clientConnection.setChatClient(this);
+                login();
+            } else {
+                Log.d("ClientConnection", "Client connection is null, cannot set chat client");
+            }
         }
         this.onlineMode = online;
     }
@@ -1116,7 +1135,6 @@ public class GameView extends SurfaceView implements Runnable {
      * Add a player to the list of players
      * @param player the player to add
      */
-
     private void addPlayer(Player player) {
         synchronized (players) {
             players.add(player);
