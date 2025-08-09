@@ -15,14 +15,27 @@
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-04-22T19:51:57.947924Z">
+        <DropdownSelection timestamp="2025-08-09T17:01:27.079267300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="Default" identifier="serial=127.0.0.1:58526;connection=035c4616" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
             </handle>
           </Target>
         </DropdownSelection>
-        <DialogSelection />
+        <DialogSelection>
+          <targets>
+            <Target type="DEFAULT_BOOT">
+              <handle>
+                <DeviceId pluginId="Default" identifier="serial=127.0.0.1:58526;connection=d408413c" />
+              </handle>
+            </Target>
+            <Target type="DEFAULT_BOOT">
+              <template>
+                <DeviceId pluginId="FirebaseDirectAccess" type="TEMPLATE" identifier="model_id=tokay/34" />
+              </template>
+            </Target>
+          </targets>
+        </DialogSelection>
       </SelectionState>
       <SelectionState runConfigName="Box2d">
         <option name="selectionMode" value="DROPDOWN" />

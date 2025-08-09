@@ -8,7 +8,7 @@ public class SoundManager {
     private static SoundManager instance;
     private SoundPool soundPool;
     private final int shootSound;
-    private int goalSound;
+    private final int goalSound;
 
     private SoundManager(Context context) {
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
@@ -23,6 +23,7 @@ public class SoundManager {
 
         // Load sounds
         shootSound = soundPool.load(context, R.raw.hit_ball, 1);
+        goalSound = soundPool.load(context, R.raw.goal, 1);
     }
 
     // Get the singleton instance
@@ -35,6 +36,10 @@ public class SoundManager {
 
     public void playShootSound() {
         soundPool.play(shootSound, 1, 1, 1, 0, 1);
+    }
+
+    public void playGoalSound() {
+        soundPool.play(goalSound, 1, 1, 1, 0, 1);
     }
 
     public void release() {

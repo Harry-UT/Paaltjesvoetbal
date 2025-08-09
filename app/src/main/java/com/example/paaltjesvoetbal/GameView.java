@@ -271,6 +271,7 @@ public class GameView extends SurfaceView implements Runnable {
      * @param player the player object
      */
     private void scored(int goal, Player player) {
+        soundManager.playGoalSound();
         // Scored in goal by player
         player.scored();
 
@@ -697,7 +698,7 @@ public class GameView extends SurfaceView implements Runnable {
                     float bottom = top + scaledHeight;
                     // Check if the touch event is within the icon's bounding box
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
-                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), (SettingsDialog.OnSettingsChangedListener) getContext(), players.size(), PLAYERSPEED, BALL_SPEED, onlineMode);
+                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), this, players.size(), PLAYERSPEED, BALL_SPEED, onlineMode);
                         settingsDialog.show();
                     }
 
@@ -1029,8 +1030,10 @@ public class GameView extends SurfaceView implements Runnable {
      * @param ballSpeed the speed of the ball
      */
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
-        if (onlineMode && !online) {
+        Log.d("SettingsDialog", "Change settings called");
+        if (!online) {
             // Enter offline mode
+            Log.d("SettingsDialog", "Offline mode");
             switch (playerCount) {
                 case 2:
                     if (players.size() == 2) {

@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-public class MainActivity extends Activity implements SettingsDialog.OnSettingsChangedListener {
+public class MainActivity extends Activity {
 
     private GameView gameView;
 
@@ -56,8 +56,8 @@ public class MainActivity extends Activity implements SettingsDialog.OnSettingsC
         }
     }
 
-    @Override
-    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
-        gameView.changeSettings(playerCount, playerSpeed, ballSpeed, online);
-    }
+//    @Override
+//    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+//        gameView.changeSettings(playerCount, playerSpeed, ballSpeed, online);
+//    }
 }
