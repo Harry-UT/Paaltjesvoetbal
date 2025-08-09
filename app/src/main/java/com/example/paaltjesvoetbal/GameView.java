@@ -299,44 +299,50 @@ public class GameView extends SurfaceView implements Runnable {
      * @param ball the ball object
      */
     private void checkGoal(Ball ball) {
-        // Loop through all goal regions to check if the ball is within any of them
+        long now = System.currentTimeMillis();
+        float ballX = ball.getX();
+        float ballY = ball.getY();
+        Player shooter = ball.getShooter();
+
         for (int i = 0; i < goalRegions.size(); i++) {
             Region region = goalRegions.get(i);
 
-            // Check if the ball's current position is inside the goal region
-            if (region.contains((int) ball.getX(), (int) ball.getY())) {
+            if (!region.contains((int) ballX, (int) ballY)) {
+                continue;
+            }
 
-                // Check if the ball is in the same goal region as the last goal and if it was scored recently
-                if (lastGoal == i && ball.getShooter() != null) {
-                    if (System.currentTimeMillis() - lastGoalTime < 200) {
-                        // A goal has been scored in this region by the shooter
-                        if (i != ball.getShooter().getNumber() && i <= players.size() - 1) {
-                            // Log something
-                            scored(i, ball.getShooter());
-                            lastShooter = ball.getShooter();
-                            int rotation = 0;
-                            if (players.indexOf(lastShooter) == 1 || players.indexOf(lastShooter) == 3) {
-                                rotation = 180;
-                            }
-                            this.scoreIncrementText = new FloatingText(ball.getShooter().getScorePosition()[0], ball.getShooter().getScorePosition()[1], 40, rotation);
-                            // Log text coordinates for score increment animation
+            if (lastGoal == i && shooter != null) {
+                if (now - lastGoalTime < 200) {
+                    int shooterIndex = players.indexOf(shooter);
 
-                            for (Star star : stars) {
-                                star.setColor(ball.getShooter().getColor());
-                            }
+                    if (i != shooter.getNumber() && i < players.size()) {
+                        scored(i, shooter);
+                        lastShooter = shooter;
+
+                        int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+                        scoreIncrementText = new FloatingText(
+                                shooter.getScorePosition()[0],
+                                shooter.getScorePosition()[1],
+                                40,
+                                rotation
+                        );
+
+                        for (Star star : stars) {
+                            star.setColor(shooter.getColor());
                         }
-                        lastGoal = -1; // Reset the last goal
-                        ball.resetShooter(); // Reset the shooter information
-                        break;
                     }
-                } else {
-                    // A different region has been scored, so update the goal region and time
-                    lastGoalTime = System.currentTimeMillis();
-                    lastGoal = i;
+
+                    lastGoal = -1;
+                    ball.resetShooter();
+                    break;
                 }
+            } else {
+                lastGoalTime = now;
+                lastGoal = i;
             }
         }
     }
+
 
     /**
      * Display the goal animation on the screen
