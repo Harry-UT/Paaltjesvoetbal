@@ -715,7 +715,7 @@ public class GameView extends SurfaceView implements Runnable {
                     float bottom = top + scaledHeight;
                     // Check if the touch event is within the icon's bounding box
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
-                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), this, players.size(), PLAYERSPEED, BALL_SPEED, onlineMode);
+                        SettingsDialog settingsDialog = new SettingsDialog(getContext(), this, players.size(), PLAYERSPEED, BALL_SPEED, onlineMode, twoVtwoMode);
                         settingsDialog.show();
                     }
 

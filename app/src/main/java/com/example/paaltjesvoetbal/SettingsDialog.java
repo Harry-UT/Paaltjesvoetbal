@@ -26,15 +26,17 @@ public class SettingsDialog extends Dialog {
     private final int resetPlayerSpeed = 4;
     private final int resetBallSpeed = 18;
     private boolean online;
+    private boolean twovTwo;
 
     // Constructor with listener and initial settings
-    public SettingsDialog(Context context, GameView listener, int playerCount, int playerSpeed, int ballSpeed, boolean online) {
+    public SettingsDialog(Context context, GameView listener, int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVTwo) {
         super(context);
         this.listener = listener;
         this.initialPlayerCount = playerCount;
         this.initialPlayerSpeed = playerSpeed;
         this.initialBallSpeed = ballSpeed;
         this.online = online;
+        this.twovTwo = twoVTwo;
     }
 
     @Override
@@ -63,6 +65,7 @@ public class SettingsDialog extends Dialog {
         ballSpeedText.setText(String.valueOf(initialBallSpeed));
         playerCountText.setText(String.valueOf(initialPlayerCount));
         onlineSwitch.setChecked(online);
+        twovtwomode.setChecked(twovTwo);
 
         Log.d("SettingsDialog", "Initial settings applied: playerCount=" + initialPlayerCount +
                 ", playerSpeed=" + initialPlayerSpeed + ", ballSpeed=" + initialBallSpeed +
@@ -140,6 +143,7 @@ public class SettingsDialog extends Dialog {
         });
 
         twovtwomode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SoundManager.getInstance(getContext()).playTwovTwoTick();
             Log.d("SettingsDialog", "Two vs Two mode toggled: " + isChecked);
             notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomode.isChecked());
         });

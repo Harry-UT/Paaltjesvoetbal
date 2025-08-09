@@ -2,6 +2,7 @@ package com.example.paaltjesvoetbal.model;
 import com.example.paaltjesvoetbal.model.Player;
 
 public class Team {
+    private int score;
     private Player player1;
     private Player player2;
 
