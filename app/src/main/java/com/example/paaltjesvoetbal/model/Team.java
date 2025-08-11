@@ -27,6 +27,10 @@ public class Team {
         this.scorePosition[1] = y;
     }
 
+    public void incrementScore() {
+        score++;
+    }
+
     public void setColor(int color) {
         this.color = color;
     }

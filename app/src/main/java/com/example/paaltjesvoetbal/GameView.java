@@ -318,6 +318,11 @@ public class GameView extends SurfaceView implements Runnable {
         soundManager.playGoalSound();
         // Scored in goal by player
         player.scored();
+        if (players.indexOf(player) == 0 || players.indexOf(player) == 2) {
+            teams.get(0).incrementScore();
+        } else {
+            teams.get(1).incrementScore();
+        }
 
         int playerColor = player.getColor();
 
@@ -358,7 +363,9 @@ public class GameView extends SurfaceView implements Runnable {
                 if (now - lastGoalTime < 200) {
                     int shooterIndex = players.indexOf(shooter);
 
+                    // Check if the shooter is not the same as the last shooter and within bounds
                     if (i != shooter.getNumber() && i < players.size()) {
+                        // Scored in goal by player!
                         scored(i, shooter);
                         lastShooter = shooter;
 
