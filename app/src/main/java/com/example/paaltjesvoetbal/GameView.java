@@ -214,13 +214,13 @@ public class GameView extends SurfaceView implements Runnable {
     private void determineBounceEdgesTwovTwo() {
         bounceEdges.clear();
         // Bottom-left bounce edge
-        Vector bottomLeft = new Vector(0, screenY - screenX * 0.3f, screenX * 0.3, screenY - screenX * 0.3f);
+        Vector bottomLeft = new Vector(0, screenY - screenX * 0.3f, screenX * 0.35, screenY - screenX * 0.3f);
         // Bottom-right bounce edge
-        Vector bottomRight = new Vector(screenX * 0.7f, screenY - screenX * 0.3f, screenX, screenY - screenX * 0.3f);
+        Vector bottomRight = new Vector(screenX * 0.65f, screenY - screenX * 0.3f, screenX, screenY - screenX * 0.3f);
         // Top-left bounce edge
-        Vector topLeft = new Vector(0, screenX * 0.3f, screenX * 0.3f, screenX * 0.3f);
+        Vector topLeft = new Vector(0, screenX * 0.3f, screenX * 0.35f, screenX * 0.3f);
         // Top-right bounce edge
-        Vector topRight = new Vector(screenX * 0.7f, screenX * 0.3f, screenX, screenX * 0.3f);
+        Vector topRight = new Vector(screenX * 0.65f, screenX * 0.3f, screenX, screenX * 0.3f);
         bounceEdges.add(bottomLeft);
         bounceEdges.add(bottomRight);
         bounceEdges.add(topLeft);
@@ -242,8 +242,8 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void determineGoalsTwovTwo() {
         // Bottom blue goal
-        Vector bottomGoal = new Vector(screenX * 0.3f, screenY - screenX * 0.3f, screenX * 0.7f, screenY - screenX * 0.3f);
-        Vector topGoal = new Vector(screenX * 0.3f, screenX * 0.3f, screenX * 0.7f, screenX * 0.3f);
+        Vector bottomGoal = new Vector(screenX * 0.35f, screenY - screenX * 0.3f, screenX * 0.65f, screenY - screenX * 0.3f);
+        Vector topGoal = new Vector(screenX * 0.35f, screenX * 0.3f, screenX * 0.65f, screenX * 0.3f);
         goals.clear();
         goals.add(bottomGoal);
         goals.add(topGoal);
