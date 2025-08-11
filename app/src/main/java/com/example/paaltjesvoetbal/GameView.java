@@ -131,13 +131,21 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
         // Determine player corner areas
-        determineGoalEdges();
+        determineGoalRegions();
 
         // Determine edges for ball bounce
-        determineBounceEdges();
+        if (twoVtwoMode) {
+            determineBounceEdgesTwovTwo();
+        } else {
+            determineBounceEdges();
+        }
 
         // Determine the goals
-        determineGoals();
+        if (twoVtwoMode) {
+            determineGoalsTwovTwo();
+        } else {
+            determineGoals();
+        }
 
         // Determine score text positions
         determineScorePositions();
@@ -210,6 +218,10 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    private void determineBounceEdgesTwovTwo() {
+
+    }
+
     /**
      * Initialize the first player object
      */
@@ -220,6 +232,10 @@ public class GameView extends SurfaceView implements Runnable {
             Vector scaledEdge = edge.getCenteredAndScaledVector(goalWidth);
             goals.add(scaledEdge);
         }
+    }
+
+    private void determineGoalsTwovTwo() {
+
     }
 
     /**
@@ -428,13 +444,15 @@ public class GameView extends SurfaceView implements Runnable {
             }
 
             // Draw the vertical goal edges black
-            synchronized (verticalGoalEdges) {
-                Paint paint = new Paint();
+            if (!twoVtwoMode) {
+                synchronized (verticalGoalEdges) {
+                    Paint paint = new Paint();
 //                paint.setColor(Color.rgb(255, 255, 255));  // White color
-                paint.setColor(Color.BLACK);
-                paint.setStrokeWidth(5);
-                for (Vector edge : verticalGoalEdges) {
-                    canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
+                    paint.setColor(Color.BLACK);
+                    paint.setStrokeWidth(5);
+                    for (Vector edge : verticalGoalEdges) {
+                        canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), paint);
+                    }
                 }
             }
 
@@ -931,7 +949,7 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Determine the corner areas of the screen
      */
-    private void determineGoalEdges() {
+    private void determineGoalRegions() {
         // Bottom-right corner (triangle)
         Path bottomRightPath = new Path();
         bottomRightPath.moveTo(screenX, screenY - screenX * 0.5f);
@@ -973,6 +991,7 @@ public class GameView extends SurfaceView implements Runnable {
         diagonalEdges.add(new Vector(screenX * 0.5, screenY * 0.09, screenX, screenX * 0.5));
 
         // Add the corner paths to the paths list
+        cornerPaths.clear();
         cornerPaths.add(bottomRightPath);
         cornerPaths.add(topLeftPath);
         cornerPaths.add(bottomLeftPath);
@@ -982,6 +1001,45 @@ public class GameView extends SurfaceView implements Runnable {
         Region region = new Region(0, 0, screenX, screenY);
 
         // Loop through the list of corner paths and add each as a region
+        goalRegions.clear();
+        for (Path path : cornerPaths) {
+            Region cornerRegion = new Region();
+            // Set the path within the bounding region
+            cornerRegion.setPath(path, region);
+            // Add the corner region to the list
+            goalRegions.add(cornerRegion);
+        }
+    }
+
+    private void determineGoalRegionsTwovTwo() {
+        // Bottom blue goal
+        Path bottomPath = new Path();
+        bottomPath.moveTo(0, screenY - screenX * 0.3f);
+        bottomPath.lineTo(screenX, screenY - screenX * 0.3f);
+        bottomPath.lineTo(screenX, screenY);
+        bottomPath.lineTo(0, screenY);
+        bottomPath.close();
+        diagonalEdges.add(new Vector(screenX, screenY - screenX * 0.5, screenX * 0.5, screenY * 0.91));
+
+        // Top red goal
+        Path topPath = new Path();
+        topPath.moveTo(0, 0);
+        topPath.lineTo(screenX, 0);
+        topPath.lineTo(screenX, screenX * 0.3f);
+        topPath.lineTo(0, screenX * 0.3f);
+        topPath.close();
+        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
+
+        // Add the goal paths to the paths list
+        cornerPaths.clear();
+        cornerPaths.add(bottomPath);
+        cornerPaths.add(topPath);
+
+        // Initialize a region with the screen dimensions
+        Region region = new Region(0, 0, screenX, screenY);
+
+        // Loop through the list of corner paths and add each as a region
+        goalRegions.clear();
         for (Path path : cornerPaths) {
             Region cornerRegion = new Region();
             // Set the path within the bounding region
@@ -1051,9 +1109,11 @@ public class GameView extends SurfaceView implements Runnable {
         if (!online) {
             if (twoVtwo) {
                 twoVtwoMode = true;
+                determineGoalRegionsTwovTwo();
                 playerCount = 4;
             } else {
                 twoVtwoMode = false;
+                determineGoalRegions();
             }
             // Enter offline mode
             Log.d("SettingsDialog", "Offline mode");
