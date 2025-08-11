@@ -1,7 +1,6 @@
 package com.example.paaltjesvoetbal.model;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 
 public class Player {
@@ -100,12 +99,16 @@ public class Player {
         this.shootButton = shootButton;
     }
 
-    public void scored() {
+    public void incrementScore() {
         score++;
     }
 
     public int getScore() {
         return score;
+    }
+
+    public void resetScore() {
+        score = 0;
     }
 
     public int getNumber() {

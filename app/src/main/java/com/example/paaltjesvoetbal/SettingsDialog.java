@@ -26,7 +26,7 @@ public class SettingsDialog extends Dialog {
     private final int resetPlayerSpeed = 4;
     private final int resetBallSpeed = 18;
     private boolean online;
-    private boolean twovTwo;
+    private boolean twovTwoMode;
 
     // Constructor with listener and initial settings
     public SettingsDialog(Context context, GameView listener, int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVTwo) {
@@ -36,7 +36,7 @@ public class SettingsDialog extends Dialog {
         this.initialPlayerSpeed = playerSpeed;
         this.initialBallSpeed = ballSpeed;
         this.online = online;
-        this.twovTwo = twoVTwo;
+        this.twovTwoMode = twoVTwo;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class SettingsDialog extends Dialog {
         TextView ballSpeedText = findViewById(R.id.currentBallSpeed);
         TextView playerCountText = findViewById(R.id.currentPlayerCount);
         Button resetButton = findViewById(R.id.resetButton);
-        CheckBox twovtwomode = findViewById(R.id.twoVtwoMode);
+        CheckBox twovtwomodeSwitch = findViewById(R.id.twoVtwoMode);
 
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch onlineSwitch = findViewById(R.id.onlineSwitch);
 
@@ -65,7 +65,7 @@ public class SettingsDialog extends Dialog {
         ballSpeedText.setText(String.valueOf(initialBallSpeed));
         playerCountText.setText(String.valueOf(initialPlayerCount));
         onlineSwitch.setChecked(online);
-        twovtwomode.setChecked(twovTwo);
+        twovtwomodeSwitch.setChecked(twovTwoMode);
 
         Log.d("SettingsDialog", "Initial settings applied: playerCount=" + initialPlayerCount +
                 ", playerSpeed=" + initialPlayerSpeed + ", ballSpeed=" + initialBallSpeed +
@@ -74,7 +74,7 @@ public class SettingsDialog extends Dialog {
         onlineSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             online = isChecked;
             Log.d("SettingsDialog", "Online switch toggled: " + isChecked);
-            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked, twovtwomode.isChecked());
+            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked, twovtwomodeSwitch.isChecked());
         });
 
         ballSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -82,7 +82,7 @@ public class SettingsDialog extends Dialog {
             public void onProgressChanged(SeekBar seekBar, int ballSpeed, boolean fromUser) {
                 ballSpeedText.setText(String.valueOf(ballSpeed));
                 Log.d("SettingsDialog", "Ball speed changed: " + ballSpeed);
-                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeed, online, twovtwomode.isChecked());
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeed, online, twovtwomodeSwitch.isChecked());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {
@@ -99,7 +99,7 @@ public class SettingsDialog extends Dialog {
             public void onProgressChanged(SeekBar seekBar, int playerCount, boolean fromUser) {
                 playerCountText.setText(String.valueOf(playerCount));
                 Log.d("SettingsDialog", "Player count changed: " + playerCount);
-                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomode.isChecked());
+                notifySettingsChanged(playerCount, playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomodeSwitch.isChecked());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {
@@ -116,7 +116,7 @@ public class SettingsDialog extends Dialog {
             public void onProgressChanged(SeekBar seekBar, int playerSpeed, boolean fromUser) {
                 playerSpeedText.setText(String.valueOf(playerSpeed));
                 Log.d("SettingsDialog", "Player speed changed: " + playerSpeed);
-                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeed, ballSpeedSeekBar.getProgress(), online, twovtwomode.isChecked());
+                notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeed, ballSpeedSeekBar.getProgress(), online, twovtwomodeSwitch.isChecked());
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {
@@ -138,14 +138,16 @@ public class SettingsDialog extends Dialog {
             playerCountText.setText(String.valueOf(resetPlayerCount));
             onlineSwitch.setChecked(false);
             online = false;
+            twovtwomodeSwitch.setChecked(false);
+            twovTwoMode = false;
             Log.d("SettingsDialog", "Settings reset to default");
-            notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed, online, twovtwomode.isChecked());
+            notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed, online, twovTwoMode);
         });
 
-        twovtwomode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        twovtwomodeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             SoundManager.getInstance(getContext()).playTwovTwoTick();
             Log.d("SettingsDialog", "Two vs Two mode toggled: " + isChecked);
-            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomode.isChecked());
+            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomodeSwitch.isChecked());
         });
     }
 

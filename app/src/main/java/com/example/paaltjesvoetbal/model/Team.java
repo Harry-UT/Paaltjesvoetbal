@@ -31,6 +31,10 @@ public class Team {
         score++;
     }
 
+    public void resetScore() {
+        score = 0;
+    }
+
     public void setColor(int color) {
         this.color = color;
     }

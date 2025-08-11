@@ -317,11 +317,14 @@ public class GameView extends SurfaceView implements Runnable {
     private void scored(int goal, Player player) {
         soundManager.playGoalSound();
         // Scored in goal by player
-        player.scored();
-        if (players.indexOf(player) == 0 || players.indexOf(player) == 2) {
-            teams.get(0).incrementScore();
-        } else {
-            teams.get(1).incrementScore();
+        player.incrementScore();
+
+        if (twoVtwoMode) {
+            if (players.indexOf(player) == 0 || players.indexOf(player) == 2) {
+                teams.get(0).incrementScore();
+            } else {
+                teams.get(1).incrementScore();
+            }
         }
 
         int playerColor = player.getColor();
@@ -1190,6 +1193,15 @@ public class GameView extends SurfaceView implements Runnable {
                 determineGoalsTwovTwo();
                 playerCount = 4;
             } else {
+                if (twoVtwoMode) {
+                    // Reset player scores
+                    for (Team team : teams) {
+                        team.resetScore();
+                    }
+                    for (Player player : players) {
+                        player.resetScore();
+                    }
+                }
                 twoVtwoMode = false;
                 determineGoalRegions();
                 determineBounceEdges();
