@@ -60,6 +60,10 @@ public class Player {
         return joystick.getDirection();
     }
 
+    public ShootButton getShootButton() {
+        return shootButton;
+    }
+
     public void setTeam(boolean inTeam) {
         this.inTeam = inTeam;
     }

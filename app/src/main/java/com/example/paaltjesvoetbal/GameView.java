@@ -141,7 +141,6 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Determine score text positions
         determineScoreTextPositions();
-        determineScoreTextPositionsTwovTwo();
 
         // Initialize ball(s)
         balls = new ArrayList<>();
@@ -279,26 +278,15 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void determineScoreTextPositionsTwovTwo() {
-        for (Team team : teams) {
-            int index = teams.indexOf(team);
-
-            // Calculate text rotation angle
-            Vector goal = goals.get(index);
-
-            float dx = (float) (goal.getX2() - goal.getX1());
-            float dy = (float) (goal.getY2() - goal.getY1());
-            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
-            dx *= scale;
-            dy *= scale;
-
-            float middleX = goal.getMidX();
-            float middleY = goal.getMidY();
-
-            float dxPerpendicular = -dy;
-            float dyPerpendicular = dx;
-
-            int xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
-            int yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+        for (int i = 0; i < teams.size(); i++) {
+            Team team = teams.get(i);
+            int xText = screenX / 2;
+            int yText;
+            if (i == 1) {
+                yText = (int) (screenX * 0.4f);
+            } else {
+                yText = (int) (screenY - screenX * 0.4f);
+            }
             team.setScorePosition(xText, yText);
         }
     }
@@ -699,7 +687,25 @@ public class GameView extends SurfaceView implements Runnable {
                     canvas.restore();
                 }
             }
-        } else {
+        } else { // draw scores of the 2 teams
+            synchronized (teams) {
+                for (Team team : teams) {
+                    // Set text color
+                    paint.setColor(team.getColor());
+
+                    // Save the current canvas state
+                    canvas.save();
+
+                    // Rotate around the text position
+                    canvas.rotate((teams.indexOf(team) == 0 ? 0 : 180), team.getScorePositionX(), team.getScorePositionY());
+
+                    // Draw the text
+                    canvas.drawText(String.valueOf(team.getScore()), team.getScorePositionX(), team.getScorePositionY(), paint);
+
+                    // Restore canvas to avoid affecting other drawings
+                    canvas.restore();
+                }
+            }
 
         }
 
@@ -984,12 +990,6 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Draw circle in the middle
         drawMiddleCircle(canvas);
-
-        // Draw the side lines
-//        canvas.drawLine(screenX * 0.95f, screenY * 0.2f, screenX * 0.95f, screenY * 0.8f, paint);
-//        canvas.drawLine(0, 0, 0, screenY, paint);
-//        canvas.drawLine(screenX, 0, screenX, screenY, paint);
-//        canvas.drawLine(0, 0, screenX, 0, paint);
     }
 
     /**
@@ -1156,7 +1156,10 @@ public class GameView extends SurfaceView implements Runnable {
             if (twoVtwo) {
                 twoVtwoMode = true;
                 teams.add(new Team(players.get(0), players.get(2)));
+                teams.get(0).setColor(Color.BLUE);
                 teams.add(new Team(players.get(1), players.get(3)));
+                teams.get(1).setColor(Color.RED);
+
                 for (Player player : players) {
                     if (player.getColor() == Color.GREEN) {
                         player.setColor(Color.BLUE);
@@ -1173,6 +1176,7 @@ public class GameView extends SurfaceView implements Runnable {
                         button.setColor(Color.RED);
                     }
                 }
+                determineScoreTextPositionsTwovTwo();
 
                 determineGoalRegionsTwovTwo();
                 determineBounceEdgesTwovTwo();
@@ -1185,6 +1189,16 @@ public class GameView extends SurfaceView implements Runnable {
                 determineGoals();
                 for (Player player : players) {
                     player.setTeam(false);
+                }
+                for (int i = 0; i < players.size(); i++) {
+                    if (i == 2) {
+                        players.get(i).setColor(Color.GREEN);
+                        players.get(i).getShootButton().setColor(Color.GREEN);
+                    }
+                    if (i == 3) {
+                        players.get(i).setColor(0xFFFFEB04); // Yellow
+                        players.get(i).getShootButton().setColor(0xFFFFEB04); // Yellow
+                    }
                 }
             }
             // Enter offline mode
