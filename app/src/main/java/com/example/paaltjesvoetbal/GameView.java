@@ -134,28 +134,20 @@ public class GameView extends SurfaceView implements Runnable {
         determineGoalRegions();
 
         // Determine edges for ball bounce
-        if (twoVtwoMode) {
-            determineBounceEdgesTwovTwo();
-        } else {
-            determineBounceEdges();
-        }
+        determineBounceEdges();
 
         // Determine the goals
-        if (twoVtwoMode) {
-            determineGoalsTwovTwo();
-        } else {
-            determineGoals();
-        }
+        determineGoals();
 
         // Determine score text positions
-        determineScorePositions();
+        determineScoreTextPositions();
 
         // Initialize ball(s)
         balls = new ArrayList<>();
         Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
         balls.add(ball);
 
-        // Initialize balls for goal animation
+        // Initialize stars for goal animation
         for (int i = 0; i < stars.length; i++) {
             stars[i] = new Star();
         }
@@ -212,6 +204,7 @@ public class GameView extends SurfaceView implements Runnable {
      * Determine the edges for ball bounce based on the screen dimensions
      */
     private void determineBounceEdges() {
+        bounceEdges.clear();
         for (Vector edge : diagonalEdges) {
             Vector[] bounceVectors = edge.split(goalWidth);
             bounceEdges.addAll(Arrays.asList(bounceVectors));
@@ -219,13 +212,26 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void determineBounceEdgesTwovTwo() {
-
+        bounceEdges.clear();
+        // Bottom-left bounce edge
+        Vector bottomLeft = new Vector(0, screenY - screenX * 0.3f, screenX * 0.3, screenY - screenX * 0.3f);
+        // Bottom-right bounce edge
+        Vector bottomRight = new Vector(screenX * 0.7f, screenY - screenX * 0.3f, screenX, screenY - screenX * 0.3f);
+        // Top-left bounce edge
+        Vector topLeft = new Vector(0, screenX * 0.3f, screenX * 0.3f, screenX * 0.3f);
+        // Top-right bounce edge
+        Vector topRight = new Vector(screenX * 0.7f, screenX * 0.3f, screenX, screenX * 0.3f);
+        bounceEdges.add(bottomLeft);
+        bounceEdges.add(bottomRight);
+        bounceEdges.add(topLeft);
+        bounceEdges.add(topRight);
     }
 
     /**
      * Initialize the first player object
      */
     private void determineGoals() {
+        goals.clear();
         // Iterate over all diagonal edges to determine the goals
         for (Vector edge : diagonalEdges) {
             // Get scaled vector
@@ -235,13 +241,18 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void determineGoalsTwovTwo() {
-
+        // Bottom blue goal
+        Vector bottomGoal = new Vector(screenX * 0.3f, screenY - screenX * 0.3f, screenX * 0.7f, screenY - screenX * 0.3f);
+        Vector topGoal = new Vector(screenX * 0.3f, screenX * 0.3f, screenX * 0.7f, screenX * 0.3f);
+        goals.clear();
+        goals.add(bottomGoal);
+        goals.add(topGoal);
     }
 
     /**
      * Determine the positions for the score text based on the screen dimensions
      */
-    private void determineScorePositions() {
+    private void determineScoreTextPositions() {
         for (Player player : players) {
             int index = players.indexOf(player);
 
@@ -266,13 +277,17 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    private void determineScoreTextPositionsTwovTwo() {
+
+    }
+
     /**
      * Update the game state
      */
     private void update() {
         synchronized (balls) {
             for (Ball ball : balls) {
-                lastBounceTime = ball.update(screenX, screenY);
+                lastBounceTime = ball.update(screenX, screenY, twoVtwoMode);
                 // Log presence of shooter for ball
                 Log.d("Ball", "Ball shooter: " + ball.getShooter());
                 if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
@@ -489,11 +504,11 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-//            synchronized (goals) {
-//                for (Vector goal : goals) {
-//                    goal.draw(canvas);
-//                }
-//            }
+            synchronized (goals) {
+                for (Vector goal : goals) {
+                    goal.draw(canvas);
+                }
+            }
 
             if (scored) {
                 displayGoalAnimation(canvas);
@@ -561,26 +576,28 @@ public class GameView extends SurfaceView implements Runnable {
         int xText;
         int yText;
 
-        synchronized (players) {
-            for (Player player : players) {
-                int index = players.indexOf(player);
+        // Draw the scores of the players
+        if (!twoVtwoMode) {
+            synchronized (players) {
+                for (Player player : players) {
+                    int index = players.indexOf(player);
 
-                // Calculate text rotation angle
-                Vector goal = goals.get(index);
+                    // Calculate text rotation angle
+                    Vector goal = goals.get(index);
 
-                float dx = (float) (goal.getX2() - goal.getX1());
-                float dy = (float) (goal.getY2() - goal.getY1());
-                float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
-                dx *= scale;
-                dy *= scale;
+                    float dx = (float) (goal.getX2() - goal.getX1());
+                    float dy = (float) (goal.getY2() - goal.getY1());
+                    float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
+                    dx *= scale;
+                    dy *= scale;
 
-                float middleX = goal.getMidX();
-                float middleY = goal.getMidY();
-                float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+                    float middleX = goal.getMidX();
+                    float middleY = goal.getMidY();
+                    float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
 
 
-                float dxPerpendicular = -dy;
-                float dyPerpendicular = dx;
+                    float dxPerpendicular = -dy;
+                    float dyPerpendicular = dx;
 
 //            float lineLength = 500; // Length of the perpendicular line
 //            float startX = middleX;
@@ -590,75 +607,78 @@ public class GameView extends SurfaceView implements Runnable {
 //
 //            canvas.drawLine(startX, startY, endX, endY, paint);
 
-                switch (index) {
-                    case 0: // Bottom-right (blue)
-                        if (rotationAngle > 0) {
-                            rotationAngle -= 180;
-                        }
-                        break;
-                    case 1: // Top-left (red)
-                        if (rotationAngle < 0) {
-                            rotationAngle += 180;
-                        }
-                        break;
-                    case 2: // Bottom-left (green)
-                        if (rotationAngle < 0) {
-                            rotationAngle += 180;
-                        }
-                        break;
-                    case 3: // Top-right (yellow)
-                        if (rotationAngle > 0) {
-                            rotationAngle -= 180;
-                        }
-                        break;
-                    default:
-                        return;
-                }
+                    switch (index) {
+                        case 0: // Bottom-right (blue)
+                            if (rotationAngle > 0) {
+                                rotationAngle -= 180;
+                            }
+                            break;
+                        case 1: // Top-left (red)
+                            if (rotationAngle < 0) {
+                                rotationAngle += 180;
+                            }
+                            break;
+                        case 2: // Bottom-left (green)
+                            if (rotationAngle < 0) {
+                                rotationAngle += 180;
+                            }
+                            break;
+                        case 3: // Top-right (yellow)
+                            if (rotationAngle > 0) {
+                                rotationAngle -= 180;
+                            }
+                            break;
+                        default:
+                            return;
+                    }
 
 //            xText = (int) middleX;
 //            yText = (int) middleY;
-                xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
-                yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+                    xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
+                    yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
 
-                // Center text with textmeasure
-                float textWidth = paint.measureText(String.valueOf(player.getScore()));
+                    // Center text with textmeasure
+                    float textWidth = paint.measureText(String.valueOf(player.getScore()));
 
-                switch (index) {
-                    case 0:
-                        xText -= (int) (textWidth / 2);
-                        break;
-                    case 1:
-                        xText += (int) (textWidth / 2);
-                        break;
-                    case 2:
-                        // Use ascend and descent to center text vertically
-                        yText += (int) ((paint.descent() + paint.ascent()) / 2);
-                        xText -= (int) (textWidth / 4);
-                        break;
-                    case 3:
-                        // Use ascend and descent to center text vertically
-                        yText += (int) ((paint.descent() + paint.ascent()) / 2 + (int) (0.029f * screenY));
-                        xText += (int) (textWidth / 4);
-                        break;
-                    default:
-                        break;
+                    switch (index) {
+                        case 0:
+                            xText -= (int) (textWidth / 2);
+                            break;
+                        case 1:
+                            xText += (int) (textWidth / 2);
+                            break;
+                        case 2:
+                            // Use ascend and descent to center text vertically
+                            yText += (int) ((paint.descent() + paint.ascent()) / 2);
+                            xText -= (int) (textWidth / 4);
+                            break;
+                        case 3:
+                            // Use ascend and descent to center text vertically
+                            yText += (int) ((paint.descent() + paint.ascent()) / 2 + (int) (0.029f * screenY));
+                            xText += (int) (textWidth / 4);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // Set text color
+                    paint.setColor(player.getColor());
+
+                    // Save the current canvas state
+                    canvas.save();
+
+                    // Rotate around the text position
+                    canvas.rotate(rotationAngle, xText, yText);
+
+                    // Draw the text
+                    canvas.drawText(String.valueOf(player.getScore()), xText, yText, paint);
+
+                    // Restore canvas to avoid affecting other drawings
+                    canvas.restore();
                 }
-
-                // Set text color
-                paint.setColor(player.getColor());
-
-                // Save the current canvas state
-                canvas.save();
-
-                // Rotate around the text position
-                canvas.rotate(rotationAngle, xText, yText);
-
-                // Draw the text
-                canvas.drawText(String.valueOf(player.getScore()), xText, yText, paint);
-
-                // Restore canvas to avoid affecting other drawings
-                canvas.restore();
             }
+        } else {
+
         }
 
         if (scored) {
@@ -841,7 +861,11 @@ public class GameView extends SurfaceView implements Runnable {
                 player.setY(newY);
             }
         }
-        determineScorePositions();
+        if (!twoVtwoMode) {
+            determineScoreTextPositions();
+        } else {
+            determineScoreTextPositionsTwovTwo();
+        }
     }
 
     /**
@@ -1110,10 +1134,14 @@ public class GameView extends SurfaceView implements Runnable {
             if (twoVtwo) {
                 twoVtwoMode = true;
                 determineGoalRegionsTwovTwo();
+                determineBounceEdgesTwovTwo();
+                determineGoalsTwovTwo();
                 playerCount = 4;
             } else {
                 twoVtwoMode = false;
                 determineGoalRegions();
+                determineBounceEdges();
+                determineGoals();
             }
             // Enter offline mode
             Log.d("SettingsDialog", "Offline mode");

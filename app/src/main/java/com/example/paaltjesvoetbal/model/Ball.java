@@ -78,10 +78,10 @@ public class Ball {
         }
     }
 
-    public long update(int screenX, int screenY) {
+    public long update(int screenX, int screenY, boolean twovTwo) {
         if (this.player == null) {
             // Check for screen boundary collisions
-            bounce(screenX, screenY);
+            bounce(screenX, screenY, twovTwo);
 
             // Update ball position based on its velocity
             x += velocityX;
@@ -113,7 +113,7 @@ public class Ball {
         this.shooter = null;
     }
 
-    private void bounce(float screenX, float screenY) {
+    private void bounce(float screenX, float screenY, boolean twovTwo) {
         // Check for collision with the left edge
         if (getX() - radius < 0) {
             if (getVelocityX() < 0) {
@@ -155,13 +155,15 @@ public class Ball {
         }
 
         // Check for collisions with the vertical goal edges
-        for (Vector edge : verticalGoalEdges) {
-            // Get distance from ball to the vector (not infinite line)
-            double distance = edge.distanceToPoint(getX(), getY());
-            if (distance <= radius) {
-                // Invert ball velocity
-                setVelocityX(-getVelocityX());
-                lastBouncedEdgeIndex = -1; // Reset last bounced edge
+        if (!twovTwo) {
+            for (Vector edge : verticalGoalEdges) {
+                // Get distance from ball to the vector (not infinite line)
+                double distance = edge.distanceToPoint(getX(), getY());
+                if (distance <= radius) {
+                    // Invert ball velocity
+                    setVelocityX(-getVelocityX());
+                    lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                }
             }
         }
     }
