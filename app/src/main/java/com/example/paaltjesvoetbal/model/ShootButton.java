@@ -12,7 +12,7 @@ public class ShootButton {
     private final float y;
     private final float radius;
     private boolean isPressed;
-    private final int color;
+    private int color;
     private int touchID = -1; // Store the pointer ID for the current touch
 
     public ShootButton(float x, float y, float radius, int color) {
@@ -62,6 +62,14 @@ public class ShootButton {
     // Set the ball object for the shoot button
     public void setBall(Ball ball) {
         this.ball = ball;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
     // Update pressed state

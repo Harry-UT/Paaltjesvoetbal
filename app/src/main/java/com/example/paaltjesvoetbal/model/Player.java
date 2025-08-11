@@ -1,6 +1,7 @@
 package com.example.paaltjesvoetbal.model;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 
 public class Player {
@@ -14,6 +15,7 @@ public class Player {
     private long lastShootTime;  // Last time the ball was shot
     private final int number;
     private final int[] scorePosition = new int[] { 0, 0 };
+    private boolean inTeam = false;  // Flag to check if the player is in a team
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color, int playerNumber) {
@@ -58,6 +60,10 @@ public class Player {
         return joystick.getDirection();
     }
 
+    public void setTeam(boolean inTeam) {
+        this.inTeam = inTeam;
+    }
+
     // Set the ball that the player is controlling
     public void setBall(Ball ball) {
         this.shootButton.setBall(ball);
@@ -81,7 +87,7 @@ public class Player {
         canvas.drawCircle(x, y, radius, paint);  // Draw the player as a circle
     }
 
-    // Setters and getters for Joystick and ShootButton
+    // Getters and setters for Joystick and ShootButton
     public void setJoystick(Joystick joystick) {
         this.joystick = joystick;
     }
@@ -96,10 +102,6 @@ public class Player {
 
     public int getScore() {
         return score;
-    }
-
-    public void resetScore() {
-        score = 0;
     }
 
     public int getNumber() {

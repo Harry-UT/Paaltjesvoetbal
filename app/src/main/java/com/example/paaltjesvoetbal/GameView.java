@@ -51,7 +51,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int screenY;
     private final List<Joystick> joysticks;
     private List<Player> players;
-    private List<Team> teams;
+    private List<Team> teams = new ArrayList<>();
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
@@ -141,6 +141,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Determine score text positions
         determineScoreTextPositions();
+        determineScoreTextPositionsTwovTwo();
 
         // Initialize ball(s)
         balls = new ArrayList<>();
@@ -278,7 +279,28 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void determineScoreTextPositionsTwovTwo() {
+        for (Team team : teams) {
+            int index = teams.indexOf(team);
 
+            // Calculate text rotation angle
+            Vector goal = goals.get(index);
+
+            float dx = (float) (goal.getX2() - goal.getX1());
+            float dy = (float) (goal.getY2() - goal.getY1());
+            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
+            dx *= scale;
+            dy *= scale;
+
+            float middleX = goal.getMidX();
+            float middleY = goal.getMidY();
+
+            float dxPerpendicular = -dy;
+            float dyPerpendicular = dx;
+
+            int xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
+            int yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
+            team.setScorePosition(xText, yText);
+        }
     }
 
     /**
@@ -861,11 +883,11 @@ public class GameView extends SurfaceView implements Runnable {
                 player.setY(newY);
             }
         }
-        if (!twoVtwoMode) {
-            determineScoreTextPositions();
-        } else {
-            determineScoreTextPositionsTwovTwo();
-        }
+//        if (!twoVtwoMode) {
+//            determineScoreTextPositions();
+//        } else {
+//            determineScoreTextPositionsTwovTwo();
+//        }
     }
 
     /**
@@ -1133,6 +1155,25 @@ public class GameView extends SurfaceView implements Runnable {
         if (!online) {
             if (twoVtwo) {
                 twoVtwoMode = true;
+                teams.add(new Team(players.get(0), players.get(2)));
+                teams.add(new Team(players.get(1), players.get(3)));
+                for (Player player : players) {
+                    if (player.getColor() == Color.GREEN) {
+                        player.setColor(Color.BLUE);
+                    }
+                    if (player.getColor() == 0xFFFFEB04) {
+                        player.setColor(Color.RED);
+                    }
+                }
+                for (ShootButton button : shootButtons) {
+                    if (button.getColor() == Color.GREEN) {
+                        button.setColor(Color.BLUE);
+                    }
+                    if (button.getColor() == 0xFFFFEB04) {
+                        button.setColor(Color.RED);
+                    }
+                }
+
                 determineGoalRegionsTwovTwo();
                 determineBounceEdgesTwovTwo();
                 determineGoalsTwovTwo();
@@ -1142,6 +1183,9 @@ public class GameView extends SurfaceView implements Runnable {
                 determineGoalRegions();
                 determineBounceEdges();
                 determineGoals();
+                for (Player player : players) {
+                    player.setTeam(false);
+                }
             }
             // Enter offline mode
             Log.d("SettingsDialog", "Offline mode");
