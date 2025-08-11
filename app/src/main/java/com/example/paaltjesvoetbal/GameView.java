@@ -1165,11 +1165,18 @@ public class GameView extends SurfaceView implements Runnable {
         if (!online) {
             if (twoVtwo) {
                 twoVtwoMode = true;
+                // If two vs two mode is enabled, we need to ensure there are 4 players
+                clearLists();
+                initializePlayer1();
+                initializePlayer2();
+                initializePlayer3();
+                initializePlayer4();
                 teams.add(new Team(players.get(0), players.get(2)));
                 teams.get(0).setColor(Color.BLUE);
                 teams.add(new Team(players.get(1), players.get(3)));
                 teams.get(1).setColor(Color.RED);
 
+                // Reset player colors for two vs two mode
                 for (Player player : players) {
                     if (player.getColor() == Color.GREEN) {
                         player.setColor(Color.BLUE);
@@ -1178,6 +1185,7 @@ public class GameView extends SurfaceView implements Runnable {
                         player.setColor(Color.RED);
                     }
                 }
+                // Reset shoot button colors for two vs two mode
                 for (ShootButton button : shootButtons) {
                     if (button.getColor() == Color.GREEN) {
                         button.setColor(Color.BLUE);
@@ -1186,8 +1194,8 @@ public class GameView extends SurfaceView implements Runnable {
                         button.setColor(Color.RED);
                     }
                 }
-                determineScoreTextPositionsTwovTwo();
 
+                determineScoreTextPositionsTwovTwo();
                 determineGoalRegionsTwovTwo();
                 determineBounceEdgesTwovTwo();
                 determineGoalsTwovTwo();
