@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-08-22T18:43:05.473747900Z">
+        <DropdownSelection timestamp="2025-08-22T22:11:52.680885600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Harry\.android\avd\Medium_Tablet.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -26,12 +26,7 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=5200244b53ee25dd" />
-              </handle>
-            </Target>
-            <Target type="DEFAULT_BOOT">
-              <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Harry\.android\avd\Medium_Tablet.avd" />
               </handle>
             </Target>
           </targets>
