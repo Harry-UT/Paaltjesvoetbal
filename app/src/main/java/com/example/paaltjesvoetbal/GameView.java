@@ -586,6 +586,10 @@ public class GameView extends SurfaceView implements Runnable {
         paint.setColor(Color.BLACK);
         for (int i = 0; i < PLAYERCOUNT * 2; i++) {
             Vector bounceEdge = bounceEdges.get(i);
+            // Draw a little edge index next to the bounce edge
+//            paint.setTextSize(30);
+//            canvas.drawText(String.valueOf(i), (float) bounceEdge.getMidX(), (float) bounceEdge.getMidY(), paint);
+
             // Get the goalpost coordinates
             // Use mod 2 to alternate between first or second coordinate of edge
             if (postSide % 2 == 0) {
