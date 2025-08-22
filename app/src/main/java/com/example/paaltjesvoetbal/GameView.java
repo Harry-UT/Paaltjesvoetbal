@@ -67,7 +67,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
     private final List<Vector> bounceEdges = new ArrayList<>();
-    private final List<Vector> goals = new ArrayList<>();
+    private final List<Vector> goalLines = new ArrayList<>();
     private final List<Path> cornerPaths = new ArrayList<>();
     private final List<Region> goalRegions = new ArrayList<>();
     private long lastBounceTime = 0;
@@ -231,12 +231,12 @@ public class GameView extends SurfaceView implements Runnable {
      * Initialize the first player object
      */
     private void determineGoals() {
-        goals.clear();
+        goalLines.clear();
         // Iterate over all diagonal edges to determine the goals
         for (Vector edge : diagonalEdges) {
             // Get scaled vector
             Vector scaledEdge = edge.getCenteredAndScaledVector(goalWidth);
-            goals.add(scaledEdge);
+            goalLines.add(scaledEdge);
         }
     }
 
@@ -244,9 +244,9 @@ public class GameView extends SurfaceView implements Runnable {
         // Bottom blue goal
         Vector bottomGoal = new Vector(screenX * 0.35f, screenY - screenX * 0.3f, screenX * 0.65f, screenY - screenX * 0.3f);
         Vector topGoal = new Vector(screenX * 0.35f, screenX * 0.3f, screenX * 0.65f, screenX * 0.3f);
-        goals.clear();
-        goals.add(bottomGoal);
-        goals.add(topGoal);
+        goalLines.clear();
+        goalLines.add(bottomGoal);
+        goalLines.add(topGoal);
     }
 
     /**
@@ -257,7 +257,7 @@ public class GameView extends SurfaceView implements Runnable {
             int index = players.indexOf(player);
 
             // Calculate text rotation angle
-            Vector goal = goals.get(index);
+            Vector goal = goalLines.get(index);
 
             float dx = (float) (goal.getX2() - goal.getX1());
             float dy = (float) (goal.getY2() - goal.getY1());
@@ -433,7 +433,7 @@ public class GameView extends SurfaceView implements Runnable {
 
             drawPlayground(canvas);
 
-            // Draw the corner paths
+            // Draw the goal regions
             synchronized (cornerPaths) {
                 Paint paint = new Paint();
                 for (int i = 0; i < cornerPaths.size(); i++) {
@@ -524,8 +524,8 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            synchronized (goals) {
-                for (Vector goal : goals) {
+            synchronized (goalLines) {
+                for (Vector goal : goalLines) {
                     goal.draw(canvas);
                 }
             }
@@ -603,7 +603,7 @@ public class GameView extends SurfaceView implements Runnable {
                     int index = players.indexOf(player);
 
                     // Calculate text rotation angle
-                    Vector goal = goals.get(index);
+                    Vector goal = goalLines.get(index);
 
                     float dx = (float) (goal.getX2() - goal.getX1());
                     float dy = (float) (goal.getY2() - goal.getY1());
