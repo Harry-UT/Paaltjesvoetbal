@@ -581,12 +581,13 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
     private void drawGoalPosts(Canvas canvas) {
-        // Use mod 2 to alternate between first or second coordinate of edge
-        int postSide = 1;
+        int postSide = 1; // To alternate between the two posts of each goal
         Paint paint = new Paint();
         paint.setColor(Color.BLACK);
-        for (Vector bounceEdge : bounceEdges) {
+        for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+            Vector bounceEdge = bounceEdges.get(i);
             // Get the goalpost coordinates
+            // Use mod 2 to alternate between first or second coordinate of edge
             if (postSide % 2 == 0) {
                 float x1 = (float) bounceEdge.getX1();
                 float y1 = (float) bounceEdge.getY1();
