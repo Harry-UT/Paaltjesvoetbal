@@ -347,7 +347,7 @@ public class GameView extends SurfaceView implements Runnable {
 
     /**
      * Check if a goal has been scored by a player
-     * @param ball the ball object
+     * @param ball the ball object to check
      */
     private void checkGoal(Ball ball) {
         long now = System.currentTimeMillis();
@@ -1253,6 +1253,9 @@ public class GameView extends SurfaceView implements Runnable {
             } else {
                 if (twoVtwoMode) {
                     // Reset player scores
+                    determineGoalRegions();
+                    determineBounceEdges();
+                    determineGoals();
                     for (Team team : teams) {
                         team.resetScore();
                     }
@@ -1261,9 +1264,6 @@ public class GameView extends SurfaceView implements Runnable {
                     }
                 }
                 twoVtwoMode = false;
-                determineGoalRegions();
-                determineBounceEdges();
-                determineGoals();
                 for (Player player : players) {
                     player.setTeam(false);
                 }
