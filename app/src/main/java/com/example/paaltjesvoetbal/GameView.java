@@ -63,13 +63,15 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int PLAYERCOUNT = 4;
+
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
-    private final List<Vector> bounceEdges = new ArrayList<>();
-    private final List<Vector> goalLines = new ArrayList<>();
-    private final List<Path> cornerPaths = new ArrayList<>();
-    private final List<Region> goalRegions = new ArrayList<>();
+    private final List<Vector> bounceEdges = new ArrayList<>(); // The lines which the ball bounces off
+    private final List<Vector> goalLines = new ArrayList<>(); // The lines which the ball crosses to score a goal
+    private final List<Path> cornerPaths = new ArrayList<>(); // The circumference of each goal area
+    private final List<Region> goalRegions = new ArrayList<>(); // The goal areas for each player
+
     private long lastBounceTime = 0;
     private float lastGoalTime;
     private Player lastShooter;
@@ -533,11 +535,11 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
 
-            synchronized (goalLines) {
-                for (Vector goal : goalLines) {
-                    goal.draw(canvas);
-                }
-            }
+//            synchronized (goalLines) {
+//                for (Vector goal : goalLines) {
+//                    goal.draw(canvas);
+//                }
+//            }
 
             if (scored) {
                 displayGoalAnimation(canvas);
@@ -906,6 +908,32 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
+     * Calculate the shortest distance from a point (player) to a line segment (edge)
+     * @param edge the line segment represented as a Vector
+     * @param player the player object representing the point
+     * @return the shortest distance from the point to the line segment
+     */
+    private double pointToLineSegmentDistOwnGoal(Vector edge, Player player) {
+        double x0 = player.getX(), y0 = player.getY();
+        double x1 = edge.getX1(), y1 = edge.getY1();
+        double x2 = edge.getX2(), y2 = edge.getY2();
+
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double lengthSquared = dx * dx + dy * dy;
+
+        if (lengthSquared == 0) return Math.sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+
+        double t = ((x0 - x1) * dx + (y0 - y1) * dy) / lengthSquared;
+        t = Math.max(0, Math.min(1, t)); // Clamp t to [0,1]
+
+        double projX = x1 + t * dx;
+        double projY = y1 + t * dy;
+
+        return Math.sqrt((x0 - projX) * (x0 - projX) + (y0 - projY) * (y0 - projY));
+    }
+
+    /**
      * Update the player positions based on joystick input
      */
     private void updatePlayers() {
@@ -917,11 +945,34 @@ public class GameView extends SurfaceView implements Runnable {
                 float newX = player.getX() + moveX;
                 float newY = player.getY() + moveY;
 
-                // Clamp player position withing field bounds (not in corners)
+                // Clamp player position within field bounds (not in corners)
                 for (int i = 0; i < bounceEdges.size(); i++) {
                     Vector edge = bounceEdges.get(i);
-                    float dist = (float) pointToLineDist(edge, player);
+                    float dist = 1000f; // Initialize with a large distance
+                    int edgeIndex = i;
+
+                    switch (players.indexOf(player)) {
+                        case 0:
+                            dist = (edgeIndex == 0 || edgeIndex == 1) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            break;
+                        case 1:
+                            dist = (edgeIndex == 2 || edgeIndex == 3) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            break;
+                        case 2:
+                            dist = (edgeIndex == 4 || edgeIndex == 5) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            break;
+                        case 3:
+                            dist = (edgeIndex == 6 || edgeIndex == 7) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            break;
+                        default:
+                            dist = (float) pointToLineDist(edge, player);
+                            break;
+                    }
+                    dist = (float) pointToLineSegmentDistOwnGoal(edge, player);
+
                     if (dist < player.getRadius()) {
+//                        Log.d("EdgeClamp", "Player " + players.indexOf(player) + " clamped at edge " + i + ", distance: " + dist);
+
                         double dx = edge.getX2() - edge.getX1();
                         double dy = edge.getY2() - edge.getY1();
                         double len = Math.sqrt(dx * dx + dy * dy);
