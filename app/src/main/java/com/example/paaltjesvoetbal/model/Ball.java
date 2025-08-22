@@ -78,10 +78,10 @@ public class Ball {
         }
     }
 
-    public long update(int screenX, int screenY, boolean twovTwo) {
+    public long update(int screenX, int screenY, List<Vector> goalLines, boolean twovTwo) {
         if (this.player == null) {
             // Check for screen boundary collisions
-            bounce(screenX, screenY, twovTwo);
+            bounce(screenX, screenY, goalLines, twovTwo);
 
             // Update ball position based on its velocity
             x += velocityX;
@@ -113,7 +113,7 @@ public class Ball {
         this.shooter = null;
     }
 
-    private void bounce(float screenX, float screenY, boolean twovTwo) {
+    private void bounce(float screenX, float screenY, List<Vector> goalLines, boolean twovTwo) {
         // Check for collision with the left edge
         if (getX() - radius < 0) {
             if (getVelocityX() < 0) {
@@ -154,6 +154,13 @@ public class Ball {
             checkEdgeCollision(i, screenX);
         }
 
+        // Check for collisions with unused goalLines
+        if (goalLines != null) {
+            for (Vector edge : goalLines) {
+                checkGoalLineCollission(edge, screenX);
+            }
+        }
+
         // Check for collisions with the vertical goal edges
         if (!twovTwo) {
             for (Vector edge : verticalGoalEdges) {
@@ -167,6 +174,79 @@ public class Ball {
             }
         }
     }
+
+    public void checkGoalLineCollission(Vector edge, float screenX) {
+        long currentTime = System.currentTimeMillis();
+        double postRadius = 6; // Radius of the goalpost
+
+        double x1 = edge.getX1();
+        double y1 = edge.getY1();
+        double x2 = edge.getX2();
+        double y2 = edge.getY2();
+        double edgeDX = x2 - x1;
+        double edgeDY = y2 - y1;
+
+        // Handle goalpost collision (if near the endpoints)
+        double distanceToStart = Math.hypot(getX() - x1, getY() - y1);
+        double distanceToEnd = Math.hypot(getX() - x2, getY() - y2);
+
+        double goalpostX = (distanceToStart <= (postRadius + radius)) ? x1 : x2;
+        double goalpostY = (distanceToStart <= (postRadius + radius)) ? y1 : y2;
+
+        if ((distanceToStart <= (postRadius + radius) || distanceToEnd <= (postRadius + radius)) &&
+                goalpostX > 0 && goalpostX < screenX &&
+                (goalpostX > screenX / 2 + 5 || goalpostX < screenX / 2 - 5)) {
+
+            double normalX = getX() - goalpostX;
+            double normalY = getY() - goalpostY;
+            double normalLength = Math.hypot(normalX, normalY);
+            normalX /= normalLength;
+            normalY /= normalLength;
+
+            reflectBall(normalX, normalY);
+            resolveOverlap(normalX, normalY, postRadius - Math.min(distanceToStart, distanceToEnd));
+            lastBounceTime = currentTime;
+
+            return;
+        }
+
+        // Normal edge collision
+        double ballDX = getX() - x1;
+        double ballDY = getY() - y1;
+        double projection = (ballDX * edgeDX + ballDY * edgeDY) / (edgeDX * edgeDX + edgeDY * edgeDY);
+
+        double closestX, closestY;
+        if (projection < 0) {
+            closestX = x1;
+            closestY = y1;
+        } else if (projection > 1) {
+            closestX = x2;
+            closestY = y2;
+        } else {
+            closestX = x1 + projection * edgeDX;
+            closestY = y1 + projection * edgeDY;
+        }
+
+        double distanceToEdge = Math.hypot(getX() - closestX, getY() - closestY);
+
+        if (distanceToEdge <= radius) {
+            double normalX = -edgeDY;
+            double normalY = edgeDX;
+            double normalLength = Math.hypot(normalX, normalY);
+            normalX /= normalLength;
+            normalY /= normalLength;
+
+            if ((getVelocityX() * normalX + getVelocityY() * normalY) > 0) {
+                normalX = -normalX;
+                normalY = -normalY;
+            }
+
+            reflectBall(normalX, normalY);
+            resolveOverlap(normalX, normalY, radius - distanceToEdge);
+            lastBounceTime = currentTime;
+        }
+    }
+
 
     public void checkEdgeCollision(int edgeVectorIndex, float screenX) {
         long currentTime = System.currentTimeMillis();

@@ -299,7 +299,7 @@ public class GameView extends SurfaceView implements Runnable {
     private void update() {
         synchronized (balls) {
             for (Ball ball : balls) {
-                lastBounceTime = ball.update(screenX, screenY, twoVtwoMode);
+                lastBounceTime = ball.update(screenX, screenY, PLAYERCOUNT < 4 ? goalLines.subList(2,4) : null, twoVtwoMode);
                 // Log presence of shooter for ball
                 Log.d("Ball", "Ball shooter: " + ball.getShooter());
                 if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
