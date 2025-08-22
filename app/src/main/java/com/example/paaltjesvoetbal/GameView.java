@@ -879,6 +879,24 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
+     * Calculate the shortest distance from a point (player) to a line (edge)
+     * @param edge the line represented as a Vector
+     * @param player the player object representing the point
+     * @return the shortest distance from the point to the line
+     */
+    private double pointToLineDist(Vector edge, Player player) {
+        double x0 = player.getX();
+        double y0 = player.getY();
+        double x1 = edge.getX1();
+        double y1 = edge.getY1();
+        double x2 = edge.getX2();
+        double y2 = edge.getY2();
+        double numerator = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1);
+        double denominator = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
+        return numerator / denominator;
+    }
+
+    /**
      * Update the player positions based on joystick input
      */
     private void updatePlayers() {
@@ -889,6 +907,38 @@ public class GameView extends SurfaceView implements Runnable {
                 float moveY = PLAYERSPEED * (float) Math.sin(direction);
                 float newX = player.getX() + moveX;
                 float newY = player.getY() + moveY;
+
+                // Clamp player position withing field bounds (not in corners)
+                for (int i = 0; i < bounceEdges.size(); i++) {
+                    Vector edge = bounceEdges.get(i);
+                    float dist = (float) pointToLineDist(edge, player);
+                    if (dist < player.getRadius()) {
+                        double dx = edge.getX2() - edge.getX1();
+                        double dy = edge.getY2() - edge.getY1();
+                        double len = Math.sqrt(dx * dx + dy * dy);
+
+                        // Wall normal
+                        double nx = -dy / len;
+                        double ny = dx / len;
+
+                        // Flip normal for specific edges
+                        if ((i == 0 || i == 1) && twoVtwoMode) {
+                            nx = -nx;
+                            ny = -ny;
+                        }
+
+                        // Only project if moving INTO the wall
+                        double moveDot = moveX * nx + moveY * ny;
+                        if (moveDot < 0) {
+                            moveX -= (float) (moveDot * nx);
+                            moveY -= (float) (moveDot * ny);
+                        }
+
+                        newX = player.getX() + (float) moveX;
+                        newY = player.getY() + (float) moveY;
+                    }
+                }
+
 
                 // Clamp player position within screen bounds
                 newX = Math.max(player.getRadius(), Math.min(newX, screenX - player.getRadius()));
