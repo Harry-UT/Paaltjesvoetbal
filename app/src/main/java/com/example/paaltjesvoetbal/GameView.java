@@ -320,11 +320,20 @@ public class GameView extends SurfaceView implements Runnable {
         player.incrementScore();
 
         if (twoVtwoMode) {
+            int teamIndex = (players.indexOf(player) == 0 || players.indexOf(player) == 2) ? 0 : 1;
+            // Only allow scoring in the opponent's goal
+            if ((teamIndex == 0 && goal == 0) || (teamIndex == 1 && goal == 1)) {
+                // Prevent scoring in own goal
+                return;
+            }
+
             if (players.indexOf(player) == 0 || players.indexOf(player) == 2) {
                 teams.get(0).incrementScore();
             } else {
                 teams.get(1).incrementScore();
             }
+        } else {
+            player.incrementScore();
         }
 
         int playerColor = player.getColor();
@@ -1210,7 +1219,12 @@ public class GameView extends SurfaceView implements Runnable {
      * @param playerSpeed the speed of the players
      * @param ballSpeed the speed of the ball
      */
-    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo) {
+    public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo, boolean isReset) {
+        if (isReset) {
+            for (Ball ball: balls) {
+                ball.reset((int) (screenX / 2f), (int) (screenY / 2f));
+            }
+        }
         Log.d("SettingsDialog", "Change settings called");
         if (!online) {
             if (twoVtwo) {
