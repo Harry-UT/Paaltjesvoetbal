@@ -62,7 +62,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int BALLRADIUS = 15;
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
-    private final int PLAYERCOUNT = 4;
+    private int PLAYERCOUNT = 4;
 
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
@@ -540,6 +540,16 @@ public class GameView extends SurfaceView implements Runnable {
 //                    goal.draw(canvas);
 //                }
 //            }
+
+            if (PLAYERCOUNT < 4) {
+                // Draw unused goal lines when in less than 4 player mode
+                if (PLAYERCOUNT == 2) {
+                    goalLines.get(2).draw(canvas);
+                    goalLines.get(3).draw(canvas);
+                } else if (PLAYERCOUNT == 3) {
+                    goalLines.get(3).draw(canvas);
+                }
+            }
 
             if (scored) {
                 displayGoalAnimation(canvas);
@@ -1271,6 +1281,7 @@ public class GameView extends SurfaceView implements Runnable {
      * @param ballSpeed the speed of the ball
      */
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo, boolean isReset) {
+        PLAYERCOUNT = playerCount;
         if (isReset) {
             for (Ball ball: balls) {
                 ball.reset((int) (screenX / 2f), (int) (screenY / 2f));
