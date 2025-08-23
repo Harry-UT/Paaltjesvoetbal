@@ -14,7 +14,7 @@ public final class Protocol {
     public static final String INVALIDUSERNAME = "INVALIDUSERNAME";
     public static final String SERVER = "SERVER";
     public static final String ERROR = "ERROR";
-
+    public static final String PING = "PING";
     // Both:
     public static final String UPDATE = "UPDATE";
     public static final String SEPARATOR = "~";
