@@ -14,7 +14,7 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
-        <option name="selectionMode" value="DROPDOWN" />
+        <option name="selectionMode" value="DIALOG" />
         <DropdownSelection timestamp="2025-08-23T20:10:59.443287100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
@@ -26,12 +26,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=5200244b53ee25dd" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=5200244b53ee25dd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
               </handle>
             </Target>
           </targets>
