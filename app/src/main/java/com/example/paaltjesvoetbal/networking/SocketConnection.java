@@ -1,5 +1,7 @@
 package com.example.paaltjesvoetbal.networking;
 
+import android.util.Log;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -64,6 +66,7 @@ public abstract class SocketConnection {
         try {
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
+                Log.d("Connection", "test");
                 handleMessage(inputLine);
             }
         } catch (IOException e) {

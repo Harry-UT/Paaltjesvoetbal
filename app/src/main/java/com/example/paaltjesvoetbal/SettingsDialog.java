@@ -65,6 +65,8 @@ public class SettingsDialog extends Dialog {
         CheckBox twovtwomodeSwitch = findViewById(R.id.twoVtwoMode);
         TextInputEditText usernameInput = findViewById(R.id.usernameInput);
         Button okButton = findViewById(R.id.okButton);
+        Button pingButton = findViewById(R.id.pingButton);
+        TextView pingText = findViewById(R.id.ping);
 
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch onlineSwitch = findViewById(R.id.onlineSwitch);
 
@@ -80,6 +82,19 @@ public class SettingsDialog extends Dialog {
         Log.d("SettingsDialog", "Initial settings applied: playerCount=" + initialPlayerCount +
                 ", playerSpeed=" + initialPlayerSpeed + ", ballSpeed=" + initialBallSpeed +
                 ", online=" + online);
+
+        pingButton.setOnClickListener(v -> {
+            new Thread(() -> {
+                try {
+                    int ping = listener.pingServer(); // run ping in background
+                    Log.d("SettingsDialog", "Ping result: " + ping + " ms");
+                    pingText.post(() -> pingText.setText(String.valueOf(ping))); // update UI safely
+                } catch (InterruptedException e) {
+                    Log.e("SettingsDialog", "Ping interrupted", e);
+                    pingText.post(() -> pingText.setText("Error")); // update UI safely on error
+                }
+            }).start();
+        });
 
         onlineSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             online = isChecked;

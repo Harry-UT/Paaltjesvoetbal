@@ -62,6 +62,7 @@ public class ClientConnection extends SocketConnection {
      */
     @Override
     protected void handleMessage(String message) {
+        Log.d("ClientConnection", "Received message: " + message);
         System.out.println(message);
         String[] splitMsg = message.split(Protocol.SEPARATOR);
         //        System.out.println(Arrays.toString(splitMsg));
@@ -77,6 +78,10 @@ public class ClientConnection extends SocketConnection {
                 break;
             case Protocol.SERVER:
                 System.out.println("Message from server: " + splitMsg[1]);
+                break;
+            case Protocol.PING:
+                Log.d("Ping", "Ping received from server.");
+                gameClient.onPingResponse();
                 break;
         }
     }

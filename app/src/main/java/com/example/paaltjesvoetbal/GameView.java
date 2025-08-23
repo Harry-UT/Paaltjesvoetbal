@@ -24,6 +24,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +40,7 @@ import com.example.paaltjesvoetbal.model.ShootButton;
 import com.example.paaltjesvoetbal.model.Star;
 import com.example.paaltjesvoetbal.model.Team;
 import com.example.paaltjesvoetbal.model.Vector;
+import com.example.paaltjesvoetbal.networking.Protocol;
 
 
 /**
@@ -71,7 +76,9 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> goalLines = new ArrayList<>(); // The lines which the ball crosses to score a goal
     private final List<Path> cornerPaths = new ArrayList<>(); // The circumference of each goal area
     private final List<Region> goalRegions = new ArrayList<>(); // The goal areas for each player
-
+    private final ReentrantLock pingLock = new ReentrantLock();
+    private final Condition pingReceived = pingLock.newCondition();
+    private boolean pingResponse = false;
     private long lastBounceTime = 0;
     private float lastGoalTime;
     private Player lastShooter;
@@ -86,6 +93,7 @@ public class GameView extends SurfaceView implements Runnable {
     private int fps;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
+
     private String username;
     private ClientConnection clientConnection;
     private InetAddress server;
@@ -1410,6 +1418,36 @@ public class GameView extends SurfaceView implements Runnable {
         this.onlineMode = online;
     }
 
+    public int pingServer() throws InterruptedException {
+        if (clientConnection == null) return -1;
+
+        int startTime = (int) System.currentTimeMillis();
+        pingLock.lock();
+        try {
+            pingResponse = false;
+            clientConnection.sendMessage(Protocol.PING, LocalDateTime.now().toString());
+            Log.d("Ping", "Ping message sent to server");
+            while (!pingResponse) {
+                pingReceived.await();  // waits until signal() is called
+            }
+        } finally {
+            pingLock.unlock();
+        }
+        return (int) (System.currentTimeMillis() - startTime);
+    }
+
+    public void onPingResponse() {
+        pingLock.lock();
+        try {
+            pingResponse = true;
+            pingReceived.signalAll();  // wakes up waiting thread
+            Log.d("Ping", "Ping response received from server");
+        } finally {
+            pingLock.unlock();
+        }
+    }
+
+
     private void connectToServer() {
         new Thread(() -> {
             try {
@@ -1417,6 +1455,7 @@ public class GameView extends SurfaceView implements Runnable {
                 Log.d("Connection", "Server IP: " + server.toString());
                 ClientConnection connection = new ClientConnection(server, port);
                 Log.d("Connection", "Client connection initialized");
+                connection.start();
                 this.clientConnection = connection;
                 Log.d("Connection", "Client connection created");
                 if (clientConnection != null) {
