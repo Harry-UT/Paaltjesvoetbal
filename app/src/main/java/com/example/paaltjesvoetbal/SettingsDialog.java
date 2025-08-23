@@ -13,6 +13,10 @@ import android.widget.CheckBox;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.text.TextWatcher;
+import android.text.Editable;
+import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.EditorInfo;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -59,6 +63,7 @@ public class SettingsDialog extends Dialog {
         Button resetButton = findViewById(R.id.resetButton);
         CheckBox twovtwomodeSwitch = findViewById(R.id.twoVtwoMode);
         TextInputEditText usernameInput = findViewById(R.id.usernameInput);
+        Button okButton = findViewById(R.id.okButton);
 
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch onlineSwitch = findViewById(R.id.onlineSwitch);
 
@@ -78,7 +83,47 @@ public class SettingsDialog extends Dialog {
         onlineSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             online = isChecked;
             Log.d("SettingsDialog", "Online switch toggled: " + isChecked);
-            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked, twovtwomodeSwitch.isChecked(), false);
+            if (isChecked) {
+                String username = usernameInput.getText().toString();
+                if (username.isEmpty()) {
+                    usernameInput.setError("Please enter a username to play online");
+                    onlineSwitch.setChecked(false);
+                } else {
+                    notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked, twovtwomodeSwitch.isChecked(), false);
+                }
+            }
+        });
+
+        usernameInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                if (usernameInput.getError() != null) {
+                    usernameInput.setError(null);
+                }
+                usernameInput.clearFocus();
+                usernameInput.setSelection(0, 0); // Clear text selection
+
+                // Hide keyboard and remove cursor
+                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(usernameInput.getWindowToken(), 0);
+            }
+        });
+
+        usernameInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                    actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                    (event != null && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER)) {
+
+                usernameInput.clearFocus();
+                usernameInput.setSelection(0, 0); // Clear text selection
+                return true;
+            }
+            return false;
+        });
+
+        okButton.setOnClickListener(v -> {
+            usernameInput.clearFocus();
+            usernameInput.setSelection(0, 0); // Clear text selection
+            // Your existing OK button logic here
         });
 
         ballSpeedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

@@ -215,7 +215,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
-            android:id="@+id/button"
+            android:id="@+id/okButton"
             android:layout_width="49dp"
             android:layout_height="41dp"
             android:layout_marginStart="144dp"
