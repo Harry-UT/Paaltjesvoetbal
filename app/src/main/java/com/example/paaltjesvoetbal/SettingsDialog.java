@@ -17,6 +17,7 @@ import android.text.TextWatcher;
 import android.text.Editable;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Toast;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -118,6 +119,21 @@ public class SettingsDialog extends Dialog {
                 return true;
             }
             return false;
+        });
+
+        usernameInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (online) {
+                    Toast.makeText(getContext(), "Username will be used after reconnecting", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
         });
 
         okButton.setOnClickListener(v -> {
