@@ -318,9 +318,6 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void scored(int goal, Player player) {
         soundManager.playGoalSound();
-        // Scored in goal by player
-        player.incrementScore();
-
         if (twoVtwoMode) {
             int teamIndex = (players.indexOf(player) == 0 || players.indexOf(player) == 2) ? 0 : 1;
             // Only allow scoring in the opponent's goal
@@ -1398,7 +1395,6 @@ public class GameView extends SurfaceView implements Runnable {
             // Reset the game state for online mode
             try {
                 connectToServer();
-                Log.d("Connection", "Client connection created");
             } catch (Exception e) {
                 Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
             }
@@ -1409,17 +1405,15 @@ public class GameView extends SurfaceView implements Runnable {
     private void connectToServer() {
         new Thread(() -> {
             try {
-                this.server = InetAddress.getByName("192.168.56.1");
+                this.server = InetAddress.getByName("192.168.178.31");
+                Log.d("Connection", "Server IP: " + server.toString());
                 ClientConnection connection = new ClientConnection(server, port);
-
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-                mainHandler.post(() -> {
-                    this.clientConnection = connection;
-                    Log.d("Connection", "Client connection created");
-                    if (clientConnection != null) {
-                        clientConnection.setChatClient(this);
-                    }
-                });
+                Log.d("Connection", "Client connection initialized");
+                this.clientConnection = connection;
+                Log.d("Connection", "Client connection created");
+                if (clientConnection != null) {
+                    clientConnection.setChatClient(this);
+                }
             } catch (IOException e) {
                 Handler mainHandler = new Handler(Looper.getMainLooper());
                 mainHandler.post(() -> {
@@ -1429,12 +1423,16 @@ public class GameView extends SurfaceView implements Runnable {
         }).start();
     }
 
+    /**
+     * Send a message to the server with a timestamp
+     * @param message the message to send
+     */
     public void sendMessage(String message) {
         new Thread(() -> {
             if (clientConnection != null) { // Send time.now
-                LocalDateTime now = LocalDateTime.now();
-                String timestamp = now.toString();  // Converts to ISO format
-                clientConnection.sendMessage(message, timestamp); // gets the current timestamp in ISO format
+                LocalDateTime now = LocalDateTime.now(); // Get current time in ISO format
+                String timestamp = now.toString();  // Convert to string
+                clientConnection.sendMessage(message, timestamp);
             }
         }).start();
     }

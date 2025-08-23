@@ -1,5 +1,7 @@
 package com.example.paaltjesvoetbal;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import com.example.paaltjesvoetbal.networking.SocketConnection;
