@@ -14,6 +14,9 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
 import java.util.Objects;
 
 public class SettingsDialog extends Dialog {
@@ -55,6 +58,7 @@ public class SettingsDialog extends Dialog {
         TextView playerCountText = findViewById(R.id.currentPlayerCount);
         Button resetButton = findViewById(R.id.resetButton);
         CheckBox twovtwomodeSwitch = findViewById(R.id.twoVtwoMode);
+        TextInputEditText usernameInput = findViewById(R.id.usernameInput);
 
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch onlineSwitch = findViewById(R.id.onlineSwitch);
 

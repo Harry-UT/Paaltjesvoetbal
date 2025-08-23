@@ -963,7 +963,7 @@ public class GameView extends SurfaceView implements Runnable {
                 // Clamp player position within field bounds (not in corners)
                 for (int i = 0; i < bounceEdges.size(); i++) {
                     Vector edge = bounceEdges.get(i);
-                    float dist = 1000f; // Initialize with a large distance
+                    float dist; // Initialize with a large distance
                     int edgeIndex = i;
 
                     switch (players.indexOf(player)) {
@@ -1394,7 +1394,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
             changePlayerSpeed(playerSpeed);
             changeBallSpeed(ballSpeed);
-        } else if (!onlineMode && online) {
+        } else if (!onlineMode) {
             // Reset the game state for online mode
             try {
                 server = InetAddress.getByName("192.168.56.1");
