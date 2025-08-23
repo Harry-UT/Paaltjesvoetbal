@@ -584,7 +584,7 @@ public class GameView extends SurfaceView implements Runnable {
         int postSide = 1; // To alternate between the two posts of each goal
         Paint paint = new Paint();
         paint.setColor(Color.BLACK);
-        for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+        for (int i = 0; i < (twoVtwoMode ? 4 : PLAYERCOUNT * 2); i++) {
             Vector bounceEdge = bounceEdges.get(i);
             // Draw a little edge index next to the bounce edge
 //            paint.setTextSize(30);
