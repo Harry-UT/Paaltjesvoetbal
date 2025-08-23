@@ -14,11 +14,11 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
-        <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2025-08-23T17:59:50.881618400Z">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-08-23T18:53:55.533510Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Harry\.android\avd\Medium_Phone_API_35.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
             </handle>
           </Target>
         </DropdownSelection>

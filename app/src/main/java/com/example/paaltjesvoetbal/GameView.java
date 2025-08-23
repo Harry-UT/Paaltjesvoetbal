@@ -1397,19 +1397,46 @@ public class GameView extends SurfaceView implements Runnable {
         } else if (!onlineMode) {
             // Reset the game state for online mode
             try {
-                server = InetAddress.getByName("192.168.56.1");
-                this.clientConnection = new ClientConnection(server, port);
-            } catch (IOException e) {
+                connectToServer();
+                Log.d("Connection", "Client connection created");
+            } catch (Exception e) {
                 Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
-            }
-            if (clientConnection != null) {
-                clientConnection.setChatClient(this);
-                login();
-            } else {
-                Log.d("ClientConnection", "Client connection is null, cannot set chat client");
             }
         }
         this.onlineMode = online;
+    }
+
+    private void connectToServer() {
+        new Thread(() -> {
+            try {
+                this.server = InetAddress.getByName("192.168.56.1");
+                ClientConnection connection = new ClientConnection(server, port);
+
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    this.clientConnection = connection;
+                    Log.d("Connection", "Client connection created");
+                    if (clientConnection != null) {
+                        clientConnection.setChatClient(this);
+                    }
+                });
+            } catch (IOException e) {
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    Log.d("Connection", "Error creating client connection: " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    public void sendMessage(String message) {
+        new Thread(() -> {
+            if (clientConnection != null) { // Send time.now
+                LocalDateTime now = LocalDateTime.now();
+                String timestamp = now.toString();  // Converts to ISO format
+                clientConnection.sendMessage(message, timestamp); // gets the current timestamp in ISO format
+            }
+        }).start();
     }
 
     /**
@@ -1554,10 +1581,6 @@ public class GameView extends SurfaceView implements Runnable {
         // For example, update player positions or scores based on the message
     }
 
-    private void login() {
-
-    }
-
     public void determineUsername() {
         System.out.print("Enter your username: ");
         boolean set = false;
@@ -1572,23 +1595,6 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
         }
-    }
-
-    public void sendMessage() {
-        String message = "";
-        System.out.print("Enter desired receiver: ");
-//        String receiver = input.nextLine();
-        System.out.print("Enter message: ");
-//        String message = input.nextLine();
-        System.out.println("Sending message");
-        System.out.println(getUsername());
-        LocalDateTime now = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            now = LocalDateTime.now();
-        }
-        assert now != null;
-        String timestamp = now.toString();  // Converts to ISO format
-        clientConnection.sendMessage(message, timestamp); // gets the current timestamp in ISO format
     }
 
     private String getUsername() {
