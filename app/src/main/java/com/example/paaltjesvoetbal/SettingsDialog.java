@@ -119,6 +119,18 @@ public class SettingsDialog extends Dialog {
             }
         });
 
+        twovtwomodeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                playerCountSeekBar.setProgress(4);
+                playerCountSeekBar.setEnabled(false);
+            } else {
+                playerCountSeekBar.setEnabled(true);
+            }
+            SoundManager.getInstance(getContext()).playTwovTwoTick();
+            Log.d("SettingsDialog", "Two vs Two mode toggled: " + isChecked);
+            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomodeSwitch.isChecked(), true);
+        });
+
         usernameInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 if (usernameInput.getError() != null) {
@@ -231,12 +243,6 @@ public class SettingsDialog extends Dialog {
             twovTwoMode = false;
             Log.d("SettingsDialog", "Settings reset to default");
             notifySettingsChanged(resetPlayerCount, resetPlayerSpeed, resetBallSpeed, online, twovTwoMode, true);
-        });
-
-        twovtwomodeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SoundManager.getInstance(getContext()).playTwovTwoTick();
-            Log.d("SettingsDialog", "Two vs Two mode toggled: " + isChecked);
-            notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), online, twovtwomodeSwitch.isChecked(), true);
         });
     }
 
