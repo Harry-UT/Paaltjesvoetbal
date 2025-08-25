@@ -10,6 +10,14 @@ public class GoalPost {
         this.radius = radius;
     }
 
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
     public void bounceBall(Ball ball) {
         // Vector from post to ball
         float dx = ball.getX() - x;

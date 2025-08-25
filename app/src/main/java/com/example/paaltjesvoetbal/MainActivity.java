@@ -21,8 +21,11 @@ public class MainActivity extends Activity {
         int screenX = getResources().getDisplayMetrics().widthPixels;
         int screenY = getResources().getDisplayMetrics().heightPixels + 30;
 
+        // Get screen density (DPI)
+        int dpi = getResources().getDisplayMetrics().densityDpi;
+
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, screenY);
+        gameView = new GameView(this, screenX, screenY, dpi);
 
         // Set the GameView as the content view
         setContentView(gameView);

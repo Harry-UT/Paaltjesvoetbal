@@ -30,7 +30,7 @@ public class SettingsDialog extends Dialog {
     private final int initialPlayerCount;
     private final int initialPlayerSpeed;
     private final int initialBallSpeed;
-    private final int resetPlayerCount = 2;
+    private final int resetPlayerCount = 4;
     private final int resetPlayerSpeed = 4;
     private final int resetBallSpeed = 18;
     private boolean online;

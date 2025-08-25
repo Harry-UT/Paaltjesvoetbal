@@ -31,6 +31,7 @@ import android.os.Looper;
 
 import com.example.paaltjesvoetbal.model.Ball;
 import com.example.paaltjesvoetbal.model.FloatingText;
+import com.example.paaltjesvoetbal.model.GoalPost;
 import com.example.paaltjesvoetbal.model.Joystick;
 import com.example.paaltjesvoetbal.model.Player;
 import com.example.paaltjesvoetbal.model.ShootButton;
@@ -55,6 +56,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final SurfaceHolder holder;
     private final int screenX;
     private final int screenY;
+    private final int DPI;
     private final List<Joystick> joysticks;
     private final List<Player> players;
     private final List<Team> teams = new ArrayList<>();
@@ -68,7 +70,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final int BALLRADIUS = 15;
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
+    private final int GOALPOSTRADIUS = 5;
     private int PLAYERCOUNT = 4;
+    private static final long BALL_BOUNCE_COOLDOWN_MS = 100; // 100ms cooldown
+
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
@@ -76,6 +81,8 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> bounceEdgesTwovTwo = new ArrayList<>(); // The lines which the ball bounces off in 2v2 mode
     private final List<Vector> goalLines = new ArrayList<>(); // The lines which the ball crosses to score a goal
     private final List<Vector> goalLinesTwovTwo = new ArrayList<>(); // The lines which the ball crosses to score a goal in 2v2 mode
+    private final List<GoalPost> goalPosts = new ArrayList<>(); // The goal posts at the corners of the goals
+    private final List<GoalPost> goalPostsTwovTwo = new ArrayList<>(); // The goal posts at the corners of the goals in 2v2 mode
     private final List<Path> cornerPaths = new ArrayList<>(); // The circumference of each goal area
     private final List<Path> cornerPathsTwovTwo = new ArrayList<>(); // The circumference of each goal area in 2v2 mode
     private final List<Region> goalRegions = new ArrayList<>(); // The goal areas for each player
@@ -126,13 +133,15 @@ public class GameView extends SurfaceView implements Runnable {
      * @param screenX the width of the screen
      * @param screenY the height of the screen
      */
-    public GameView(Context context, int screenX, int screenY) {
+    public GameView(Context context, int screenX, int screenY, int dpi) {
         super(context);
+        Log.d("DPI", "dpi: " + dpi);
         soundManager = SoundManager.getInstance(context);
 
         setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
+        this.DPI = dpi;
         this.goalText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
         playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
@@ -172,6 +181,10 @@ public class GameView extends SurfaceView implements Runnable {
         // Determine the goals
         determineGoals();
         determineGoalsTwovTwo();
+
+        // Determine goal posts
+        determineGoalPosts();
+        determineGoalPostsTwovTwo();
 
         // Determine score text positions
         determineScoreTextPositions();
@@ -368,6 +381,8 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the bounce edges of the goals
         for (Vector edge : bounceEdges) {
             staticCanvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
+            // Draw a little index number for debugging
+            staticCanvas.drawText(String.valueOf(bounceEdges.indexOf(edge)), (float) ((edge.getX1() + edge.getX2()) / 2), (float) ((edge.getY1() + edge.getY2()) / 2), fpsPaint);
         }
         for (Vector edge : verticalGoalEdges) {
             staticCanvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
@@ -417,6 +432,7 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the bounce edges of the goals
         for (Vector edge : bounceEdgesTwovTwo) {
             staticCanvasTwovTwo.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
+            staticCanvasTwovTwo.drawText(String.valueOf(bounceEdgesTwovTwo.indexOf(edge)), (float) ((edge.getX1() + edge.getX2()) / 2), (float) ((edge.getY1() + edge.getY2()) / 2), fpsPaint);
         }
         // Draw goalposts
         drawGoalPostsTwovTwo();
@@ -434,6 +450,8 @@ public class GameView extends SurfaceView implements Runnable {
             float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
 
             staticCanvas.drawCircle(x, y, 5, goalPostPaint);
+            // Add a little index number for debugging
+            staticCanvas.drawText(String.valueOf(i), x + 10, y + 10, fpsPaint);
             postSide++;
         }
     }
@@ -442,14 +460,10 @@ public class GameView extends SurfaceView implements Runnable {
      * Draw the goal posts at the corners of the goals in 2v2 mode
      */
     private void drawGoalPostsTwovTwo() {
-        int postSide = 1;
-        for (int i = 0; i < 4; i++) {
-            Vector edge = bounceEdgesTwovTwo.get(i);
-            float x = (postSide % 2 == 0) ? (float) edge.getX1() : (float) edge.getX2();
-            float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
-
-            staticCanvasTwovTwo.drawCircle(x, y, 5, goalPostPaint);
-            postSide++;
+        for (int i = 0; i < goalPostsTwovTwo.size(); i++) {
+            staticCanvasTwovTwo.drawCircle(goalPostsTwovTwo.get(i).getX(), goalPostsTwovTwo.get(i).getY(), GOALPOSTRADIUS, goalPostPaint);
+            // Draw a little index number for debugging
+            staticCanvasTwovTwo.drawText(String.valueOf(i), goalPostsTwovTwo.get(i).getX() + 10, goalPostsTwovTwo.get(i).getY() + 10, fpsPaint);
         }
     }
 
@@ -513,17 +527,52 @@ public class GameView extends SurfaceView implements Runnable {
         Vector topLeft = new Vector(0, screenX * 0.3f, screenX * 0.35f, screenX * 0.3f);
         // Top-right bounce edge
         Vector topRight = new Vector(screenX * 0.65f, screenX * 0.3f, screenX, screenX * 0.3f);
-        bounceEdgesTwovTwo.add(bottomLeft);
         bounceEdgesTwovTwo.add(bottomRight);
+        bounceEdgesTwovTwo.add(bottomLeft);
         bounceEdgesTwovTwo.add(topLeft);
         bounceEdgesTwovTwo.add(topRight);
+    }
+
+    /**
+     * Determine the positions of the goal posts based on the goal lines
+     */
+    private void determineGoalPosts() {
+        double x = goalLines.get(0).getX2();
+        double y = goalLines.get(0).getY2();
+        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLines.get(0).getX1();
+        y = goalLines.get(0).getY1();
+        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLines.get(1).getX1();
+        y = goalLines.get(1).getY1();
+        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLines.get(1).getX2();
+        y = goalLines.get(1).getY2();
+        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+    }
+
+    /**
+     * Determine the positions of the goal posts based on the goal lines in 2v2 mode
+     */
+    private void determineGoalPostsTwovTwo() {
+        double x = goalLinesTwovTwo.get(0).getX2();
+        double y = goalLinesTwovTwo.get(0).getY2();
+        goalPostsTwovTwo.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLinesTwovTwo.get(0).getX1();
+        y = goalLinesTwovTwo.get(0).getY1();
+        goalPostsTwovTwo.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLinesTwovTwo.get(1).getX1();
+        y = goalLinesTwovTwo.get(1).getY1();
+        goalPostsTwovTwo.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
+        x = goalLinesTwovTwo.get(1).getX2();
+        y = goalLinesTwovTwo.get(1).getY2();
+        goalPostsTwovTwo.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
     }
 
     /**
      * Initialize the first player object
      */
     private void determineGoals() {
-        goalLines.clear();
         // Iterate over all diagonal edges to determine the goals
         for (Vector edge : diagonalEdges) {
             // Get scaled vector
@@ -536,7 +585,6 @@ public class GameView extends SurfaceView implements Runnable {
         // Bottom blue goal
         Vector bottomGoal = new Vector(screenX * 0.35f, screenY - screenX * 0.3f, screenX * 0.65f, screenY - screenX * 0.3f);
         Vector topGoal = new Vector(screenX * 0.35f, screenX * 0.3f, screenX * 0.65f, screenX * 0.3f);
-        goalLinesTwovTwo.clear();
         goalLinesTwovTwo.add(bottomGoal);
         goalLinesTwovTwo.add(topGoal);
     }
@@ -590,14 +638,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (onlineMode) {
             updateOnline();
         } else {
-            for (Ball ball : balls) {
-                lastBounceTime = ball.update(screenX, screenY, PLAYERCOUNT < 4 ? goalLines.subList(2, 4) : null, twoVtwoMode);
-                // Log presence of shooter for ball
-                Log.d("Ball", "Ball shooter: " + ball.getShooter());
-                if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
-                    checkGoal(ball);
-                }
-            }
+            updateBalls();
             checkPlayerBallCollision();
             updatePlayers();
         }
@@ -605,6 +646,202 @@ public class GameView extends SurfaceView implements Runnable {
 
     private void updateOnline() {
 
+    }
+
+    /**
+     * Update the positions of the balls
+     */
+    private void updateBalls() {
+        for (Ball ball : balls) {
+            if (ball.getPlayer() == null) {
+                // Check whether the ball has to bounce
+                checkBounce(ball);
+                checkEdgeCollision(ball);
+                if (PLAYERCOUNT < 4) {
+//                    checkGoalLineCollision(ball); Todo: fix
+                }
+
+                // Update ball position based on its velocity
+                ball.incrementXY();
+                // Decrement the ball's velocity
+                ball.updateVelocity();
+            } else { // Todo: fix
+//                // Update the ball's position based on the player's direction
+//                float direction = this.player.getDirection();  // Get the player's direction (angle in radians)
+//                if (direction != 0) {
+//                    // Define a distance to move the ball from the player (e.g., just in front of the player)
+//                    float combinedRadius = this.player.getRadius() + this.radius; // Combine player and ball radii
+//
+//                    // Calculate new position based on direction, adjusted by combined radius
+//                    setX((float) (this.player.getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
+//                    setY((float) (this.player.getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
+//                }
+            }
+
+            // Log presence of shooter for ball
+            Log.d("Ball", "Ball shooter: " + ball.getShooter());
+            if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
+                checkGoal(ball);
+            }
+        }
+    }
+
+    private void checkBounce(Ball ball) {
+        // Check for collision with the left edge
+        if (getX() - ball.getRadius() < 0) {
+            if (ball.getVelocityX() < 0) {
+                ball.setVelocityX(-ball.getVelocityX());  // Reverse horizontal direction
+                ball.setLastBouncedEdgeIndex(-1);      // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with left edge");
+            }
+        }
+
+        // Check for collision with the right edge of the screen
+        if (getX() + ball.getRadius() > screenX) {
+            if (ball.getVelocityX() > 0) {
+                ball.setVelocityX(-ball.getVelocityX());  // Reverse horizontal direction
+                ball.setLastBouncedEdgeIndex(-1);      // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with right edge");
+            }
+        }
+
+        // Check for collisions with top and bottom edges of the screen
+        if (getY() - ball.getRadius() < 0) {
+            if (ball.getVelocityY() < 0) {
+                ball.setVelocityY(-ball.getVelocityY());  // Reverse vertical direction
+                ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with top edge");
+            }
+        }
+
+        if (getY() + ball.getRadius() > screenY) {
+            if (ball.getVelocityY() > 0) {
+                ball.setVelocityY(-ball.getVelocityY());  // Reverse vertical direction
+                ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                Log.d("Bounce", "Ball collided with bottom edge");
+            }
+        }
+
+        // Check for collisions with the diagonal edges
+//        for (int i = 0; i < bounceEdges.size(); i++) {
+//            checkEdgeCollision(i, screenX, goalLines);
+//        }
+
+        // Check for collisions with the vertical goal edges
+        if (!twoVtwoMode) {
+            for (Vector edge : verticalGoalEdges) {
+                // Get distance from ball to the vector (not infinite line)
+                double distance = edge.distanceToPoint(getX(), getY());
+                if (distance <= ball.getRadius()) {
+                    // Invert ball velocity
+                    ball.setVelocityX(-ball.getVelocityX());
+                    ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                }
+            }
+        }
+    }
+
+    public void checkEdgeCollision(Ball ball) {
+        for (int edgeVectorIndex = 0; edgeVectorIndex < bounceEdges.size(); edgeVectorIndex++) {
+            long currentTime = System.currentTimeMillis();
+            double postRadius = 6; // Radius of the goalpost
+
+            // If still within the cooldown period, don't allow another bounce
+            if ((ball.getLastBouncedEdgeIndex() == edgeVectorIndex && ball.getLastGoalpostIndex() != edgeVectorIndex) && (currentTime - lastBounceTime < BALL_BOUNCE_COOLDOWN_MS)) {
+                return;
+            }
+
+            Vector edge = bounceEdges.get(edgeVectorIndex);
+            double x1 = edge.getX1();
+            double y1 = edge.getY1();
+            double x2 = edge.getX2();
+            double y2 = edge.getY2();
+            double edgeDX = x2 - x1;
+            double edgeDY = y2 - y1;
+
+            double ballDX = getX() - x1;
+            double ballDY = getY() - y1;
+            double dotProduct = ballDX * edgeDX + ballDY * edgeDY;
+            double edgeLengthSquared = edgeDX * edgeDX + edgeDY * edgeDY;
+            double projection = dotProduct / edgeLengthSquared;
+
+            // Handle goalpost collision (if near the endpoints)
+            if (goalLines != null && !((goalLines.size() == 1 && (edgeVectorIndex == 4 || edgeVectorIndex == 5)) || (goalLines.size() == 2 && (edgeVectorIndex == 6 || edgeVectorIndex == 7)))) {
+                double distanceToStart = Math.sqrt(Math.pow(getX() - x1, 2) + Math.pow(getY() - y1, 2));
+                double distanceToEnd = Math.sqrt(Math.pow(getX() - x2, 2) + Math.pow(getY() - y2, 2));
+
+                double goalpostX = (distanceToStart <= (postRadius + ball.getRadius())) ? x1 : x2;
+                double goalpostY = (distanceToStart <= (postRadius + ball.getRadius())) ? y1 : y2;
+
+                // Check if the ball is within the goalpost radius
+                // And make sure only the intended goalposts are checked
+                boolean sameGoalPost = (ball.getLastGoalpostIndex() == edgeVectorIndex) || (ball.getLastGoalpostIndex() == 3 && edgeVectorIndex == 6) || (ball.getLastGoalpostIndex() == 6 && edgeVectorIndex == 3) || (ball.getLastGoalpostIndex() == 4 && edgeVectorIndex == 1) || (ball.getLastGoalpostIndex() == 1 && edgeVectorIndex == 4);
+                if (((distanceToStart <= (postRadius + ball.getRadius()) || distanceToEnd <= (postRadius + ball.getRadius())) &&
+                        (goalpostX > 0 && goalpostX < screenX)) && !sameGoalPost && (goalpostX > screenX / 2 + 5 || goalpostX < screenX / 2 - 5)) {
+                    Log.d("Bounce", "Ball collided with goalpost " + edgeVectorIndex);
+                    Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+                    Log.d("Bounce", "GoalpostX: " + goalpostX);
+                    // Log screenx / 2
+                    Log.d("Bounce", "Screenx / 2: " + screenX / 2);
+
+                    ball.setLastBouncedEdgeIndex(edgeVectorIndex);
+                    ball.setLastGoalpostIndex(edgeVectorIndex);
+                    lastBounceTime = currentTime;
+
+                    double normalX = getX() - goalpostX;
+                    double normalY = getY() - goalpostY;
+                    double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
+                    normalX /= normalLength;
+                    normalY /= normalLength;
+
+                    ball.reflect(normalX, normalY);
+//                    resolveOverlap(normalX, normalY, postRadius - Math.min(distanceToStart, distanceToEnd));
+                    Log.d("Bounce", "Ball velocity: (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
+                    return;
+                }
+            }
+
+            // Normal edge collision
+            double closestX, closestY;
+            if (projection < 0) {
+                closestX = x1;
+                closestY = y1;
+            } else if (projection > 1) {
+                closestX = x2;
+                closestY = y2;
+            } else {
+                closestX = x1 + projection * edgeDX;
+                closestY = y1 + projection * edgeDY;
+            }
+
+            double distanceToEdge = Math.sqrt(Math.pow(getX() - closestX, 2) + Math.pow(getY() - closestY, 2));
+
+            if (distanceToEdge <= ball.getRadius()) {
+                Log.d("Bounce", "Ball collided with edge " + edgeVectorIndex);
+                Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
+                Log.d("Bounce", "Last bounce edge: " + ball.getLastBouncedEdgeIndex());
+                ball.setLastBouncedEdgeIndex(edgeVectorIndex);
+                ball.setLastGoalpostIndex(-1);
+                lastBounceTime = currentTime;
+
+                double normalX = -edgeDY;
+                double normalY = edgeDX;
+                double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
+                normalX /= normalLength;
+                normalY /= normalLength;
+
+                // Ensure the ball bounces in the correct direction (ball passed through the edge case)
+                if ((ball.getVelocityX() * normalX + ball.getVelocityY() * normalY) > 0) {
+                    normalX = -normalX;
+                    normalY = -normalY;
+                }
+
+                ball.reflect(normalX, normalY);
+//                resolveOverlap(normalX, normalY, radius - distanceToEdge);
+
+                Log.d("Bounce", "Ball velocity: (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
+            }
+        }
     }
 
     /**
@@ -949,7 +1186,6 @@ public class GameView extends SurfaceView implements Runnable {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                     boolean pointerHandled = false;
-
                     // Handle joystick reset
                     synchronized (joysticks) {
                         for (Joystick joystick : joysticks) {
@@ -1393,6 +1629,11 @@ public class GameView extends SurfaceView implements Runnable {
         this.onlineMode = online;
     }
 
+    /**
+     * Ping the server and return the round-trip time in milliseconds
+     * @return the ping time in milliseconds, or -1 if not connected
+     * @throws InterruptedException if the thread is interrupted while waiting
+     */
     public int pingServer() throws InterruptedException {
         if (clientConnection == null) return -1;
 
@@ -1475,21 +1716,6 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void changeBallSpeed(int ballSpeed) {
         this.BALL_SPEED = ballSpeed;
-    }
-
-    /**
-     * Clear the lists of players, joysticks and shoot buttons
-     */
-    private void clearLists() {
-//        synchronized (players) {
-//            players = new ArrayList<>();
-//        }
-//        synchronized (joysticks) {
-//            joysticks.clear();
-//        }
-//        synchronized (shootButtons) {
-//            shootButtons.clear();
-//        }
     }
 
     /**
