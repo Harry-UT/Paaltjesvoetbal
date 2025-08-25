@@ -1374,7 +1374,7 @@ public class GameView extends SurfaceView implements Runnable {
                     }
                 }
             }
-        } else {
+        } else { // Todo: Finish
             if (!onlineMode) {
                 // Reset the game state and connect to server
                 try {
