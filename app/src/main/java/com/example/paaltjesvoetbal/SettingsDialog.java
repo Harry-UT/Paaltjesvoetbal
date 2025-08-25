@@ -100,10 +100,10 @@ public class SettingsDialog extends Dialog {
             online = isChecked;
             Log.d("SettingsDialog", "Online switch toggled: " + isChecked);
             if (isChecked) {
-                playerCountSeekBar.setEnabled(true);
-                playerSpeedSeekBar.setEnabled(true);
-                ballSpeedSeekBar.setEnabled(true);
-                twovtwomodeSwitch.setEnabled(true);
+                playerCountSeekBar.setEnabled(false);
+                playerSpeedSeekBar.setEnabled(false);
+                ballSpeedSeekBar.setEnabled(false);
+                twovtwomodeSwitch.setEnabled(false);
                 String username = usernameInput.getText().toString();
                 if (username.isEmpty()) {
                     usernameInput.setError("Please enter a username to play online");
@@ -112,10 +112,10 @@ public class SettingsDialog extends Dialog {
                     notifySettingsChanged(playerCountSeekBar.getProgress(), playerSpeedSeekBar.getProgress(), ballSpeedSeekBar.getProgress(), isChecked, twovtwomodeSwitch.isChecked(), false);
                 }
             } else {
-                playerCountSeekBar.setEnabled(false);
-                playerSpeedSeekBar.setEnabled(false);
-                ballSpeedSeekBar.setEnabled(false);
-                twovtwomodeSwitch.setEnabled(false);
+                playerCountSeekBar.setEnabled(true);
+                playerSpeedSeekBar.setEnabled(true);
+                ballSpeedSeekBar.setEnabled(true);
+                twovtwomodeSwitch.setEnabled(true);
             }
         });
 
