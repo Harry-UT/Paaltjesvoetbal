@@ -8,10 +8,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PorterDuff;
 import android.graphics.Region;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -25,8 +23,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
 
@@ -52,9 +48,9 @@ public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
     private final Bitmap settingsIcon = BitmapFactory.decodeResource(getResources(), R.drawable.settings_icon);
     private Bitmap staticLayer;
-    private Bitmap goalPostsLayer;
-
     private Canvas staticCanvas;
+    private Bitmap staticLayerTwovTwo;
+    private Canvas staticCanvasTwovTwo;
 
     private boolean isPlaying;
     private final SurfaceHolder holder;
@@ -62,7 +58,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int screenY;
     private final List<Joystick> joysticks;
     private List<Player> players;
-    private List<Team> teams = new ArrayList<>();
+    private final List<Team> teams = new ArrayList<>();
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
@@ -74,7 +70,6 @@ public class GameView extends SurfaceView implements Runnable {
     private final int JOYSTICKRADIUS = 95;
     private final int SHOOTBUTTONRADIUS = 50;
     private int PLAYERCOUNT = 4;
-
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
@@ -99,7 +94,6 @@ public class GameView extends SurfaceView implements Runnable {
     private int fps;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
-
     private final Paint goalPaintBlue = new Paint();
     private final Paint goalPaintRed = new Paint();
     private final Paint goalPaintGreen = new Paint();
@@ -107,7 +101,6 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Paint> scoresPaints = new ArrayList<>();
     private final Paint teamScoresPaint = new Paint();
     private final Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
-
     private final List<int[]> scorePositions = new ArrayList<>(); // Contains the x and y of the score text per player
     private final List<Float> scoreRotations = new ArrayList<>(); // Contains the rotation of the score text per player
     private final Paint edgePaint = new Paint();
@@ -118,12 +111,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final Paint goalTextAnimationPaint = new Paint();
     private final Paint scoreIncrementPaint = new Paint();
     float outerRadius;
-
-
     private String username;
     private ClientConnection clientConnection;
     private InetAddress server;
-    private int port = 3000;
+    private final int port = 3000;
 
     /**
      * Constructor for the GameView class
@@ -192,33 +183,32 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void initPaints() {
+        // Initialize goal paints
         goalPaintBlue.setColor(Color.argb(140, 0, 0, 255));
         goalPaintRed.setColor(Color.argb(128, 255, 0, 0));
         goalPaintGreen.setColor(Color.rgb(140, 238, 144));
         goalPaintYellow.setColor(Color.argb(140, 255, 255, 0));
 
+        // Initialize edge paint
         edgePaint.setColor(Color.BLACK);
         edgePaint.setStrokeWidth(5);
 
+        // Initialize fps paint
         fpsPaint.setColor(Color.RED);
         fpsPaint.setTextSize(40);
 
+        // Initialize goal text paint
         float scaleFactor = 0.3f;
-
         // Desired position for the icon (center of the screen)
         float centerX = screenX / 2f;
         float centerY = screenY / 2f;
-
         // Apply scaling to the matrix
         settingsMatrix.postScale(scaleFactor, scaleFactor);
-
         // Compute the dimensions of the scaled icon
         float scaledWidth = settingsIcon.getWidth() * scaleFactor;
         float scaledHeight = settingsIcon.getHeight() * scaleFactor;
-
         // Adjust the translation to account for the scaled dimensions
         settingsMatrix.postTranslate(centerX - (scaledWidth / 2), centerY - (scaledHeight / 2));
-
         // Set up the paint for the circle (donut shape)
         middleCirclePaint.setColor(Color.BLACK);
         middleCirclePaint.setStrokeWidth(15);
@@ -227,18 +217,20 @@ public class GameView extends SurfaceView implements Runnable {
 
         goalPostPaint.setColor(Color.BLACK);
 
+        // Initialize goal text animation paint
         for (int i = 0; i < 4; i++) {
             Paint scorePaint = new Paint();
             scorePaint.setTextSize(60);
             scorePaint.setAntiAlias(true); // Smooth text edges
-
             scorePaint.setTypeface(typeface); // Set custom font
             scoresPaints.add(scorePaint);
         }
 
+        // Initialize team score paint
         teamScoresPaint.setTextSize(60);
         teamScoresPaint.setTypeface(typeface); // Set custom font
 
+        // Initialize goal text animation paint
         int xText;
         int yText;
         for (int index = 0; index < 4; index++) {
@@ -255,17 +247,8 @@ public class GameView extends SurfaceView implements Runnable {
             float middleY = goal.getMidY();
             float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
 
-
             float dxPerpendicular = -dy;
             float dyPerpendicular = dx;
-
-//            float lineLength = 500; // Length of the perpendicular line
-//            float startX = middleX;
-//            float startY = middleY;
-//            float endX = middleX + (dxPerpendicular * lineLength / 2);
-//            float endY = middleY + (dyPerpendicular * lineLength / 2);
-//
-//            canvas.drawLine(startX, startY, endX, endY, paint);
 
             switch (index) {
                 case 0: // Bottom-right (blue)
@@ -292,14 +275,11 @@ public class GameView extends SurfaceView implements Runnable {
                     return;
             }
 
-//            xText = (int) middleX;
-//            yText = (int) middleY;
+            // Calculate text position
             xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
             yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
-
-            // Center text with textmeasure
+            // Center text with text measure
             float textWidth = scoresPaints.get(index).measureText(String.valueOf(players.get(index).getScore()));
-
             switch (index) {
                 case 0:
                     xText -= (int) (textWidth / 2);
@@ -337,15 +317,15 @@ public class GameView extends SurfaceView implements Runnable {
         float y = ((float) screenY / 2) - ((goalTextAnimationPaint.descent() + goalTextAnimationPaint.ascent()) / 2);
         scoreIncrementPaint.setTextSize(scoreIncrementText.getSize());
 
-       initStaticBitmap(false);
+       initStaticBitmap();
     }
 
     /**
      * Initialize the static bitmap layer that contains non-changing elements
      */
-    private void initStaticBitmap(boolean forTwovTwo) {
+    private void initStaticBitmap() {
         // Create a bitmap for the static layer
-        staticLayer = Bitmap.createBitmap(screenX, screenY, Bitmap.Config.ARGB_8888);
+        staticLayer = Bitmap.createBitmap(screenX, screenY, Bitmap.Config.RGB_565);
         staticCanvas = new Canvas(staticLayer);
         // Draw the beige background
         staticCanvas.drawColor(Color.parseColor("#FFF1E9"));
@@ -413,50 +393,41 @@ public class GameView extends SurfaceView implements Runnable {
      */
     @Override
     public void run() {
-        final long OPTIMAL_TIME = 1000000000 / TARGET_FPS; // Time per frame in nanoseconds (1 second / 30 FPS)
-
+        final long OPTIMAL_TIME = 1_000_000_000 / TARGET_FPS;
         long lastLoopTime = System.nanoTime();
-        long lastTime = System.nanoTime();
+        long fpsTimer = System.nanoTime();
         int frames = 0;
 
         while (isPlaying) {
             long now = System.nanoTime();
-            long updateLength = now - lastLoopTime;
-            long sleepTime = OPTIMAL_TIME - updateLength; // Time to sleep to maintain the target FPS
+            float deltaTime = (now - lastLoopTime) / 1_000_000_000.0f; // seconds
+            lastLoopTime = now;
 
+            // Update game objects using deltaTime
+            update(deltaTime);
+
+            // Draw frame
+            draw();
+
+            frames++;
+
+            // Sleep to maintain target FPS
+            long frameTime = System.nanoTime() - now;
+            long sleepTime = (OPTIMAL_TIME - frameTime) / 1_000_000; // ms
             if (sleepTime > 0) {
-                // Convert sleep time to milliseconds and sleep to maintain FPS
-                try {
-                    Thread.sleep(sleepTime / 1000000); // Sleep in milliseconds
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                try { Thread.sleep(sleepTime); } catch (InterruptedException e) {}
             }
 
-            // Busy-wait to sync the loop without overshooting the target FPS
-            while (System.nanoTime() - lastLoopTime < OPTIMAL_TIME) {
-                // Empty loop for busy-wait, ensuring frame time is as close to optimal as possible
-            }
-
-            lastLoopTime = System.nanoTime();
-            update(); // Update game state
-            // Log update time
-//            Log.d("GameView", "Update time: " + (System.nanoTime() - lastLoopTime) + " ns");
-            draw();   // Render game frame
-            // Log draw time
-//            Log.d("GameView", "Draw time: " + (System.nanoTime() - lastLoopTime) / 1_000_000 + " ms");
-
-            frames++; // Count frames
-
-            // Calculate and log real FPS every second
-            if (System.nanoTime() - lastTime >= 1_000_000_000) {
-                Log.d("FPSTRACK", "Real FPS: " + frames); // Log the real FPS
-                fps = frames; // Save the real FPS
-                frames = 0; // Reset frame count
-                lastTime = System.nanoTime();
+            // Update FPS every second
+            if (System.nanoTime() - fpsTimer >= 1_000_000_000) {
+                fps = frames;
+                frames = 0;
+                fpsTimer = System.nanoTime();
+                Log.d("FPSTRACK", "Real FPS: " + fps);
             }
         }
     }
+
 
     /**
      * Determine the edges for ball bounce based on the screen dimensions
@@ -552,18 +523,16 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Update the game state
      */
-    private void update() {
+    private void update(float deltaTime) {
         if (onlineMode) {
             updateOnline();
         } else {
-            synchronized (balls) {
-                for (Ball ball : balls) {
-                    lastBounceTime = ball.update(screenX, screenY, PLAYERCOUNT < 4 ? goalLines.subList(2, 4) : null, twoVtwoMode);
-                    // Log presence of shooter for ball
-                    Log.d("Ball", "Ball shooter: " + ball.getShooter());
-                    if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
-                        checkGoal(ball);
-                    }
+            for (Ball ball : balls) {
+                lastBounceTime = ball.update(screenX, screenY, PLAYERCOUNT < 4 ? goalLines.subList(2, 4) : null, twoVtwoMode);
+                // Log presence of shooter for ball
+                Log.d("Ball", "Ball shooter: " + ball.getShooter());
+                if (!scored && System.currentTimeMillis() - lastBounceTime > 200) {
+                    checkGoal(ball);
                 }
             }
             checkPlayerBallCollision();
@@ -745,12 +714,6 @@ public class GameView extends SurfaceView implements Runnable {
                 player.draw(canvas);
             }
 //        }
-            // Draw all goal lines
-//            synchronized (goalLines) {
-//                for (Vector goal : goalLines) {
-//                    goal.draw(canvas);
-//                }
-//            }
 
         if (scored) {
             displayGoalAnimation(canvas);
@@ -764,7 +727,7 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
             if (!allZero) {
-                Log.d("GameView", "Not all scores are zero, updating stars");
+//                Log.d("GameView", "Not all scores are zero, updating stars");
                 for (Star star : stars) {
                     // Fade stars out
                     star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), true);
@@ -775,11 +738,11 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Draw fps
         canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
-        Log.d("GameView", "Draw time 2: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+//        Log.d("GameView", "Draw time 2: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         // Unlock the canvas and post the updates
         holder.unlockCanvasAndPost(canvas);
-        Log.d("GameView", "Draw time 3: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+//        Log.d("GameView", "Draw time 3: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
     }
 
     private void drawGoalPosts(Canvas canvas) {
