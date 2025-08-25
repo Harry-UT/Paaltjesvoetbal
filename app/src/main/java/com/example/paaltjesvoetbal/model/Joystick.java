@@ -10,6 +10,8 @@ public class Joystick {
     private float stickX, stickY;
     private int touchID = -1;
     private final float radius;
+    private final Paint outerPaint = new Paint();
+    private final Paint innerPaint = new Paint();
 
     // Constructor to initialize the joystick position and player reference
     public Joystick(float baseCenterX, float baseCenterY, float radius) {
@@ -18,6 +20,10 @@ public class Joystick {
         this.stickX = baseCenterX;
         this.stickY = baseCenterY;
         this.radius = radius;
+        this.outerPaint.setColor(Color.GRAY);  // Joystick base color
+        this.outerPaint.setAlpha(100);  // Slight transparency for the base
+        innerPaint.setAntiAlias(true);
+        innerPaint.setColor(Color.WHITE);  // Joystick stick color
     }
 
     public void reset() {
@@ -62,16 +68,11 @@ public class Joystick {
     }
 
     public void draw(Canvas canvas) {
-        // Draw the base of the joystick (circle)
-        Paint paint = new Paint();
-        paint.setColor(Color.GRAY);  // Joystick base color
-        paint.setAlpha(100);  // Slight transparency for the base
-        canvas.drawCircle(baseCenterX, baseCenterY, radius, paint);
-        paint.setAntiAlias(true);
+        // Draw the base of the joystick (gray donut)
+        canvas.drawCircle(baseCenterX, baseCenterY, radius, outerPaint);
 
-        // Draw the stick of the joystick (smaller circle)
-        paint.setColor(Color.WHITE);  // Joystick stick color
-        canvas.drawCircle(stickX, stickY, 30, paint);  // Stick size is smaller
+        // Draw the stick of the joystick (smaller coloured circle)
+        canvas.drawCircle(stickX, stickY, 30, innerPaint);
     }
 
     public boolean isTouched(float touchX, float touchY) {
