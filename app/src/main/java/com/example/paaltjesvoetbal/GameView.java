@@ -74,9 +74,13 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Vector> diagonalEdges = new ArrayList<>();
     private final List<Vector> verticalGoalEdges = new ArrayList<>();
     private final List<Vector> bounceEdges = new ArrayList<>(); // The lines which the ball bounces off
+    private final List<Vector> bounceEdgesTwovTwo = new ArrayList<>(); // The lines which the ball bounces off in 2v2 mode
     private final List<Vector> goalLines = new ArrayList<>(); // The lines which the ball crosses to score a goal
+    private final List<Vector> goalLinesTwovTwo = new ArrayList<>(); // The lines which the ball crosses to score a goal in 2v2 mode
     private final List<Path> cornerPaths = new ArrayList<>(); // The circumference of each goal area
+    private final List<Path> cornerPathsTwovTwo = new ArrayList<>(); // The circumference of each goal area in 2v2 mode
     private final List<Region> goalRegions = new ArrayList<>(); // The goal areas for each player
+    private final List<Region> goalRegionsTwovTwo = new ArrayList<>(); // The goal areas for each player in 2v2 mode
     private final ReentrantLock pingLock = new ReentrantLock();
     private final Condition pingReceived = pingLock.newCondition();
     private boolean pingResponse = false;
@@ -90,7 +94,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final FloatingText goalText;
     private FloatingText scoreIncrementText;
     public SoundManager soundManager;
-    private final int TARGET_FPS = 60;
+    private final int TARGET_FPS = 50;
     private int fps;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
@@ -115,6 +119,7 @@ public class GameView extends SurfaceView implements Runnable {
     private ClientConnection clientConnection;
     private InetAddress server;
     private final int port = 3000;
+    private boolean needSync = true;
 
     /**
      * Constructor for the GameView class
@@ -159,12 +164,15 @@ public class GameView extends SurfaceView implements Runnable {
         }
         // Determine player corner areas
         determineGoalRegions();
+        determineGoalRegionsTwovTwo();
 
         // Determine edges for ball bounce
         determineBounceEdges();
+        determineBounceEdgesTwovTwo();
 
         // Determine the goals
         determineGoals();
+        determineGoalsTwovTwo();
 
         // Determine score text positions
         determineScoreTextPositions();
@@ -318,6 +326,7 @@ public class GameView extends SurfaceView implements Runnable {
         scoreIncrementPaint.setTextSize(scoreIncrementText.getSize());
 
        initStaticBitmap();
+       initStaticBitmapTwovTwo();
     }
 
     /**
@@ -372,6 +381,39 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    private void initStaticBitmapTwovTwo() {
+        // Create a bitmap for the static layer
+        staticLayerTwovTwo = Bitmap.createBitmap(screenX, screenY, Bitmap.Config.RGB_565);
+        staticCanvasTwovTwo = new Canvas(staticLayerTwovTwo);
+        // Draw the beige background
+        staticCanvasTwovTwo.drawColor(Color.parseColor("#FFF1E9"));
+        // Draw the outer circle in the middle of the field
+        staticCanvasTwovTwo.drawCircle((float) screenX / 2, (float) screenY / 2, outerRadius, middleCirclePaint);
+        // Draw the bottom UI bar (black)
+        Paint blackPaint = new Paint();
+        blackPaint.setColor(Color.BLACK);
+        staticCanvasTwovTwo.drawRect(0, screenY, screenX, screenY + 40, blackPaint);
+        // Draw the settings icon in the middle of the screen
+        staticCanvasTwovTwo.drawBitmap(settingsIcon, settingsMatrix, null);
+        // Draw the goal regions
+        for (int i = 0; i < cornerPathsTwovTwo.size(); i++) {
+            switch (i) {
+                case 0:
+                    staticCanvasTwovTwo.drawPath(cornerPathsTwovTwo.get(i), goalPaintRed);
+                    break;
+                case 1:
+                    staticCanvasTwovTwo.drawPath(cornerPathsTwovTwo.get(i), goalPaintBlue);
+                    break;
+            }
+        }
+        // Draw the bounce edges of the goals
+        for (Vector edge : bounceEdgesTwovTwo) {
+            staticCanvasTwovTwo.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
+        }
+        // Draw goalposts
+        drawGoalPostsTwovTwo();
+    }
+
     /**
      * Draw the goal posts at the corners of the goals
      */
@@ -384,6 +426,18 @@ public class GameView extends SurfaceView implements Runnable {
             float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
 
             staticCanvas.drawCircle(x, y, 5, goalPostPaint);
+            postSide++;
+        }
+    }
+
+    private void drawGoalPostsTwovTwo() {
+        int postSide = 1;
+        for (int i = 0; i < 4; i++) {
+            Vector edge = bounceEdgesTwovTwo.get(i);
+            float x = (postSide % 2 == 0) ? (float) edge.getX1() : (float) edge.getX2();
+            float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
+
+            staticCanvasTwovTwo.drawCircle(x, y, 5, goalPostPaint);
             postSide++;
         }
     }
@@ -433,7 +487,6 @@ public class GameView extends SurfaceView implements Runnable {
      * Determine the edges for ball bounce based on the screen dimensions
      */
     private void determineBounceEdges() {
-        bounceEdges.clear();
         for (Vector edge : diagonalEdges) {
             Vector[] bounceVectors = edge.split(goalWidth);
             bounceEdges.addAll(Arrays.asList(bounceVectors));
@@ -441,7 +494,6 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     private void determineBounceEdgesTwovTwo() {
-        bounceEdges.clear();
         // Bottom-left bounce edge
         Vector bottomLeft = new Vector(0, screenY - screenX * 0.3f, screenX * 0.35, screenY - screenX * 0.3f);
         // Bottom-right bounce edge
@@ -450,10 +502,10 @@ public class GameView extends SurfaceView implements Runnable {
         Vector topLeft = new Vector(0, screenX * 0.3f, screenX * 0.35f, screenX * 0.3f);
         // Top-right bounce edge
         Vector topRight = new Vector(screenX * 0.65f, screenX * 0.3f, screenX, screenX * 0.3f);
-        bounceEdges.add(bottomLeft);
-        bounceEdges.add(bottomRight);
-        bounceEdges.add(topLeft);
-        bounceEdges.add(topRight);
+        bounceEdgesTwovTwo.add(bottomLeft);
+        bounceEdgesTwovTwo.add(bottomRight);
+        bounceEdgesTwovTwo.add(topLeft);
+        bounceEdgesTwovTwo.add(topRight);
     }
 
     /**
@@ -473,9 +525,9 @@ public class GameView extends SurfaceView implements Runnable {
         // Bottom blue goal
         Vector bottomGoal = new Vector(screenX * 0.35f, screenY - screenX * 0.3f, screenX * 0.65f, screenY - screenX * 0.3f);
         Vector topGoal = new Vector(screenX * 0.35f, screenX * 0.3f, screenX * 0.65f, screenX * 0.3f);
-        goalLines.clear();
-        goalLines.add(bottomGoal);
-        goalLines.add(topGoal);
+        goalLinesTwovTwo.clear();
+        goalLinesTwovTwo.add(bottomGoal);
+        goalLinesTwovTwo.add(topGoal);
     }
 
     /**
@@ -674,11 +726,15 @@ public class GameView extends SurfaceView implements Runnable {
         if (!holder.getSurface().isValid()) return;
 
         Canvas canvas = holder.lockHardwareCanvas();
-        Log.d("GameView", "Draw time: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-        canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static edges
-        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
-        // Draw the vertical goal edges black
+        if (twoVtwoMode) {
+            canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
+        } else {
+            canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static stuff
+        }
+//        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+
+        // Draw the vertical goal edges black when not in 2v2 mode
         if (!twoVtwoMode) {
             for (Vector edge : verticalGoalEdges) {
                 canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
@@ -686,11 +742,17 @@ public class GameView extends SurfaceView implements Runnable {
         }
 
         // Draw the joysticks
-//        synchronized (joysticks) {
+        if (needSync) {
+            synchronized (joysticks) {
+                for (Joystick joystick : joysticks) {
+                    joystick.draw(canvas);  // Call the draw method for each joystick
+                }
+            }
+        } else {
             for (Joystick joystick : joysticks) {
                 joystick.draw(canvas);  // Call the draw method for each joystick
             }
-//        }
+        }
 
         drawScores(canvas);
 
@@ -743,32 +805,6 @@ public class GameView extends SurfaceView implements Runnable {
         // Unlock the canvas and post the updates
         holder.unlockCanvasAndPost(canvas);
 //        Log.d("GameView", "Draw time 3: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-    }
-
-    private void drawGoalPosts(Canvas canvas) {
-        int postSide = 1; // To alternate between the two posts of each goal
-
-        for (int i = 0; i < (twoVtwoMode ? 4 : PLAYERCOUNT * 2); i++) {
-            Vector bounceEdge = bounceEdges.get(i);
-            // Draw a little edge index next to the bounce edge
-//            paint.setTextSize(30);
-//            canvas.drawText(String.valueOf(i), (float) bounceEdge.getMidX(), (float) bounceEdge.getMidY(), paint);
-
-            // Get the goalpost coordinates
-            // Use mod 2 to alternate between first or second coordinate of edge
-            if (postSide % 2 == 0) {
-                float x1 = (float) bounceEdge.getX1();
-                float y1 = (float) bounceEdge.getY1();
-                // Draw a little black dot
-                canvas.drawCircle(x1, y1, 5, goalPostPaint);
-            } else {
-                float x2 = (float) bounceEdge.getX2();
-                float y2 = (float) bounceEdge.getY2();
-                // Draw a little black dot
-                canvas.drawCircle(x2, y2, 5, goalPostPaint);
-            }
-            postSide++;
-        }
     }
 
     /**
@@ -901,9 +937,7 @@ public class GameView extends SurfaceView implements Runnable {
                             }
                         }
                     }
-
                     break;
-
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                     boolean pointerHandled = false;
@@ -937,7 +971,6 @@ public class GameView extends SurfaceView implements Runnable {
                         }
                     }
                     break;
-
                 case MotionEvent.ACTION_MOVE:
                     // Handle move for all active pointers
                     for (int i = 0; i < event.getPointerCount(); i++) {
@@ -1225,6 +1258,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Determine the corner areas of the screen for two vs two mode
+     */
     private void determineGoalRegionsTwovTwo() {
         // Bottom blue goal
         Path bottomPath = new Path();
@@ -1233,7 +1269,7 @@ public class GameView extends SurfaceView implements Runnable {
         bottomPath.lineTo(screenX, screenY);
         bottomPath.lineTo(0, screenY);
         bottomPath.close();
-        diagonalEdges.add(new Vector(screenX, screenY - screenX * 0.5, screenX * 0.5, screenY * 0.91));
+//        diagonalEdges.add(new Vector(screenX, screenY - screenX * 0.5, screenX * 0.5, screenY * 0.91));
 
         // Top red goal
         Path topPath = new Path();
@@ -1242,24 +1278,22 @@ public class GameView extends SurfaceView implements Runnable {
         topPath.lineTo(screenX, screenX * 0.3f);
         topPath.lineTo(0, screenX * 0.3f);
         topPath.close();
-        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
+//        diagonalEdges.add(new Vector(0, screenX * 0.5, screenX * 0.5, screenY * 0.09));
 
         // Add the goal paths to the paths list
-        cornerPaths.clear();
-        cornerPaths.add(bottomPath);
-        cornerPaths.add(topPath);
+        cornerPathsTwovTwo.add(bottomPath);
+        cornerPathsTwovTwo.add(topPath);
 
         // Initialize a region with the screen dimensions
         Region region = new Region(0, 0, screenX, screenY);
 
         // Loop through the list of corner paths and add each as a region
-        goalRegions.clear();
-        for (Path path : cornerPaths) {
+        for (Path path : cornerPathsTwovTwo) {
             Region cornerRegion = new Region();
             // Set the path within the bounding region
             cornerRegion.setPath(path, region);
             // Add the corner region to the list
-            goalRegions.add(cornerRegion);
+            goalRegionsTwovTwo.add(cornerRegion);
         }
     }
 
@@ -1309,18 +1343,10 @@ public class GameView extends SurfaceView implements Runnable {
                         button.setColor(Color.RED);
                     }
                 }
-
-                determineScoreTextPositionsTwovTwo();
-                determineGoalRegionsTwovTwo();
-                determineBounceEdgesTwovTwo();
-                determineGoalsTwovTwo();
                 playerCount = 4;
             } else {
                 if (twoVtwoMode) {
                     // Reset player scores
-                    determineGoalRegions();
-                    determineBounceEdges();
-                    determineGoals();
                     for (Team team : teams) {
                         team.resetScore();
                     }
