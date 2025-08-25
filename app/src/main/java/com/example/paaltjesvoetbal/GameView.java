@@ -1358,22 +1358,28 @@ public class GameView extends SurfaceView implements Runnable {
                 if (twoVtwoMode) { // If we were in 2v2 mode before
                     // Reset player scores
                     teams.clear();
+                    // Reset player colors for FFA mode
+                    for (int i = 0; i < players.size(); i++) {
+                        if (i == 2) {
+                            players.get(i).setColor(Color.GREEN);
+                            players.get(i).getShootButton().setColor(Color.GREEN);
+                        }
+                        if (i == 3) {
+                            players.get(i).setColor(0xFFFFEB04); // Yellow
+                            players.get(i).getShootButton().setColor(0xFFFFEB04); // Yellow
+                        }
+                    }
                     for (Player player : players) {
                         player.resetScore();
                     }
+                    for (Ball ball: balls) {
+                        ball.reset((int) (screenX / 2f), (int) (screenY / 2f));
+                    }
                 }
                 twoVtwoMode = false;
-                for (int i = 0; i < players.size(); i++) {
-                    if (i == 2) {
-                        players.get(i).setColor(Color.GREEN);
-                        players.get(i).getShootButton().setColor(Color.GREEN);
-                    }
-                    if (i == 3) {
-                        players.get(i).setColor(0xFFFFEB04); // Yellow
-                        players.get(i).getShootButton().setColor(0xFFFFEB04); // Yellow
-                    }
-                }
             }
+            changePlayerSpeed(playerSpeed);
+            changeBallSpeed(ballSpeed);
         } else { // Todo: Finish
             if (!onlineMode) {
                 // Reset the game state and connect to server

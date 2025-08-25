@@ -14,8 +14,8 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
-        <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2025-08-25T20:40:43.437043300Z">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-08-25T21:19:13.969744900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=5200244b53ee25dd" />
