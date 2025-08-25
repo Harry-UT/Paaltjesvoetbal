@@ -580,6 +580,9 @@ public class GameView extends SurfaceView implements Runnable {
             goalLines.add(scaledEdge);
         }
     }
+    /**
+     * Determine the goal regions for each player based on the screen dimensions
+     */
 
     private void determineGoalsTwovTwo() {
         // Bottom blue goal
@@ -1389,17 +1392,32 @@ public class GameView extends SurfaceView implements Runnable {
      * Check for collisions between players and balls
      */
     private void checkPlayerBallCollision() {
-        synchronized (players) {
-            for (Player player : players) {
+        if (needSync) {
+            synchronized (players) {
                 synchronized (balls) {
-                    for (Ball ball : balls) {
-                        float dx = player.getX() - ball.getX();
-                        float dy = player.getY() - ball.getY();
-                        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    for (Player player : players) {
+                        for (Ball ball : balls) {
+                            float dx = player.getX() - ball.getX();
+                            float dy = player.getY() - ball.getY();
+                            float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
-                        if (distance <= player.getRadius() + ball.getRadius()) {
-                            onPlayerHitBall(player, ball);
+                            // If the distance is less than the sum of the radii, a collision has occurred
+                            if (distance <= player.getRadius() + ball.getRadius()) {
+                                onPlayerHitBall(player, ball);
+                            }
                         }
+                    }
+                }
+            }
+        } else {
+            for (Player player : players) {
+                for (Ball ball : balls) {
+                    float dx = player.getX() - ball.getX();
+                    float dy = player.getY() - ball.getY();
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= player.getRadius() + ball.getRadius()) {
+                        onPlayerHitBall(player, ball);
                     }
                 }
             }
