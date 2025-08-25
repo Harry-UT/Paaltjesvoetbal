@@ -381,6 +381,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Initialize the static bitmap layer for 2v2 mode
+     */
     private void initStaticBitmapTwovTwo() {
         // Create a bitmap for the static layer
         staticLayerTwovTwo = Bitmap.createBitmap(screenX, screenY, Bitmap.Config.RGB_565);
@@ -430,6 +433,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Draw the goal posts at the corners of the goals in 2v2 mode
+     */
     private void drawGoalPostsTwovTwo() {
         int postSide = 1;
         for (int i = 0; i < 4; i++) {
