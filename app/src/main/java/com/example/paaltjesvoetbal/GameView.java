@@ -51,7 +51,6 @@ public class GameView extends SurfaceView implements Runnable {
     private Canvas staticCanvas;
     private Bitmap staticLayerTwovTwo;
     private Canvas staticCanvasTwovTwo;
-
     private boolean isPlaying;
     private final SurfaceHolder holder;
     private final int screenX;
@@ -767,8 +766,8 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
             synchronized (players) {
-                for (Player player : players) {
-                    player.draw(canvas);
+                for (int i = 0; i < PLAYERCOUNT; i++) {
+                    players.get(i).draw(canvas);
                 }
             }
         } else  {
@@ -809,11 +808,9 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Draw fps
         canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
-//        Log.d("GameView", "Draw time 2: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         // Unlock the canvas and post the updates
         holder.unlockCanvasAndPost(canvas);
-//        Log.d("GameView", "Draw time 3: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
     }
 
     /**
@@ -920,6 +917,8 @@ public class GameView extends SurfaceView implements Runnable {
                     if (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom) {
                         SettingsDialog settingsDialog = new SettingsDialog(getContext(), this, players.size(), PLAYERSPEED, BALL_SPEED, onlineMode, twoVtwoMode);
                         settingsDialog.show();
+                        needSync = true;
+                        settingsDialog.setOnDismissListener(d -> needSync = false);
                     }
 
                     // Check for joystick touch if no button was pressed
@@ -1321,52 +1320,49 @@ public class GameView extends SurfaceView implements Runnable {
         }
         Log.d("SettingsDialog", "Change settings called");
         if (!online) {
+            if (onlineMode) {
+                Log.d("SettingsDialog", "Going in offline mode");
+                changePlayerSpeed(playerSpeed);
+                changeBallSpeed(ballSpeed);
+                for (Player player : players) {
+                    player.resetScore();
+                }
+            }
             if (twoVtwo) {
+                PLAYERCOUNT = 4;
                 twoVtwoMode = true;
-                // If two vs two mode is enabled, we need to ensure there are 4 players
-                clearLists();
-                initializePlayer1();
-                initializePlayer2();
-                initializePlayer3();
-                initializePlayer4();
+                // If two vs two mode is enabled
                 teams.add(new Team(players.get(0), players.get(2)));
                 teams.get(0).setColor(Color.BLUE);
                 teams.add(new Team(players.get(1), players.get(3)));
                 teams.get(1).setColor(Color.RED);
 
                 // Reset player colors for two vs two mode
-                for (Player player : players) {
-                    if (player.getColor() == Color.GREEN) {
-                        player.setColor(Color.BLUE);
-                    }
-                    if (player.getColor() == 0xFFFFEB04) {
-                        player.setColor(Color.RED);
+                for (int i = 0; i < players.size(); i++) {
+                    if (i == 0 || i == 2) {
+                        players.get(i).setColor(Color.BLUE);
+                    } else {
+                        players.get(i).setColor(Color.RED);
                     }
                 }
+
                 // Reset shoot button colors for two vs two mode
-                for (ShootButton button : shootButtons) {
-                    if (button.getColor() == Color.GREEN) {
-                        button.setColor(Color.BLUE);
-                    }
-                    if (button.getColor() == 0xFFFFEB04) {
-                        button.setColor(Color.RED);
+                for (int i = 0; i < shootButtons.size(); i++) {
+                    if (i == 0 || i == 2) {
+                        shootButtons.get(i).setColor(Color.BLUE);
+                    } else {
+                        shootButtons.get(i).setColor(Color.RED);
                     }
                 }
-                playerCount = 4;
             } else {
-                if (twoVtwoMode) {
+                if (twoVtwoMode) { // If we were in 2v2 mode before
                     // Reset player scores
-                    for (Team team : teams) {
-                        team.resetScore();
-                    }
+                    teams.clear();
                     for (Player player : players) {
                         player.resetScore();
                     }
                 }
                 twoVtwoMode = false;
-                for (Player player : players) {
-                    player.setTeam(false);
-                }
                 for (int i = 0; i < players.size(); i++) {
                     if (i == 2) {
                         players.get(i).setColor(Color.GREEN);
@@ -1378,47 +1374,14 @@ public class GameView extends SurfaceView implements Runnable {
                     }
                 }
             }
-            // Enter offline mode
-            Log.d("SettingsDialog", "Offline mode");
-            switch (playerCount) {
-                case 2:
-                    if (players.size() == 2) {
-                        break;
-                    }
-                    clearLists();
-                    initializePlayer1();
-                    initializePlayer2();
-                    break;
-                case 3:
-                    if (players.size() == 3) {
-                        break;
-                    }
-                    clearLists();
-                    initializePlayer1();
-                    initializePlayer2();
-                    initializePlayer3();
-                    break;
-                case 4:
-                    if (players.size() == 4) {
-                        break;
-                    }
-                    clearLists();
-                    initializePlayer1();
-                    initializePlayer2();
-                    initializePlayer3();
-                    initializePlayer4();
-                    break;
-                default:
-                    break;
-            }
-            changePlayerSpeed(playerSpeed);
-            changeBallSpeed(ballSpeed);
-        } else if (!onlineMode) {
-            // Reset the game state for online mode
-            try {
-                connectToServer();
-            } catch (Exception e) {
-                Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
+        } else {
+            if (!onlineMode) {
+                // Reset the game state and connect to server
+                try {
+                    connectToServer();
+                } catch (Exception e) {
+                    Log.d("ClientConnection", "Error creating client connection: " + e.getMessage());
+                }
             }
         }
         this.onlineMode = online;

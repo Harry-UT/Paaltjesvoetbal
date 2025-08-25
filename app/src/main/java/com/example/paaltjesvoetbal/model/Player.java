@@ -14,7 +14,6 @@ public class Player {
     private long lastShootTime;  // Last time the ball was shot
     private final int number;
     private final int[] scorePosition = new int[] { 0, 0 };
-    private boolean inTeam = false;  // Flag to check if the player is in a team
 
     // Constructor to initialize the player
     public Player(float x, float y, int radius, int color, int playerNumber) {
@@ -61,10 +60,6 @@ public class Player {
 
     public ShootButton getShootButton() {
         return shootButton;
-    }
-
-    public void setTeam(boolean inTeam) {
-        this.inTeam = inTeam;
     }
 
     // Set the ball that the player is controlling
