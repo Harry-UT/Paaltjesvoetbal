@@ -57,7 +57,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int screenX;
     private final int screenY;
     private final List<Joystick> joysticks;
-    private List<Player> players;
+    private final List<Player> players;
     private final List<Team> teams = new ArrayList<>();
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
@@ -94,7 +94,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final FloatingText goalText;
     private FloatingText scoreIncrementText;
     public SoundManager soundManager;
-    private final int TARGET_FPS = 50;
+    private final int TARGET_FPS = 60;
     private int fps;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
@@ -190,6 +190,9 @@ public class GameView extends SurfaceView implements Runnable {
         initPaints(); // Initialize all paint stuff for performance improvement
     }
 
+    /**
+     * Initialize all Paint objects used in the game
+     */
     private void initPaints() {
         // Initialize goal paints
         goalPaintBlue.setColor(Color.argb(140, 0, 0, 255));
@@ -365,6 +368,9 @@ public class GameView extends SurfaceView implements Runnable {
         }
         // Draw the bounce edges of the goals
         for (Vector edge : bounceEdges) {
+            staticCanvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
+        }
+        for (Vector edge : verticalGoalEdges) {
             staticCanvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
         }
         // Draw goalposts
@@ -737,51 +743,48 @@ public class GameView extends SurfaceView implements Runnable {
             canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
         } else {
             canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static stuff
+
         }
 //        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
-        // Draw the vertical goal edges black when not in 2v2 mode
-        if (!twoVtwoMode) {
-            for (Vector edge : verticalGoalEdges) {
-                canvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
-            }
-        }
+        drawScores(canvas);
 
-        // Draw the joysticks
+        // Draw the balls
         if (needSync) {
             synchronized (joysticks) {
                 for (Joystick joystick : joysticks) {
                     joystick.draw(canvas);  // Call the draw method for each joystick
                 }
             }
-        } else {
+            synchronized (balls) {
+                for (Ball ball : balls) {
+                    ball.draw(canvas);
+                }
+            }
+            synchronized (shootButtons) {
+                for (ShootButton button : shootButtons) {
+                    button.draw(canvas);
+                }
+            }
+            synchronized (players) {
+                for (Player player : players) {
+                    player.draw(canvas);
+                }
+            }
+        } else  {
             for (Joystick joystick : joysticks) {
                 joystick.draw(canvas);  // Call the draw method for each joystick
             }
-        }
-
-        drawScores(canvas);
-
-        // Draw the balls
-//        synchronized (balls) {
             for (Ball ball : balls) {
                 ball.draw(canvas);
             }
-//        }
-
-        // Draw the shoot buttons
-//        synchronized (shootButtons) {
             for (ShootButton button : shootButtons) {
                 button.draw(canvas);
             }
-//        }
-
-        // Draw the players
-//        synchronized (players) {
             for (Player player : players) {
                 player.draw(canvas);
             }
-//        }
+        }
 
         if (scored) {
             displayGoalAnimation(canvas);
@@ -1509,15 +1512,15 @@ public class GameView extends SurfaceView implements Runnable {
      * Clear the lists of players, joysticks and shoot buttons
      */
     private void clearLists() {
-        synchronized (players) {
-            players = new ArrayList<>();
-        }
-        synchronized (joysticks) {
-            joysticks.clear();
-        }
-        synchronized (shootButtons) {
-            shootButtons.clear();
-        }
+//        synchronized (players) {
+//            players = new ArrayList<>();
+//        }
+//        synchronized (joysticks) {
+//            joysticks.clear();
+//        }
+//        synchronized (shootButtons) {
+//            shootButtons.clear();
+//        }
     }
 
     /**
