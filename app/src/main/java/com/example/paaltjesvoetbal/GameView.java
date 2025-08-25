@@ -960,6 +960,53 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    public void drawNormalVectorsInwards(Canvas canvas) {
+        Paint paint = new Paint();
+        // Draw normal vectors of the edges from the middle of screen
+        paint.setColor(Color.RED);
+        paint.setStrokeWidth(5);
+
+        paint = new Paint();
+        for (Vector edge : bounceEdges) {
+            // Draw the normal vector or the edge * 50 length for visibility
+            Vector normalVector = getNormalVector(edge);
+            paint.setColor(Color.RED);
+            paint.setStrokeWidth(5);
+            canvas.drawLine((float) normalVector.getX1(), (float) normalVector.getY1(), (float) (normalVector.getX1() + (normalVector.getX2() - normalVector.getX1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), (float) (normalVector.getY1() + (normalVector.getY2() - normalVector.getY1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), paint);
+        }
+    }
+
+    public void drawNormalVectorsOutwards(Canvas canvas) {
+        Paint paint = new Paint();
+        // Draw normal vectors of the edges from the middle of screen
+        paint.setColor(Color.RED);
+        paint.setStrokeWidth(5);
+
+        paint = new Paint();
+        for (Vector edge : bounceEdges) {
+            // Draw the normal vector or the edge * 50 length for visibility
+            Vector normalVector = getNormalVector(edge);
+            paint.setColor(Color.GREEN);
+            paint.setStrokeWidth(5);
+            canvas.drawLine((float) normalVector.getX1(), (float) normalVector.getY1(), (float) (normalVector.getX1() - (normalVector.getX2() - normalVector.getX1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), (float) (normalVector.getY1() - (normalVector.getY2() - normalVector.getY1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), paint);
+        }
+    }
+
+    private Vector getNormalVector(Vector vector) {
+        float edgeX = (float) (vector.getX2() - vector.getX1());
+        float edgeY = (float) (vector.getY2() - vector.getY1());
+        float edgeLength = (float) Math.sqrt(edgeX * edgeX + edgeY * edgeY);
+        float normalX = -edgeY / edgeLength;
+        float normalY = edgeX / edgeLength;
+
+        // Draw normal vector from the middle of the edge
+        float startX = (float) (vector.getX1() + edgeX / 2);
+        float startY = (float) (vector.getY1() + edgeY / 2);
+        float endX = startX + normalX;
+        float endY = startY + normalY;
+        return new Vector(startX, startY, endX, endY);
+    }
+
 
     /**
      * Display the goal animation on the screen
@@ -1002,8 +1049,12 @@ public class GameView extends SurfaceView implements Runnable {
             canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
         } else {
             canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static stuff
-
         }
+        if (debug) {
+            drawNormalVectorsInwards(canvas);
+            drawNormalVectorsOutwards(canvas);
+        }
+
 //        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         drawScores(canvas);

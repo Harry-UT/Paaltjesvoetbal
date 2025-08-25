@@ -36,18 +36,6 @@ public class Ball {
         // Create a paint object for the ball
         ballPaint = new Paint();
         ballPaint.setAntiAlias(true);
-
-        // Create a shader to fill the ball with a gradient from black to white
-//        Shader shader = new LinearGradient(
-//                x - radius, y,       // Start at the left side of the circle
-//                x + radius, y,           // End at the right side of the circle
-//                Color.BLACK,             // Left side color (black)
-//                Color.WHITE,             // Right side color (white)
-//                Shader.TileMode.CLAMP    // The gradient will not repeat, it will clamp the color at the edges
-//        );
-
-        // Apply the shader to the paint
-//        ballPaint.setShader(shader);
         ballPaint.setColor(Color.DKGRAY);
     }
 
@@ -58,22 +46,6 @@ public class Ball {
         // Log presence of shooter
         if (shooter != null) {
             Log.d("Shoot", "Ball has a shooter");
-        }
-    }
-
-    public void drawNormalVectors(Canvas canvas) {
-        Paint paint = new Paint();
-        // Draw normal vectors of the edges from the middle of screen
-        paint.setColor(Color.RED);
-        paint.setStrokeWidth(5);
-
-        paint = new Paint();
-        for (Vector edge : bounceEdges) {
-            // Draw the normal vector or the edge * 50 length for visibility
-            Vector normalVector = getNormalVector(edge);
-            paint.setColor(Color.RED);
-            paint.setStrokeWidth(5);
-            canvas.drawLine((float) normalVector.getX1(), (float) normalVector.getY1(), (float) (normalVector.getX1() + (normalVector.getX2() - normalVector.getX1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), (float) (normalVector.getY1() + (normalVector.getY2() - normalVector.getY1()) * 50 / Math.sqrt(Math.pow(normalVector.getX2() - normalVector.getX1(), 2) + Math.pow(normalVector.getY2() - normalVector.getY1(), 2))), paint);
         }
     }
 
@@ -120,20 +92,6 @@ public class Ball {
         return dotProduct < 0;
     }
 
-    private Vector getNormalVector(Vector vector) {
-        float edgeX = (float) (vector.getX2() - vector.getX1());
-        float edgeY = (float) (vector.getY2() - vector.getY1());
-        float edgeLength = (float) Math.sqrt(edgeX * edgeX + edgeY * edgeY);
-        float normalX = -edgeY / edgeLength;
-        float normalY = edgeX / edgeLength;
-
-        // Draw normal vector from the middle of the edge
-        float startX = (float) (vector.getX1() + edgeX / 2);
-        float startY = (float) (vector.getY1() + edgeY / 2);
-        float endX = startX + normalX;
-        float endY = startY + normalY;
-        return new Vector(startX, startY, endX, endY);
-    }
 
     public float getX() {
         return x;
