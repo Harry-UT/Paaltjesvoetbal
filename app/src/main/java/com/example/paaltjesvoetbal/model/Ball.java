@@ -15,7 +15,6 @@ public class Ball {
     private Player shooter = null;
     private int lastBouncedEdgeIndex = -1;
     private int lastGoalpostIndex = -1;
-    private long lastBounceTime = 0;
     public Ball(float x, float y, float radius) {
         this.x = x;
         this.y = y;
@@ -44,6 +43,10 @@ public class Ball {
         return this.shooter;
     }
 
+    public void setShooter(Player shooter) {
+        this.shooter = shooter;
+    }
+
     public void resetShooter() {
         this.shooter = null;
     }
@@ -58,22 +61,6 @@ public class Ball {
         double dotProductVelocity = velocityX * normalX + velocityY * normalY;
         setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
         setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
-    }
-
-    // Method to check if the deviation between two vectors is greater than 90 degrees
-    public static boolean isDeviationGreaterThan90(Vector v1, Vector v2) {
-        // Get the direction components of the vectors
-        double dx1 = v1.getX2() - v1.getX1();
-        double dy1 = v1.getY2() - v1.getY1();
-
-        double dx2 = v2.getX2() - v2.getX1();
-        double dy2 = v2.getY2() - v2.getY1();
-
-        // Calculate the dot product of the two direction vectors
-        double dotProduct = dx1 * dx2 + dy1 * dy2;
-
-        // If the dot product is negative, the angle is greater than 90 degrees
-        return dotProduct < 0;
     }
 
     public float getX() {
