@@ -542,6 +542,9 @@ public class GameView extends SurfaceView implements Runnable {
         goalLinesTwovTwo.add(topGoal);
     }
 
+    /**
+     * Determine the score text positions for each player
+     */
     private void determineScoreTextPositions() {
         // Initialize score text positions and rotations
         for (int i = 0; i < 4; i++) {
