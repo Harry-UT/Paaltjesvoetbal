@@ -56,7 +56,6 @@ public class GameView extends SurfaceView implements Runnable {
     private final SurfaceHolder holder;
     private final int screenX;
     private final int screenY;
-    private final int DPI;
     private final List<Joystick> joysticks;
     private final List<Player> players;
     private final List<Team> teams = new ArrayList<>();
@@ -64,7 +63,6 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
     private final int[][] playerPositions;
-    private final int[][] resetPlayerPositions;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -146,11 +144,9 @@ public class GameView extends SurfaceView implements Runnable {
         setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
-        this.DPI = dpi;
         this.goalText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
         playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
-        resetPlayerPositions = playerPositions.clone();
         holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
@@ -767,14 +763,15 @@ public class GameView extends SurfaceView implements Runnable {
 
     public void shoot(Ball ball) {
         Player player = ball.getPlayer();
+        ball.setPlayer(null);
         Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player " + players.indexOf(player));
         if (player != null) {
 //            Log.d("Shoot", "Player is shooting the ball" + (player.getColor() == Color.BLUE));
             // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
             float dx = ball.getX() - player.getX();  // Ball's position minus Player's position (shoot away from player)
             float dy = ball.getY() - player.getY();  // Ball's position minus Player's position (shoot away from player)
-            // Normalize direction vector (dx, dy)
             Log.d("Direction", "Direction before normalization: (" + dx + ", " + dy + ")");
+            // Normalize direction vector (dx, dy)
             float length = (float) Math.sqrt(dx * dx + dy * dy);
             if (length != 0) {
                 dx /= length;
@@ -786,8 +783,7 @@ public class GameView extends SurfaceView implements Runnable {
             ball.setVelocityY(dy * BALL_SPEED);
 
             // Once the ball is shot, release it from the player
-            ball.getPlayer().releaseBall();
-            ball.setPlayer(null);
+            player.releaseBall();
             Log.d("Shoot", "Ball was shot");
         }
     }
@@ -1144,7 +1140,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         if (!holder.getSurface().isValid()) return;
 
-        Canvas canvas = holder.lockHardwareCanvas();
+        Canvas canvas = holder.lockCanvas();
 
         if (twoVtwoMode) {
             canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
