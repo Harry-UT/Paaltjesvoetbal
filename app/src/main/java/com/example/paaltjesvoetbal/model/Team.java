@@ -5,7 +5,6 @@ public class Team {
     private int score;
     private Player player1;
     private Player player2;
-
     private int color;
     private int[] scorePosition = new int[] { 0, 0 };
 
@@ -14,12 +13,8 @@ public class Team {
         this.player2 = player2;
     }
 
-    public int getScorePositionX() {
-        return scorePosition[0];
-    }
-
-    public int getScorePositionY() {
-        return scorePosition[1];
+    public int[] getScorePosition() {
+        return scorePosition;
     }
 
     public void setScorePosition(int x, int y) {

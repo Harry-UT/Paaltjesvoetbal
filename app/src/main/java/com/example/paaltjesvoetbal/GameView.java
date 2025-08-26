@@ -16,7 +16,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Matrix;
 
-import androidx.compose.material3.AlertDialogDefaults;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
@@ -76,7 +75,6 @@ public class GameView extends SurfaceView implements Runnable {
     private int PLAYERCOUNT = 4;
     private static final long BALL_BOUNCE_COOLDOWN_MS = 100; // 100ms cooldown
     private static final float BALL_DAMPING_FACTOR = 0.985F;
-
     private final boolean debug = false;
 
     private final double goalWidth = 0.5;
@@ -100,7 +98,7 @@ public class GameView extends SurfaceView implements Runnable {
     private Player lastShooter;
     private int lastGoal;
     private boolean scored = false;
-    private final Star[] stars = new Star[40];
+    private final Star[] stars = new Star[60];
     private long splashStartTime = 0;
     private final FloatingText GOALText;
     private FloatingText scoreIncrementText;
@@ -114,9 +112,10 @@ public class GameView extends SurfaceView implements Runnable {
     private final Paint goalPaintGreen = new Paint();
     private final Paint goalPaintYellow = new Paint();
     private final List<Paint> scoresPaints = new ArrayList<>();
-    private final Paint teamScoresPaint = new Paint();
+    private final List<Paint> teamScoresPaints = new ArrayList<>();
     private final Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
-    private final List<int[]> scorePositions = new ArrayList<>(); // Contains the x and y of the score text per player
+    private final List<int[]> originalScoreTextPositions = new ArrayList<>(); // Contains the x and y of the score text per player
+    private final List<int[]> scoreTextPositions = new ArrayList<>(); // Contains the x and y of the score text per player
     private final List<int[]> teamScorePositions = new ArrayList<>(); // Contains the x and y of the score text per team in 2v2 mode
     private final List<Float> scoreRotations = new ArrayList<>(); // Contains the rotation of the score text per player
     private final Paint edgePaint = new Paint();
@@ -126,7 +125,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final Matrix settingsMatrix = new Matrix();
     private final Paint GOALtextPaint = new Paint();
     private final Paint scoreIncrementPaint = new Paint();
-    float outerRadius;
+    private float middleCircleOuterRadius;
     private String username;
     private ClientConnection clientConnection;
     private InetAddress server;
@@ -144,21 +143,21 @@ public class GameView extends SurfaceView implements Runnable {
         super(context);
         Log.d("Resolution", "ScreenX: " + screenX + ", ScreenY: " + screenY);
         Log.d("Resolution", "dpi: " + dpi);
-        PPCM = dpi / 2.54f; // pixels per centimeter
+        this.PPCM = dpi / 2.54f; // pixels per centimeter
         Log.d("Resolution", "ppcm: " + PPCM);
-        soundManager = SoundManager.getInstance(context);
+        this.soundManager = SoundManager.getInstance(context);
 
         setKeepScreenOn(true);
         this.screenX = screenX;
         this.screenY = screenY;
         this.GOALText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
-        holder = getHolder();
+        this.holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
-        players = new ArrayList<>();
-        joysticks = new ArrayList<>();
-        shootButtons = new ArrayList<>();
+        this.players = new ArrayList<>();
+        this.joysticks = new ArrayList<>();
+        this.shootButtons = new ArrayList<>();
 
         // Determine player corner areas
         determineGoalRegions();
@@ -176,7 +175,8 @@ public class GameView extends SurfaceView implements Runnable {
         determineGoalPosts();
         determineGoalPostsTwovTwo();
 
-        // Determine score text positions for teams in 2v2 mode
+        // Determine score text positions
+        determineScoreTextPositions();
         determineScoreTextPositionsTwovTwo();
 
         // Determine the positions of the players
@@ -205,6 +205,8 @@ public class GameView extends SurfaceView implements Runnable {
         // Initialize teams
         teams.add(new Team(players.get(1), players.get(3)));
         teams.add(new Team(players.get(0), players.get(2)));
+        teams.get(0).setColor(Color.BLUE);
+        teams.get(1).setColor(Color.RED);
 
         // Initialize ball(s)
         balls = new ArrayList<>();
@@ -236,7 +238,7 @@ public class GameView extends SurfaceView implements Runnable {
         fpsPaint.setColor(Color.RED);
         fpsPaint.setTextSize(40);
 
-        // Initialize goal text paint
+        // Initialize settings icon matrix
         float scaleFactor = 0.3f;
         // Desired position for the icon (center of the screen)
         float centerX = screenX / 2f;
@@ -248,15 +250,17 @@ public class GameView extends SurfaceView implements Runnable {
         float scaledHeight = settingsIcon.getHeight() * scaleFactor;
         // Adjust the translation to account for the scaled dimensions
         settingsMatrix.postTranslate(centerX - (scaledWidth / 2), centerY - (scaledHeight / 2));
+
         // Set up the paint for the circle (donut shape)
         middleCirclePaint.setColor(Color.BLACK);
         middleCirclePaint.setStrokeWidth(15);
         middleCirclePaint.setStyle(Paint.Style.STROKE);  // Set it to STROKE to create an open middle circle
-        outerRadius = screenX * 0.07f;
+        middleCircleOuterRadius = screenX * 0.07f;
 
+        // Initialize goal post paint
         goalPostPaint.setColor(Color.BLACK);
 
-        // Initialize goal text animation paint
+        // Initialize centered GOAL! text paint
         for (int i = 0; i < 4; i++) {
             Paint scorePaint = new Paint();
             scorePaint.setTextSize(60);
@@ -265,94 +269,31 @@ public class GameView extends SurfaceView implements Runnable {
             scoresPaints.add(scorePaint);
         }
 
-        // Initialize team score paint
-        teamScoresPaint.setTextSize(60);
-        teamScoresPaint.setTypeface(typeface); // Set custom font
-
-        // Initialize goal text animation paint
-        int xText;
-        int yText;
-        for (int index = 0; index < 4; index++) {
-            // Calculate text rotation angle
-            Vector goal = goalLines.get(index);
-
-            float dx = (float) (goal.getX2() - goal.getX1());
-            float dy = (float) (goal.getY2() - goal.getY1());
-            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy));
-            dx *= scale;
-            dy *= scale;
-
-            float middleX = goal.getMidX();
-            float middleY = goal.getMidY();
-            float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
-
-            float dxPerpendicular = -dy;
-            float dyPerpendicular = dx;
-
-            switch (index) {
-                case 0: // Bottom-right (blue)
-                    if (rotationAngle > 0) {
-                        rotationAngle -= 180;
-                    }
-                    break;
-                case 1: // Top-left (red)
-                    if (rotationAngle < 0) {
-                        rotationAngle += 180;
-                    }
-                    break;
-                case 2: // Bottom-left (green)
-                    if (rotationAngle < 0) {
-                        rotationAngle += 180;
-                    }
-                    break;
-                case 3: // Top-right (yellow)
-                    if (rotationAngle > 0) {
-                        rotationAngle -= 180;
-                    }
-                    break;
-                default:
-                    return;
-            }
-
-            // Calculate text position
-            xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
-            yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
-            // Center text with text measure
-            float textWidth = scoresPaints.get(index).measureText(String.valueOf(players.get(index).getScore()));
-            switch (index) {
-                case 0:
-                    xText -= (int) (textWidth / 2);
-                    break;
-                case 1:
-                    xText += (int) (textWidth / 2);
-                    break;
-                case 2:
-                    // Use ascend and descent to center text vertically
-                    yText += (int) ((scoresPaints.get(index).descent() + scoresPaints.get(index).ascent()) / 2);
-                    xText -= (int) (textWidth / 4);
-                    break;
-                case 3:
-                    // Use ascend and descent to center text vertically
-                    yText += (int) ((scoresPaints.get(index).descent() + scoresPaints.get(index).ascent()) / 2 + (int) (0.029f * screenY));
-                    xText += (int) (textWidth / 4);
-                    break;
-                default:
-                    break;
-            }
-            // Set text color
-            scoresPaints.get(index).setColor(players.get(index).getColor());
-            scorePositions.add(new int[]{xText, yText});
-            scoreRotations.add(rotationAngle);
+        // Initialize team score paints
+        for (int i = 0; i < 2; i++) {
+            Paint teamScorePaint = new Paint();
+            teamScorePaint.setTextSize(60);
+            teamScorePaint.setAntiAlias(true); // Smooth text edges
+            teamScorePaint.setTypeface(typeface); // Set custom font
+            teamScorePaint.setColor(i == 0 ? Color.BLUE : Color.RED);
+            teamScoresPaints.add(teamScorePaint);
         }
 
+        // Set score text color
+        for (int i = 0; i > 4; i++) {
+            scoresPaints.get(i).setColor(players.get(i).getColor());
+        }
+
+        // Set GOAL! text paint properties
         GOALtextPaint.setTextSize(GOALText.getSize());
         GOALtextPaint.setTypeface(typeface);
 
         // Measure the width of the text
         scoreIncrementPaint.setTextSize(scoreIncrementText.getSize());
 
-       initStaticBitmap();
-       initStaticBitmapTwovTwo();
+        // Initialize static bitmaps
+        initStaticBitmap();
+        initStaticBitmapTwovTwo();
     }
 
     /**
@@ -365,7 +306,7 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the beige background
         staticCanvas.drawColor(Color.parseColor("#FFF1E9"));
         // Draw the outer circle in the middle of the field
-        staticCanvas.drawCircle((float) screenX / 2, (float) screenY / 2, outerRadius, middleCirclePaint);
+        staticCanvas.drawCircle((float) screenX / 2, (float) screenY / 2, middleCircleOuterRadius, middleCirclePaint);
         // Draw the settings icon in the middle of the screen
         staticCanvas.drawBitmap(settingsIcon, settingsMatrix, null);
         // Draw the goal regions
@@ -408,7 +349,7 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the beige background
         staticCanvasTwovTwo.drawColor(Color.parseColor("#FFF1E9"));
         // Draw the outer circle in the middle of the field
-        staticCanvasTwovTwo.drawCircle((float) screenX / 2, (float) screenY / 2, outerRadius, middleCirclePaint);
+        staticCanvasTwovTwo.drawCircle((float) screenX / 2, (float) screenY / 2, middleCircleOuterRadius, middleCirclePaint);
         // Draw the settings icon in the middle of the screen
         staticCanvasTwovTwo.drawBitmap(settingsIcon, settingsMatrix, null);
         // Draw the goal regions
@@ -446,6 +387,30 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
     }
+
+    /**
+     * Center the score texts based on their measured width
+     */
+    private void centerScoreTexts() {
+        for (int i = 0; i < originalScoreTextPositions.size(); i++) {
+            int[] original = originalScoreTextPositions.get(i);
+            Paint paint = scoresPaints.get(i);
+            String text = String.valueOf(players.get(i).getScore());
+
+            // Horizontal centering
+            float textWidth = paint.measureText(text);
+            int xCentered = (int) (original[0] - textWidth / 2f);
+
+            // Vertical centering
+            Paint.FontMetrics fm = paint.getFontMetrics();
+            int yCentered = (int) (original[1] - (fm.ascent + fm.descent) / 2f);
+
+            // Store centered coordinates in the modifiable array
+            scoreTextPositions.get(i)[0] = xCentered;
+            scoreTextPositions.get(i)[1] = yCentered;
+        }
+    }
+
 
     /**
      * Run method for the game thread
@@ -572,6 +537,75 @@ public class GameView extends SurfaceView implements Runnable {
         goalLinesTwovTwo.add(topGoal);
     }
 
+    private void determineScoreTextPositions() {
+        // Initialize score text positions and rotations
+        for (int i = 0; i < 4; i++) {
+            int xText;
+            int yText;
+            Vector goal = goalLines.get(i);
+            // Get normalized direction vector of the goal line
+            float dx = (float) (goal.getX2() - goal.getX1());
+            float dy = (float) (goal.getY2() - goal.getY1());
+            Log.d("ScoreText", "Goal line vector: (" + dx + ", " + dy + ")");
+            // Normalize the vector
+            float length = (float) Math.sqrt(dx*dx + dy*dy);
+            dx /= length;
+            dy /= length;
+
+            // Calculate angle in degrees using atan2
+            float rotationAngle = (float) Math.toDegrees(Math.atan2(dy, dx));
+
+            // Get middle point of the goal line
+            float middleX = goal.getMidX();
+            float middleY = goal.getMidY();
+
+            // Calculate perpendicular vector
+            float dxPerpendicular = -dy;
+            float dyPerpendicular = dx;
+            Log.d("ScoreText", "Perpendicular vector: (" + dxPerpendicular + ", " + dyPerpendicular + ")");
+
+            switch (i) {
+                case 0: // Bottom-right (blue)
+                    if (rotationAngle > 0) {
+                        rotationAngle -= 180;
+                    }
+                    break;
+                case 1: // Top-left (red)
+                    if (rotationAngle < 0) {
+                        rotationAngle += 180;
+                    }
+                    break;
+                case 2: // Bottom-left (green)
+                    if (rotationAngle < 0) {
+                        rotationAngle += 180;
+                    }
+                    break;
+                case 3: // Top-right (yellow)
+                    if (rotationAngle > 0) {
+                        rotationAngle -= 180;
+                    }
+                    break;
+                default:
+                    return;
+            }
+
+            // Calculate text position
+            xText = (int) (middleX + dxPerpendicular * 1.3 * PPCM);
+            yText = (int) (middleY + dyPerpendicular * 1.3 * PPCM);
+            // Log distance between middle and text position
+            Log.d("ScoreText", "Distance from middle to text position for player " + i + ": " + Math.sqrt(Math.pow(xText - middleX, 2) + Math.pow(yText - middleY, 2)));
+            originalScoreTextPositions.add(new int[]{xText, yText});
+            scoreTextPositions.add(new int[]{xText, yText}); // Initially the same, will be centered later
+            scoreRotations.add(rotationAngle);
+        }
+        // Log all text positions
+        for (int i = 0; i < originalScoreTextPositions.size(); i++) {
+            int[] pos = originalScoreTextPositions.get(i);
+            float rot = scoreRotations.get(i);
+            Log.d("ScoreText", "Player " + i + " score text position: (" + pos[0] + ", " + pos[1] + "), rotation: " + rot);
+        }
+    }
+
     private void determineScoreTextPositionsTwovTwo() {
         for (int i = 0; i < teams.size(); i++) {
             int xText = screenX / 2;
@@ -581,7 +615,7 @@ public class GameView extends SurfaceView implements Runnable {
             } else {
                 yText = (int) (screenY - screenX * 0.4f);
             }
-            teamScorePositions.add(new int[]{xText, yText});
+            teams.get(i).setScorePosition(xText, yText);
         }
     }
 
@@ -595,6 +629,7 @@ public class GameView extends SurfaceView implements Runnable {
             updateBalls();
             checkPlayerBallCollision();
             updatePlayers();
+            centerScoreTexts();
         }
     }
 
@@ -963,14 +998,18 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void checkGoal(Ball ball) {
         long now = System.currentTimeMillis();
+        // Get ball position
         float ballX = ball.getX();
         float ballY = ball.getY();
+        // Get the player who last shot the ball
         Player shooter = ball.getShooter();
+        // If no shooter, return
         if (shooter == null) return;
 
         if (twoVtwoMode) {
             for (int i = 0; i < goalRegionsTwovTwo.size(); i++) { // Check goal in 2v2 goal regions
                 Region region = goalRegionsTwovTwo.get(i);
+                // If ball not in region, continue
                 if (!region.contains((int) ballX, (int) ballY)) {
                     continue;
                 }
@@ -978,21 +1017,29 @@ public class GameView extends SurfaceView implements Runnable {
                 // Scored in goal by player
                 int shooterIndex = players.indexOf(shooter);
 
+                // Handle scoring
                 scored(i, shooter);
+
+                // Remember last shooter for celebration animation
                 lastShooter = shooter;
 
+                // Get rotation of GOAL! text based on side of screen the shooter is on
                 int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+
+                // Create floating text for score increment
                 scoreIncrementText = new FloatingText(
-                        shooter.getScorePosition()[0],
-                        shooter.getScorePosition()[1],
+                        scoreTextPositions.get(shooterIndex)[0],
+                        scoreTextPositions.get(shooterIndex)[1],
                         40,
                         rotation
                 );
 
+                // Change star colors to the color of the scoring player
                 for (Star star : stars) {
                     star.setColor(shooter.getColor());
                 }
 
+                // Reset goal tracking variables
                 lastGoal = -1;
                 ball.resetShooter();
                 break;
@@ -1013,10 +1060,12 @@ public class GameView extends SurfaceView implements Runnable {
                         scored(i, shooter);
                         lastShooter = shooter;
 
+                        // Get rotation of GOAL! text based on side of screen the shooter is on
                         int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+                        // Create floating text for score increment
                         scoreIncrementText = new FloatingText(
-                                shooter.getScorePosition()[0],
-                                shooter.getScorePosition()[1],
+                                scoreTextPositions.get(shooterIndex)[0],
+                                scoreTextPositions.get(shooterIndex)[1],
                                 40,
                                 rotation
                         );
@@ -1327,10 +1376,12 @@ public class GameView extends SurfaceView implements Runnable {
                 canvas.save();
 
                 // Rotate around the text position
-                canvas.rotate(scoreRotations.get(i), scorePositions.get(i)[0], scorePositions.get(i)[1]);
-
+                int scoreX = scoreTextPositions.get(i)[0];
+                int scoreY = scoreTextPositions.get(i)[1];
+                canvas.rotate(scoreRotations.get(i), scoreX, scoreY);
+z
                 // Draw the text
-                canvas.drawText(String.valueOf(players.get(i).getScore()), scorePositions.get(i)[0], scorePositions.get(i)[1], scoresPaints.get(i));
+                canvas.drawText(String.valueOf(players.get(i).getScore()), scoreX, scoreY, scoresPaints.get(i));
 
                 // Restore canvas to avoid affecting other drawings
                 canvas.restore();
@@ -1338,38 +1389,32 @@ public class GameView extends SurfaceView implements Runnable {
         } else { // draw scores of the 2 teams
             if (needSync) {
                 synchronized (teams) {
-                    for (int i = 0; i < teams.size(); i++) {
-                        // Set text color
-                        teamScoresPaint.setColor(i == 0 ? Color.BLUE : Color.RED);
-
+                    for (int i = 0; i < 2; i++) {
                         // Save the current canvas state
                         canvas.save();
-
+                        int rotationAngle = (i == 0) ? 0 : 180;
                         // Rotate around the text position
-                        canvas.rotate((i == 0 ? 0 : 180), teams.get(i).getScorePositionX(), teams.get(i).getScorePositionY());
+                        canvas.rotate(rotationAngle, teams.get(i).getScorePosition()[0], teams.get(i).getScorePosition()[1]);
 
                         // Draw the text
                         Team team = teams.get(i);
-                        canvas.drawText(String.valueOf(team.getScore()), team.getScorePositionX(), team.getScorePositionY(), teamScoresPaint);
+                        canvas.drawText(String.valueOf(team.getScore()), team.getScorePosition()[0], team.getScorePosition()[1], teamScoresPaints.get(i));
 
                         // Restore canvas to avoid affecting other drawings
                         canvas.restore();
                     }
                 }
             } else {
-                for (int i = 0; i < teams.size(); i++) {
-                    // Set text color
-                    teamScoresPaint.setColor(i == 0 ? Color.BLUE : Color.RED);
-
+                for (int i = 0; i < 2; i++) {
                     // Save the current canvas state
                     canvas.save();
-
+                    int rotationAngle = (i == 0) ? 0 : 180;
                     // Rotate around the text position
-                    canvas.rotate((i == 0 ? 0 : 180), teams.get(i).getScorePositionX(), teams.get(i).getScorePositionY());
+                    canvas.rotate(rotationAngle, teams.get(i).getScorePosition()[0], teams.get(i).getScorePosition()[1]);
 
                     // Draw the text
                     Team team = teams.get(i);
-                    canvas.drawText(String.valueOf(team.getScore()), team.getScorePositionX(), team.getScorePositionY(), teamScoresPaint);
+                    canvas.drawText(String.valueOf(team.getScore()), team.getScorePosition()[0], team.getScorePosition()[1], teamScoresPaints.get(i));
 
                     // Restore canvas to avoid affecting other drawings
                     canvas.restore();
@@ -1380,7 +1425,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (scored) {
             // Set text size
             GOALtextPaint.setColor(lastShooter.getColor());
-            // Draw the centered text
+            // Draw the centered GOAL!text
             float textWidth = GOALtextPaint.measureText("GOAL!");
             // Calculate the x position for centering the text
             float x = (screenX - textWidth) / 2;
@@ -1390,7 +1435,6 @@ public class GameView extends SurfaceView implements Runnable {
             GOALText.increment(3, 0, 0);
             GOALtextPaint.setTextSize(GOALText.getSize());
             canvas.drawText("GOAL!", x, y, GOALtextPaint);
-
 
             // Draw a score increment animation above the last shooter score position
             canvas.save();
@@ -1704,11 +1748,6 @@ public class GameView extends SurfaceView implements Runnable {
                 player.setY(newY);
             }
         }
-//        if (!twoVtwoMode) {
-//            determineScoreTextPositions();
-//        } else {
-//            determineScoreTextPositionsTwovTwo();
-//        }
     }
 
     /**
@@ -1939,12 +1978,6 @@ public class GameView extends SurfaceView implements Runnable {
             if (twoVtwo) {
                 PLAYERCOUNT = 4;
                 twoVtwoMode = true;
-                // If two vs two mode is enabled
-                teams.add(new Team(players.get(0), players.get(2)));
-                teams.get(0).setColor(Color.BLUE);
-                teams.add(new Team(players.get(1), players.get(3)));
-                teams.get(1).setColor(Color.RED);
-
                 // Reset player colors for two vs two mode
                 for (int i = 0; i < players.size(); i++) {
                     if (i == 0 || i == 2) {
