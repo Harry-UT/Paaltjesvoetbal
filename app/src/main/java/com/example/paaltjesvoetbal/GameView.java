@@ -393,23 +393,28 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void centerScoreTexts() {
         for (int i = 0; i < originalScoreTextPositions.size(); i++) {
-            int[] original = originalScoreTextPositions.get(i);
+            int[] original = originalScoreTextPositions.get(i); // keep immutable
             Paint paint = scoresPaints.get(i);
             String text = String.valueOf(players.get(i).getScore());
 
-            // Horizontal centering
+            // Measure text width and font metrics
             float textWidth = paint.measureText(text);
-            int xCentered = (int) (original[0] - textWidth / 2f);
-
-            // Vertical centering
             Paint.FontMetrics fm = paint.getFontMetrics();
+
+            // Compute centered coordinates
+            int xCentered = (int) (original[0] - textWidth / 2f);
             int yCentered = (int) (original[1] - (fm.ascent + fm.descent) / 2f);
 
-            // Store centered coordinates in the modifiable array
+            // Clamp to screen to avoid off-screen drawing
+            xCentered = Math.max(0, Math.min(xCentered, screenX - (int) textWidth));
+            yCentered = Math.max((int) -fm.ascent, Math.min(yCentered, screenY - (int) fm.descent));
+
+            // Store in modifiable array
             scoreTextPositions.get(i)[0] = xCentered;
             scoreTextPositions.get(i)[1] = yCentered;
         }
     }
+
 
 
     /**
@@ -1267,7 +1272,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
             if (debug) {
                 drawNormalVectorsInwards(canvas);
-                drawNormalVectorsOutwards(canvas);
+//                drawNormalVectorsOutwards(canvas);
             }
         }
 
@@ -1379,7 +1384,7 @@ public class GameView extends SurfaceView implements Runnable {
                 int scoreX = scoreTextPositions.get(i)[0];
                 int scoreY = scoreTextPositions.get(i)[1];
                 canvas.rotate(scoreRotations.get(i), scoreX, scoreY);
-z
+
                 // Draw the text
                 canvas.drawText(String.valueOf(players.get(i).getScore()), scoreX, scoreY, scoresPaints.get(i));
 
