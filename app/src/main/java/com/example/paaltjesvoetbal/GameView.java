@@ -15,6 +15,8 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Matrix;
+
+import androidx.compose.material3.AlertDialogDefaults;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
@@ -386,18 +388,6 @@ public class GameView extends SurfaceView implements Runnable {
         for (Vector edge : verticalGoalEdges) {
             staticCanvas.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
         }
-        // Draw goalposts
-        drawGoalPosts();
-        // Draw the goal lines
-        if (PLAYERCOUNT < 4) {
-            // Draw unused goal lines when in less than 4 player mode
-            if (PLAYERCOUNT == 2) {
-                goalLines.get(2).draw(staticCanvas);
-                goalLines.get(3).draw(staticCanvas);
-            } else if (PLAYERCOUNT == 3) {
-                goalLines.get(3).draw(staticCanvas);
-            }
-        }
     }
 
     /**
@@ -434,26 +424,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
         // Draw goalposts
         drawGoalPostsTwovTwo();
-    }
-
-    /**
-     * Draw the goal posts at the corners of the goals
-     */
-    private void drawGoalPosts() {
-        int postSide = 1;
-        int totalPosts = twoVtwoMode ? 4 : PLAYERCOUNT * 2;
-        for (int i = 0; i < totalPosts; i++) {
-            Vector edge = bounceEdges.get(i);
-            float x = (postSide % 2 == 0) ? (float) edge.getX1() : (float) edge.getX2();
-            float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
-
-            staticCanvas.drawCircle(x, y, 5, goalPostPaint);
-            // Draw a little index number for debugging
-            if (debug) {
-                staticCanvas.drawText(String.valueOf(i), x + 10, y + 10, fpsPaint);
-            }
-            postSide++;
-        }
     }
 
     /**
@@ -1223,12 +1193,50 @@ public class GameView extends SurfaceView implements Runnable {
 
         if (twoVtwoMode) {
             canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
+            // Draw goal posts
+            int postSide = 1;
+            for (int i = 0; i < goalPostsTwovTwo.size(); i++) {
+                Vector edge = bounceEdgesTwovTwo.get(i);
+                float x = (postSide % 2 == 0) ? (float) edge.getX2() : (float) edge.getX1();
+                float y = (postSide % 2 == 0) ? (float) edge.getY2() : (float) edge.getY1();
+
+                canvas.drawCircle(x, y, 5, goalPostPaint);
+                // Draw a little index number for debugging
+                if (debug) {
+                    canvas.drawText(String.valueOf(i), x + 10, y + 10, fpsPaint);
+                }
+                postSide++;
+            }
             if (debug) {
                 drawNormalVectorsInwardsTwovTwo(canvas);
                 drawNormalVectorsOutwardsTwovTwo(canvas);
             }
         } else {
             canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static stuff
+            // Draw goal posts
+            int postSide = 1;
+            for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+                Vector edge = bounceEdges.get(i);
+                float x = (postSide % 2 == 0) ? (float) edge.getX1() : (float) edge.getX2();
+                float y = (postSide % 2 == 0) ? (float) edge.getY1() : (float) edge.getY2();
+
+                canvas.drawCircle(x, y, 5, goalPostPaint);
+                // Draw a little index number for debugging
+                if (debug) {
+                    canvas.drawText(String.valueOf(i), x + 10, y + 10, fpsPaint);
+                }
+                postSide++;
+            }
+            // Draw unused goal lines in 2 and 3 player mode
+            if (PLAYERCOUNT < 4) {
+                // Draw unused goal lines when in less than 4 player mode
+                if (PLAYERCOUNT == 2) {
+                    goalLines.get(2).draw(canvas);
+                    goalLines.get(3).draw(canvas);
+                } else if (PLAYERCOUNT == 3) {
+                    goalLines.get(3).draw(canvas);
+                }
+            }
             if (debug) {
                 drawNormalVectorsInwards(canvas);
                 drawNormalVectorsOutwards(canvas);
@@ -1244,8 +1252,10 @@ public class GameView extends SurfaceView implements Runnable {
         if (needSync) {
             Log.d("GameView", "Drawing with synchronization");
             synchronized (joysticks) {
-                for (Joystick joystick : joysticks) {
-                    joystick.draw(canvas);  // Call the draw method for each joystick
+                for (int i = 0; i < PLAYERCOUNT; i++) {
+//                Log.d("GameView", "Time for first circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+                    joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
+//                Log.d("GameView", "Time for second circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
                 }
             }
             synchronized (balls) {
@@ -1254,8 +1264,8 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
             synchronized (shootButtons) {
-                for (ShootButton button : shootButtons) {
-                    button.draw(canvas);
+                for (int i = 0; i < PLAYERCOUNT; i++) {
+                    shootButtons.get(i).draw(canvas);
                 }
             }
             synchronized (players) {
@@ -1265,23 +1275,22 @@ public class GameView extends SurfaceView implements Runnable {
             }
         } else  {
 //            Log.d("GameView", "Drawing without synchronization: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            for (Joystick joystick : joysticks) {
+            for (int i = 0; i < PLAYERCOUNT; i++) {
 //                Log.d("GameView", "Time for first circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-                joystick.draw(canvas);  // Call the draw method for each joystick
+                joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
 //                Log.d("GameView", "Time for second circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-
             }
 //            Log.d("GameView", "Draw time after joysticks: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
             for (Ball ball : balls) {
                 ball.draw(canvas);
             }
 //            Log.d("GameView", "Draw time after balls: " + (System.nanoTime() - startTime) / 1_000_000+ " ms");
-            for (ShootButton button : shootButtons) {
-                button.draw(canvas);
+            for (int i = 0; i < PLAYERCOUNT; i++) {
+                shootButtons.get(i).draw(canvas);
             }
 //            Log.d("GameView", "Draw time after buttons: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            for (Player player : players) {
-                player.draw(canvas);
+            for (int i = 0; i < PLAYERCOUNT; i++) {
+                players.get(i).draw(canvas);
             }
         }
         // Draw indexes at the begin points of diagonalEdges for debugging
@@ -1644,7 +1653,8 @@ public class GameView extends SurfaceView implements Runnable {
      * Update the player positions based on joystick input
      */
     private void updatePlayers() {
-        for (Player player : players) {
+        List<Player> playerList = twoVtwoMode ? players : players.subList(0, PLAYERCOUNT);
+        for (Player player : playerList) {
             float direction = player.getDirection();  // The direction set by joystick
             if (direction != 0) {
                 float moveX = PLAYERSPEED * (float) Math.cos(direction);
@@ -1750,7 +1760,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (needSync) {
             synchronized (players) {
                 synchronized (balls) {
-                    for (Player player : players) {
+                    for (Player player : players.subList(0, PLAYERCOUNT)) {
                         for (Ball ball : balls) {
                             float dx = player.getX() - ball.getX();
                             float dy = player.getY() - ball.getY();
@@ -1765,7 +1775,7 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
         } else {
-            for (Player player : players) {
+            for (Player player : players.subList(0, PLAYERCOUNT)) {
                 for (Ball ball : balls) {
                     float dx = player.getX() - ball.getX();
                     float dy = player.getY() - ball.getY();
@@ -1922,6 +1932,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo, boolean isReset) {
         PLAYERCOUNT = playerCount;
+        Log.d("SettingsDialog", "reset: " + isReset);
         if (isReset) {
             PLAYERCOUNT = 4;
             for (Ball ball : balls) {
