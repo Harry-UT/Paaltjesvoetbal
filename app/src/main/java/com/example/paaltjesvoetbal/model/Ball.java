@@ -2,10 +2,7 @@ package com.example.paaltjesvoetbal.model;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.util.Log;
 import android.graphics.Color;
-
-import java.util.List;
 
 public class Ball {
     private float x;
@@ -14,21 +11,17 @@ public class Ball {
     private float velocityX, velocityY;
     private static final float DAMPING_FACTOR = 0.985F;
     private Player player;
-    private final List<Vector> bounceEdges;
-    private final List<Vector> verticalGoalEdges;
     private Paint ballPaint;
     private Player shooter = null;
     private int lastBouncedEdgeIndex = -1;
     private int lastGoalpostIndex = -1;
     private long lastBounceTime = 0;
-    public Ball(float x, float y, float radius, List<Vector> bounceEdges, List<Vector> verticalGoalEdges) {
+    public Ball(float x, float y, float radius) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.velocityX = 0;
         this.velocityY = 0;
-        this.bounceEdges = bounceEdges;
-        this.verticalGoalEdges = verticalGoalEdges;
         initializePaint();
     }
 
@@ -39,6 +32,9 @@ public class Ball {
         ballPaint.setColor(Color.DKGRAY);
     }
 
+    /** Draw the ball on the provided canvas
+     * @param canvas Canvas to draw the ball on
+     */
     public void draw(Canvas canvas) {
         // Draw the ball with the gradient effect
         canvas.drawCircle(x, y, radius, ballPaint);

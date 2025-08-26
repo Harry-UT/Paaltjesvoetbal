@@ -193,7 +193,7 @@ public class GameView extends SurfaceView implements Runnable {
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS, bounceEdges, verticalGoalEdges);
+        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS);
         balls.add(ball);
 
         // Initialize stars for goal animation
