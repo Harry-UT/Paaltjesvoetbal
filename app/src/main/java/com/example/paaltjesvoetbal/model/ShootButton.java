@@ -24,7 +24,9 @@ public class ShootButton {
         paint = new Paint();
     }
 
-    // Draw shoot button
+    /** Draw the shoot button on the provided canvas
+     * @param canvas Canvas to draw the button on
+     */
     public void draw(Canvas canvas) {
         // Draw the outer circle with color based on pressed state
         paint.setColor(isPressed ? Color.DKGRAY : Color.LTGRAY);

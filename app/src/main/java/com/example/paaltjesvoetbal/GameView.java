@@ -770,6 +770,10 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Make the player shoot the ball away from them
+     * @param ball the ball to be possibly shot
+     */
     public void shoot(Ball ball) {
         Player player = ball.getPlayer();
         ball.setPlayer(null);
