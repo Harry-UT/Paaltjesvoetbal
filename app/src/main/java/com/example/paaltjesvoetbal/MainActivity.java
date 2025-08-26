@@ -1,6 +1,7 @@
 package com.example.paaltjesvoetbal;
 
 import android.app.Activity;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -33,15 +34,40 @@ public class MainActivity extends Activity {
 
         float dpi = diagonalPx / diagonalIn;
 
-        int drawableX = getResources().getDisplayMetrics().widthPixels;
-        int drawableY = getResources().getDisplayMetrics().heightPixels;
-
+        int drawableY = getDrawableY();
 
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, screenY, (int) dpi);
+        gameView = new GameView(this, screenX, drawableY, (int) dpi);
 
         // Set the GameView as the content view
         setContentView(gameView);
+    }
+
+    private int getDrawableY() {
+        String manufacturer = android.os.Build.MANUFACTURER; // e.g. "samsung"
+        String model = android.os.Build.MODEL;               // e.g. "SM-A202F"
+        Log.d("DeviceInfo", "Manufacturer: " + manufacturer + ", Model: " + model);
+        String device = android.os.Build.DEVICE;             // e.g. "a20e"
+
+        int navBarHeight = 0;
+        Resources resources = getResources();
+        int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            navBarHeight = resources.getDimensionPixelSize(resourceId);
+        }
+
+        boolean isSamsung = manufacturer.equalsIgnoreCase("samsung");
+        boolean isGalaxyA = isSamsung && model.toUpperCase().contains("SM-A");
+
+        // Get real screen height
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int drawableY = metrics.heightPixels;
+
+        if (isGalaxyA) {
+            drawableY -= navBarHeight;
+        }
+        return drawableY;
     }
 
     @Override

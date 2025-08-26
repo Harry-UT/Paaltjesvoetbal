@@ -581,9 +581,6 @@ public class GameView extends SurfaceView implements Runnable {
             goalLines.add(scaledEdge);
         }
     }
-    /**
-     * Determine the goal regions for each player based on the screen dimensions
-     */
 
     /**
      * Determine the goal regions for each player based on the screen dimensions
@@ -667,7 +664,7 @@ public class GameView extends SurfaceView implements Runnable {
                         checkHorVertBounce(ball);
                         checkEdgeCollision(ball);
                         if (PLAYERCOUNT < 4) {
-//                    checkGoalLineCollision(ball); Todo: fix
+//                             checkGoalLineCollision(ball); Todo: fix
                         }
 
                         // Update ball position based on its velocity
@@ -1024,7 +1021,32 @@ public class GameView extends SurfaceView implements Runnable {
 
         if (twoVtwoMode) {
             for (int i = 0; i < goalRegionsTwovTwo.size(); i++) { // Check goal in 2v2 goal regions
+                Region region = goalRegionsTwovTwo.get(i);
+                if (!region.contains((int) ballX, (int) ballY)) {
+                    continue;
+                }
 
+                // Scored in goal by player
+                int shooterIndex = players.indexOf(shooter);
+
+                scored(i, shooter);
+                lastShooter = shooter;
+
+                int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+                scoreIncrementText = new FloatingText(
+                        shooter.getScorePosition()[0],
+                        shooter.getScorePosition()[1],
+                        40,
+                        rotation
+                );
+
+                for (Star star : stars) {
+                    star.setColor(shooter.getColor());
+                }
+
+                lastGoal = -1;
+                ball.resetShooter();
+                break;
             }
         } else { // Check goal in normal goal regions
             for (int i = 0; i < goalRegions.size(); i++) {
@@ -1260,6 +1282,16 @@ public class GameView extends SurfaceView implements Runnable {
 //            Log.d("GameView", "Draw time after buttons: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
             for (Player player : players) {
                 player.draw(canvas);
+            }
+        }
+        // Draw indexes at the begin points of diagonalEdges for debugging
+        if (debug) {
+            Paint paint = new Paint();
+            paint.setColor(Color.BLACK);
+            paint.setTextSize(30);
+            for (int i = 0; i < diagonalEdges.size(); i++) {
+                Vector edge = diagonalEdges.get(i);
+                canvas.drawText(String.valueOf(i), (float) edge.getX1(), (float) edge.getY1(), paint);
             }
         }
 //        Log.d("GameView", "Draw time after sync: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
@@ -1754,6 +1786,9 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void onPlayerHitBall(Player player, Ball ball) {
         if (player.canTakeBall()) {
+            if (ball.getShooter() != null && ball.getShooter() != player) {
+                ball.getShooter().releaseBall(); // Release the ball from the previous shooter
+            }
             player.setBall(ball); // Set the ball to the player
             ball.setShooter(player); // Set the player as the (futuristic) shooter of the ball
             ball.setShot(false);
