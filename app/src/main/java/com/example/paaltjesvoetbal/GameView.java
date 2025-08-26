@@ -64,7 +64,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<Ball> balls;
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
-    private final int[][] playerPositions;
+    private int[][] playerPositions;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -117,6 +117,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final Paint teamScoresPaint = new Paint();
     private final Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
     private final List<int[]> scorePositions = new ArrayList<>(); // Contains the x and y of the score text per player
+    private final List<int[]> teamScorePositions = new ArrayList<>(); // Contains the x and y of the score text per team in 2v2 mode
     private final List<Float> scoreRotations = new ArrayList<>(); // Contains the rotation of the score text per player
     private final Paint edgePaint = new Paint();
     private final Paint fpsPaint = new Paint();
@@ -152,7 +153,6 @@ public class GameView extends SurfaceView implements Runnable {
         this.screenY = screenY;
         this.GOALText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
-        playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
         holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
@@ -160,6 +160,29 @@ public class GameView extends SurfaceView implements Runnable {
         joysticks = new ArrayList<>();
         shootButtons = new ArrayList<>();
 
+        // Determine player corner areas
+        determineGoalRegions();
+        determineGoalRegionsTwovTwo();
+
+        // Determine edges for ball bounce
+        determineBounceEdges();
+        determineBounceEdgesTwovTwo();
+
+        // Determine the goals
+        determineGoalLines();
+        determineGoalLinesTwovTwo();
+
+        // Determine goal posts
+        determineGoalPosts();
+        determineGoalPostsTwovTwo();
+
+        // Determine score text positions for teams in 2v2 mode
+        determineScoreTextPositionsTwovTwo();
+
+        // Determine the positions of the players
+        determinePlayerPositions();
+
+        // Initialize players
         for (int i = 0; i < PLAYERCOUNT; i++) {
             switch (i) {
                 case 0: // Bottom-right (blue)
@@ -178,31 +201,16 @@ public class GameView extends SurfaceView implements Runnable {
                     break;
             }
         }
-        // Determine player corner areas
-        determineGoalRegions();
-        determineGoalRegionsTwovTwo();
 
-        // Determine edges for ball bounce
-        determineBounceEdges();
-        determineBounceEdgesTwovTwo();
-
-        // Determine the goals
-        determineGoalLines();
-        determineGoalLinesTwovTwo();
-
-        // Determine goal posts
-        determineGoalPosts();
-        determineGoalPostsTwovTwo();
-
-        // Determine score text positions
-        determineScoreTextPositions();
+        // Initialize teams
+        teams.add(new Team(players.get(1), players.get(3)));
+        teams.add(new Team(players.get(0), players.get(2)));
 
         // Initialize ball(s)
         balls = new ArrayList<>();
-        Ball ball = new Ball(screenX / 2f, screenY / 2f, BALLRADIUS);
-        balls.add(ball);
+        balls.add(new Ball(screenX / 2f, screenY / 2f, BALLRADIUS));
 
-        // Initialize stars for goal animation
+        // Initialize stars for score animation
         for (int i = 0; i < stars.length; i++) {
             stars[i] = new Star();
         }
@@ -564,37 +572,8 @@ public class GameView extends SurfaceView implements Runnable {
         goalLinesTwovTwo.add(topGoal);
     }
 
-    /**
-     * Determine the positions for the score text based on the screen dimensions
-     */
-    private void determineScoreTextPositions() {
-        for (Player player : players) {
-            int index = players.indexOf(player);
-
-            // Calculate text rotation angle
-            Vector goal = goalLines.get(index);
-
-            float dx = (float) (goal.getX2() - goal.getX1());
-            float dy = (float) (goal.getY2() - goal.getY1());
-            float scale = 1.0f / (Math.abs(dx) + Math.abs(dy)); // A crude approximation
-            dx *= scale;
-            dy *= scale;
-
-            float middleX = goal.getMidX();
-            float middleY = goal.getMidY();
-
-            float dxPerpendicular = -dy;
-            float dyPerpendicular = dx;
-
-            int xText = (int) (middleX + dxPerpendicular * screenX * 0.25);
-            int yText = (int) (middleY + dyPerpendicular * screenX * 0.25);
-            player.setScorePosition(xText, yText);
-        }
-    }
-
     private void determineScoreTextPositionsTwovTwo() {
         for (int i = 0; i < teams.size(); i++) {
-            Team team = teams.get(i);
             int xText = screenX / 2;
             int yText;
             if (i == 1) {
@@ -602,7 +581,7 @@ public class GameView extends SurfaceView implements Runnable {
             } else {
                 yText = (int) (screenY - screenX * 0.4f);
             }
-            team.setScorePosition(xText, yText);
+            teamScorePositions.add(new int[]{xText, yText});
         }
     }
 
@@ -1820,6 +1799,11 @@ public class GameView extends SurfaceView implements Runnable {
             ball.setY(newBallY);
         }
     }
+
+    private void determinePlayerPositions() {
+        playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
+    }
+
     /**
      * Determine the corner areas of the screen
      */
