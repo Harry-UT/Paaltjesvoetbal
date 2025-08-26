@@ -10,7 +10,6 @@ public class ShootButton {
     private final float x;
     private final float y;
     private final float radius;
-    private int color;
     private int pointerID = -1; // Store the pointer ID for the current touch
 
     /** Constructor to initialize the shoot button
@@ -23,7 +22,6 @@ public class ShootButton {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.color = color;
         paint = new Paint();
         innerPaint = new Paint();
         innerPaint.setColor(color);
