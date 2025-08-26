@@ -63,6 +63,10 @@ public class ShootButton {
         return this.pointerID == pointer;
     }
 
+    public void changePaint(int color) {
+        innerPaint.setColor(color);
+    }
+
     // Handle pointer release
     public void resetTouchID() {
         this.pointerID = -1;

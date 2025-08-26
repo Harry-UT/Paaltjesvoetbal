@@ -32,8 +32,22 @@ public class MainActivity extends Activity {
 
         float dpi = diagonalPx / diagonalIn;
 
+        int navBarHeight = 0;
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            navBarHeight = getResources().getDimensionPixelSize(resourceId);
+        }
+
+        int drawableX = getResources().getDisplayMetrics().widthPixels;
+        int drawableY = getResources().getDisplayMetrics().heightPixels + navBarHeight;
+
+
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, screenY, (int) dpi);
+        gameView = new GameView(this, drawableX, drawableY, (int) dpi);
+        gameView.setOnApplyWindowInsetsListener((v, insets) -> {
+            insets.consumeSystemWindowInsets();
+            return insets;
+        });
 
         // Set the GameView as the content view
         setContentView(gameView);
@@ -59,13 +73,17 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            // Enable immersive mode to hide status and navigation bars
             getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_FULLSCREEN |
-                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            );
         }
     }
+
 
 //    @Override
 //    public void onSettingsChanged(int playerCount, int playerSpeed, int ballSpeed, boolean online) {

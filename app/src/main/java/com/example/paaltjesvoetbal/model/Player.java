@@ -10,6 +10,7 @@ public class Player {
     private int score = 0;  // Player's score
     private Joystick joystick;
     private ShootButton shootButton;
+    private Ball ball;
     private static final int CONTROL_TIMEOUT = 200;  // Time in milliseconds for collision timeout
     private long lastShootTime;  // Last time the ball was shot
     private final int number;
@@ -62,9 +63,13 @@ public class Player {
         return shootButton;
     }
 
+    public Ball getBall() {
+        return ball;
+    }
+
     // Set the ball that the player is controlling
     public void setBall(Ball ball) {
-        this.shootButton.setBall(ball);
+        this.ball = ball;
         lastShootTime = System.currentTimeMillis();
     }
 

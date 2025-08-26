@@ -8,10 +8,13 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="kj9L5W7UNKf32SmJq8hv-5" value="Ball" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="280" y="120" width="160" height="60" as="geometry" />
+          <mxGeometry x="280" y="120" width="160" height="90" as="geometry" />
         </mxCell>
         <mxCell id="kj9L5W7UNKf32SmJq8hv-7" value="Shootbutton" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="kj9L5W7UNKf32SmJq8hv-5">
           <mxGeometry y="30" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-34" value="Shooter" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="kj9L5W7UNKf32SmJq8hv-5">
+          <mxGeometry y="60" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="kj9L5W7UNKf32SmJq8hv-9" value="Player" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="280" y="20" width="160" height="60" as="geometry" />
@@ -20,7 +23,7 @@
           <mxGeometry y="30" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="kj9L5W7UNKf32SmJq8hv-14" value="Shootbutton" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="280" y="220" width="160" height="60" as="geometry" />
+          <mxGeometry x="280" y="250" width="160" height="60" as="geometry" />
         </mxCell>
         <mxCell id="kj9L5W7UNKf32SmJq8hv-15" value="Color" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="kj9L5W7UNKf32SmJq8hv-14">
           <mxGeometry y="30" width="160" height="30" as="geometry" />
@@ -31,14 +34,14 @@
             <mxPoint x="260" y="70" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="kj9L5W7UNKf32SmJq8hv-26" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Scoring&lt;/h1&gt;&lt;p&gt;When ball enters a goal area, get the shootbutton that shot it&lt;/p&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="40" y="290" width="180" height="80" as="geometry" />
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-26" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Scoring&lt;/h1&gt;&lt;p&gt;When ball enters a goal area, get its shooter, remove it and do goal for that player&lt;/p&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="180" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="kj9L5W7UNKf32SmJq8hv-27" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Getting the ball&lt;/h1&gt;&lt;div&gt;When a player touches the ball, remove the ball from the previous player and assign it to him, add the player as shooter to the ball&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-27" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Getting the ball&lt;/h1&gt;&lt;div&gt;When a player touches the ball, remove the ball from the previous player and assign it to the new player, add the player as shooter to the ball&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="180" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="kj9L5W7UNKf32SmJq8hv-28" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Shooting ball&lt;/h1&gt;&lt;div&gt;When a shootbutton shoots a ball, check whether that player has a ball, if so shoot the ball away.&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="40" y="170" width="180" height="120" as="geometry" />
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-28" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Shooting ball&lt;/h1&gt;&lt;div&gt;When a shootbutton is clicked, check whether the corresponding player has a ball, if so shoot the ball away, and remove the ball from the player&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="170" width="180" height="130" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

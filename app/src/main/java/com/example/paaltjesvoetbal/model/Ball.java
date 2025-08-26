@@ -9,8 +9,6 @@ public class Ball {
     private float y;
     private final float radius;
     private float velocityX, velocityY;
-    private static final float DAMPING_FACTOR = 0.985F;
-    private Player player;
     private Paint ballPaint;
     private Player shooter = null;
     private int lastBouncedEdgeIndex = -1;
@@ -88,9 +86,9 @@ public class Ball {
         this.y += velocityY;
     }
 
-    public void updateVelocity() {
-        this.velocityX *= DAMPING_FACTOR;
-        this.velocityY *= DAMPING_FACTOR;
+    public void updateVelocity(float dampingFactor) {
+        this.velocityX *= dampingFactor;
+        this.velocityY *= dampingFactor;
     }
 
     public void setVelocityY(float velocityY) {
@@ -107,13 +105,6 @@ public class Ball {
 
     public float getVelocityY() {
         return this.velocityY;
-    }
-
-    public Player getPlayer() {
-        return this.player;
-    }
-    public void setPlayer(Player player) {
-        this.player = player;
     }
 
     public int getLastBouncedEdgeIndex() {
@@ -141,7 +132,6 @@ public class Ball {
         this.y = resetY;
         this.velocityX = 0;
         this.velocityY = 0;
-        this.player = null;
         this.shooter = null;
     }
 }

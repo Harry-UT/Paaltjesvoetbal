@@ -67,12 +67,15 @@ public class GameView extends SurfaceView implements Runnable {
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
     private final int BALLRADIUS = 15;
-    private final int JOYSTICKRADIUS = 95;
+    private final int JOYSTICK_OUTERRADIUS = 95;
+    private final int JOYSTICK_INNERRADIUS = 30;
     private final int SHOOTBUTTONRADIUS = 50;
     private final int GOALPOSTRADIUS = 5;
     private int PLAYERCOUNT = 4;
     private static final long BALL_BOUNCE_COOLDOWN_MS = 100; // 100ms cooldown
-    private final boolean debug = true;
+    private static final float BALL_DAMPING_FACTOR = 0.985F;
+
+    private final boolean debug = false;
 
     private final double goalWidth = 0.5;
     private final List<Vector> diagonalEdges = new ArrayList<>();
@@ -100,7 +103,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final FloatingText GOALText;
     private FloatingText scoreIncrementText;
     public SoundManager soundManager;
-    private final int TARGET_FPS = 70;
+    private final int TARGET_FPS = 60;
     private int fps;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
@@ -136,9 +139,10 @@ public class GameView extends SurfaceView implements Runnable {
      */
     public GameView(Context context, int screenX, int screenY, int dpi) {
         super(context);
-        Log.d("DPI", "dpi: " + dpi);
+        Log.d("Resolution", "ScreenX: " + screenX + ", ScreenY: " + screenY);
+        Log.d("Resolution", "dpi: " + dpi);
         PPCM = dpi / 2.54f; // pixels per centimeter
-        Log.d("PPCM", "ppcm: " + PPCM);
+        Log.d("Resolution", "ppcm: " + PPCM);
         soundManager = SoundManager.getInstance(context);
 
         setKeepScreenOn(true);
@@ -352,10 +356,6 @@ public class GameView extends SurfaceView implements Runnable {
         staticCanvas.drawColor(Color.parseColor("#FFF1E9"));
         // Draw the outer circle in the middle of the field
         staticCanvas.drawCircle((float) screenX / 2, (float) screenY / 2, outerRadius, middleCirclePaint);
-        // Draw the bottom UI bar (black)
-        Paint blackPaint = new Paint();
-        blackPaint.setColor(Color.BLACK);
-        staticCanvas.drawRect(0, screenY, screenX, screenY + 40, blackPaint);
         // Draw the settings icon in the middle of the screen
         staticCanvas.drawBitmap(settingsIcon, settingsMatrix, null);
         // Draw the goal regions
@@ -411,10 +411,6 @@ public class GameView extends SurfaceView implements Runnable {
         staticCanvasTwovTwo.drawColor(Color.parseColor("#FFF1E9"));
         // Draw the outer circle in the middle of the field
         staticCanvasTwovTwo.drawCircle((float) screenX / 2, (float) screenY / 2, outerRadius, middleCirclePaint);
-        // Draw the bottom UI bar (black)
-        Paint blackPaint = new Paint();
-        blackPaint.setColor(Color.BLACK);
-        staticCanvasTwovTwo.drawRect(0, screenY, screenX, screenY + 40, blackPaint);
         // Draw the settings icon in the middle of the screen
         staticCanvasTwovTwo.drawBitmap(settingsIcon, settingsMatrix, null);
         // Draw the goal regions
@@ -431,7 +427,10 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw the bounce edges of the goals
         for (Vector edge : bounceEdgesTwovTwo) {
             staticCanvasTwovTwo.drawLine((float) edge.getX1(), (float) edge.getY1(), (float) edge.getX2(), (float) edge.getY2(), edgePaint);
-            staticCanvasTwovTwo.drawText(String.valueOf(bounceEdgesTwovTwo.indexOf(edge)), (float) ((edge.getX1() + edge.getX2()) / 2), (float) ((edge.getY1() + edge.getY2()) / 2), fpsPaint);
+            if (debug) {
+                // Draw a little index number for debugging
+                staticCanvasTwovTwo.drawText(String.valueOf(bounceEdgesTwovTwo.indexOf(edge)), (float) ((edge.getX1() + edge.getX2()) / 2), (float) ((edge.getY1() + edge.getY2()) / 2), fpsPaint);
+            }
         }
         // Draw goalposts
         drawGoalPostsTwovTwo();
@@ -497,7 +496,7 @@ public class GameView extends SurfaceView implements Runnable {
             long frameTime = System.nanoTime() - now;
             long sleepTime = (OPTIMAL_TIME - frameTime) / 1_000_000; // ms
             if (sleepTime > 0) {
-                try { Thread.sleep(sleepTime); } catch (InterruptedException e) {}
+                try { Thread.sleep(sleepTime); } catch (InterruptedException ignored) {}
             }
 
             // Update FPS every second
@@ -509,7 +508,6 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
     }
-
 
     /**
      * Determine the edges for ball bounce based on the screen dimensions
@@ -663,7 +661,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void updateBalls() {
         for (Ball ball : balls) {
-            if (ball.getPlayer() == null) {
+            if (ball.getShooter() == null) {
                 // Check whether the ball has to bounce
                 checkHorVertBounce(ball);
                 checkEdgeCollision(ball);
@@ -674,17 +672,17 @@ public class GameView extends SurfaceView implements Runnable {
                 // Update ball position based on its velocity
                 ball.incrementXY();
                 // Decrement the ball's velocity
-                ball.updateVelocity();
+                ball.updateVelocity(BALL_DAMPING_FACTOR);
             } else {
                 // Update the ball's position based on the player's direction
-                float direction = ball.getPlayer().getDirection();  // Get the player's direction (angle in radians)
+                float direction = ball.getShooter().getDirection();  // Get the player's direction (angle in radians)
                 if (direction != 0) {
                     // Define a distance to move the ball from the player (e.g., just in front of the player)
-                    float combinedRadius = ball.getPlayer().getRadius() + ball.getRadius(); // Combine player and ball radii
+                    float combinedRadius = ball.getShooter().getRadius() + ball.getRadius(); // Combine player and ball radii
 
                     // Calculate new position based on direction, adjusted by combined radius
-                    ball.setX((float) (ball.getPlayer().getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
-                    ball.setY((float) (ball.getPlayer().getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
+                    ball.setX((float) (ball.getShooter().getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
+                    ball.setY((float) (ball.getShooter().getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
                 }
             }
 
@@ -775,8 +773,7 @@ public class GameView extends SurfaceView implements Runnable {
      * @param ball the ball to be possibly shot
      */
     public void shoot(Ball ball) {
-        Player player = ball.getPlayer();
-        ball.setPlayer(null);
+        Player player = ball.getShooter();
         Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player " + players.indexOf(player));
         if (player != null) {
             ball.setShooter(player);
@@ -1176,11 +1173,11 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
 
-
-        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+//        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         drawScores(canvas);
 
+//        Log.d("GameView", "Draw time after scores: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
         // Draw the balls
         if (needSync) {
             Log.d("GameView", "Drawing with synchronization");
@@ -1205,19 +1202,27 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             }
         } else  {
+//            Log.d("GameView", "Drawing without synchronization: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
             for (Joystick joystick : joysticks) {
+//                Log.d("GameView", "Time for first circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
                 joystick.draw(canvas);  // Call the draw method for each joystick
+//                Log.d("GameView", "Time for second circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+
             }
+//            Log.d("GameView", "Draw time after joysticks: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
             for (Ball ball : balls) {
                 ball.draw(canvas);
             }
+//            Log.d("GameView", "Draw time after balls: " + (System.nanoTime() - startTime) / 1_000_000+ " ms");
             for (ShootButton button : shootButtons) {
                 button.draw(canvas);
             }
+//            Log.d("GameView", "Draw time after buttons: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
             for (Player player : players) {
                 player.draw(canvas);
             }
         }
+//        Log.d("GameView", "Draw time after sync: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         if (scored) {
             displayStarsAnimation(canvas);
@@ -1243,7 +1248,7 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw fps
         canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
 
-        Log.d("GameView", "Draw time before unlocking holder: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+//        Log.d("GameView", "Draw time before unlocking holder: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         // Unlock the canvas and post the updates
         holder.unlockCanvasAndPost(canvas);
@@ -1386,7 +1391,18 @@ public class GameView extends SurfaceView implements Runnable {
                     }
 
                     // Check for joystick touch if no button was pressed
-                    synchronized (joysticks) {
+                    if (needSync) {
+                        synchronized (joysticks) {
+                            for (Joystick joystick : joysticks) {
+                                if (joystick.isTouched(touchX, touchY) && joystick.getTouchID() == -1) {
+                                    joystick.setPointerID(pointerId);
+                                    joystick.onTouch(touchX, touchY);
+                                    touchAssigned = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
                         for (Joystick joystick : joysticks) {
                             if (joystick.isTouched(touchX, touchY) && joystick.getTouchID() == -1) {
                                 joystick.setPointerID(pointerId);
@@ -1399,11 +1415,19 @@ public class GameView extends SurfaceView implements Runnable {
 
                     if (!touchAssigned) {
                         // Check for shoot button touch
-                        synchronized (shootButtons) {
+                        if (needSync) {
+                            synchronized (shootButtons) {
+                                for (ShootButton button : shootButtons) {
+                                    if (button.isTouched(touchX, touchY)) {
+                                        button.setPointerID(pointerId);
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
                             for (ShootButton button : shootButtons) {
                                 if (button.isTouched(touchX, touchY)) {
-                                    button.setTouchID(pointerId);
-                                    button.setPressed(true);
+                                    button.setPointerID(pointerId);
                                     break;
                                 }
                             }
@@ -1414,9 +1438,19 @@ public class GameView extends SurfaceView implements Runnable {
                 case MotionEvent.ACTION_POINTER_UP:
                     boolean pointerHandled = false;
                     // Handle joystick reset
-                    synchronized (joysticks) {
+                    if (needSync) {
+                        synchronized (joysticks) {
+                            for (Joystick joystick : joysticks) {
+                                if (joystick.isPressedBy(pointerId)) {
+                                    joystick.reset();
+                                    pointerHandled = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
                         for (Joystick joystick : joysticks) {
-                            if (joystick.isTouchedBy(pointerId)) {
+                            if (joystick.isPressedBy(pointerId)) {
                                 joystick.reset();
                                 pointerHandled = true;
                                 break;
@@ -1426,16 +1460,29 @@ public class GameView extends SurfaceView implements Runnable {
 
                     // Handle shoot button release
                     if (!pointerHandled) {
-                        synchronized (shootButtons) {
+                        if (needSync) {
+                            synchronized (shootButtons) {
+                                for (ShootButton button : shootButtons) {
+                                    if (button.wasTouchedBy(pointerId)) {
+                                        Player shootingPlayer = players.get(shootButtons.indexOf(button));
+                                        if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex)) && shootingPlayer.getBall() != null) {
+                                            shoot(shootingPlayer.getBall());
+                                            soundManager.playShootSound();
+                                        }
+                                        button.resetTouchID();
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
                             for (ShootButton button : shootButtons) {
                                 if (button.wasTouchedBy(pointerId)) {
-                                    if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
-                                        shoot(button.getBall());
+                                    Player shootingPlayer = players.get(shootButtons.indexOf(button));
+                                    if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex)) && shootingPlayer.getBall() != null) {
+                                        shoot(shootingPlayer.getBall());
                                         soundManager.playShootSound();
-                                        button.resetBall();
                                     }
                                     button.resetTouchID();
-                                    button.setPressed(false);
                                     break;
                                 }
                             }
@@ -1449,9 +1496,18 @@ public class GameView extends SurfaceView implements Runnable {
                         float moveX = event.getX(i);
                         float moveY = event.getY(i);
 
-                        synchronized (joysticks) {
+                        if (needSync) {
+                            synchronized (joysticks) {
+                                for (Joystick joystick : joysticks) {
+                                    if (joystick.isPressedBy(movePointerId)) {
+                                        joystick.onTouch(moveX, moveY);
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
                             for (Joystick joystick : joysticks) {
-                                if (joystick.isTouchedBy(movePointerId)) {
+                                if (joystick.isPressedBy(movePointerId)) {
                                     joystick.onTouch(moveX, moveY);
                                     break;
                                 }
@@ -1524,20 +1580,19 @@ public class GameView extends SurfaceView implements Runnable {
                 for (int i = 0; i < bounceEdges.size(); i++) {
                     Vector edge = bounceEdges.get(i);
                     float dist; // Initialize with a large distance
-                    int edgeIndex = i;
 
                     switch (players.indexOf(player)) {
                         case 0:
-                            dist = (edgeIndex == 0 || edgeIndex == 1) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            dist = (i == 0 || i == 1) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
                             break;
                         case 1:
-                            dist = (edgeIndex == 2 || edgeIndex == 3) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            dist = (i == 2 || i == 3) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
                             break;
                         case 2:
-                            dist = (edgeIndex == 4 || edgeIndex == 5) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            dist = (i == 4 || i == 5) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
                             break;
                         case 3:
-                            dist = (edgeIndex == 6 || edgeIndex == 7) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+                            dist = (i == 6 || i == 7) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
                             break;
                         default:
                             dist = (float) pointToLineDist(edge, player);
@@ -1655,10 +1710,10 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void onPlayerHitBall(Player player, Ball ball) {
         if (player.canTakeBall()) {
-            if (ball.getPlayer() != null) {
-                ball.getPlayer().setBall(null);
+            if (ball.getShooter() != null) {
+                ball.getShooter().setBall(null);
             }
-            ball.setPlayer(player);
+            ball.setShooter(player);
             player.setBall(ball);
             ball.resetShooter();
 
@@ -1828,11 +1883,13 @@ public class GameView extends SurfaceView implements Runnable {
                 }
 
                 // Reset shoot button colors for two vs two mode
-                for (int i = 0; i < shootButtons.size(); i++) {
-                    if (i == 0 || i == 2) {
-                        shootButtons.get(i).setColor(Color.BLUE);
-                    } else {
-                        shootButtons.get(i).setColor(Color.RED);
+                synchronized (shootButtons) {
+                    for (int i = 0; i < shootButtons.size(); i++) {
+                        if (i == 0 || i == 2) {
+                            shootButtons.get(i).changePaint(Color.BLUE);
+                        } else {
+                            shootButtons.get(i).changePaint(Color.RED);
+                        }
                     }
                 }
             } else {
@@ -1843,11 +1900,11 @@ public class GameView extends SurfaceView implements Runnable {
                     for (int i = 0; i < players.size(); i++) {
                         if (i == 2) {
                             players.get(i).setColor(Color.GREEN);
-                            players.get(i).getShootButton().setColor(Color.GREEN);
+                            players.get(i).getShootButton().changePaint(Color.GREEN);
                         }
                         if (i == 3) {
                             players.get(i).setColor(0xFFFFEB04); // Yellow
-                            players.get(i).getShootButton().setColor(0xFFFFEB04); // Yellow
+                            players.get(i).getShootButton().changePaint(0xFFFFEB04); // Yellow
                         }
                     }
                     for (Player player : players) {
@@ -2001,7 +2058,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(playerPositions[0][0], playerPositions[0][1], PLAYERRADIUS, playerColors[0], 0);
-        newJoystick = new Joystick(screenX * 0.78f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.78f, screenY - JOYSTICK_OUTERRADIUS, JOYSTICK_INNERRADIUS, JOYSTICK_OUTERRADIUS);
         shootButton = new ShootButton(screenX * 0.92f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[0]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
@@ -2019,7 +2076,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(playerPositions[1][0], playerPositions[1][1], PLAYERRADIUS, playerColors[1], 1);
-        newJoystick = new Joystick(screenX * 0.22f, JOYSTICKRADIUS, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.22f, JOYSTICK_OUTERRADIUS, JOYSTICK_INNERRADIUS, JOYSTICK_OUTERRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[1]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
@@ -2037,7 +2094,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(playerPositions[2][0], playerPositions[2][1], PLAYERRADIUS, playerColors[2], 2);
-        newJoystick = new Joystick(screenX * 0.22f, screenY - screenX * 0.13f, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.22f, screenY - JOYSTICK_OUTERRADIUS, JOYSTICK_INNERRADIUS, JOYSTICK_OUTERRADIUS);
         shootButton = new ShootButton(screenX * 0.08f, screenY * 0.83f, SHOOTBUTTONRADIUS, playerColors[2]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
@@ -2055,7 +2112,7 @@ public class GameView extends SurfaceView implements Runnable {
         Joystick newJoystick;
         ShootButton shootButton;
         newPlayer = new Player(playerPositions[3][0], playerPositions[3][1], PLAYERRADIUS, playerColors[3], 3);
-        newJoystick = new Joystick(screenX * 0.78f, JOYSTICKRADIUS, JOYSTICKRADIUS);
+        newJoystick = new Joystick(screenX * 0.78f, JOYSTICK_OUTERRADIUS, JOYSTICK_INNERRADIUS, JOYSTICK_OUTERRADIUS);
         shootButton = new ShootButton(screenX * 0.91f, screenY * 0.17f, SHOOTBUTTONRADIUS, playerColors[3]);
         newPlayer.setJoystick(newJoystick);
         newPlayer.setShootButton(shootButton);
