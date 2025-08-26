@@ -57,23 +57,16 @@ public class Ball {
         this.shooter = null;
     }
 
+    /** Reflect the ball's velocity based on a normal vector
+     * @param normalX X component of the normal vector
+     * @param normalY Y component of the normal vector
+     */
     public void reflect(double normalX, double normalY) {
         double velocityX = getVelocityX();
         double velocityY = getVelocityY();
         double dotProductVelocity = velocityX * normalX + velocityY * normalY;
         setVelocityX((float) (velocityX - 2 * dotProductVelocity * normalX));
         setVelocityY((float) (velocityY - 2 * dotProductVelocity * normalY));
-    }
-
-    private void resolveOverlap(double normalX, double normalY, double overlap) {
-        if (overlap > 0) {
-            setX((float) (getX() + normalX * overlap));
-            setY((float) (getY() + normalY * overlap));
-        }
-    }
-
-    public Vector getUnitDirectionVector(double dx, double dy) {
-        return new Vector(0, 0, dx, dy);
     }
 
     // Method to check if the deviation between two vectors is greater than 90 degrees
@@ -123,19 +116,19 @@ public class Ball {
         this.velocityY *= DAMPING_FACTOR;
     }
 
-    public synchronized void setVelocityY(float velocityY) {
+    public void setVelocityY(float velocityY) {
         this.velocityY = velocityY;
     }
 
-    public synchronized void setVelocityX(float velocityX) {
+    public void setVelocityX(float velocityX) {
         this.velocityX = velocityX;
     }
 
-    public synchronized float getVelocityX() {
+    public float getVelocityX() {
         return this.velocityX;
     }
 
-    public synchronized float getVelocityY() {
+    public float getVelocityY() {
         return this.velocityY;
     }
 
@@ -160,37 +153,6 @@ public class Ball {
 
     public void setLastGoalpostIndex(int index) {
         this.lastGoalpostIndex = index;
-    }
-    public void shoot(int shootSpeed) {
-        Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player");
-        if (player != null) {
-            shooter = player;
-            // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
-            float dx = this.x - player.getX();  // Ball's position minus Player's position (shoot away from player)
-            float dy = this.y - player.getY();  // Ball's position minus Player's position (shoot away from player)
-
-            // Normalize direction vector (dx, dy)
-            float magnitude = (float) Math.sqrt(dx * dx + dy * dy);
-
-            // Only normalize if magnitude is significant
-            if (magnitude > 0.001f) {
-                dx /= magnitude;
-                dy /= magnitude;
-            } else {
-                // Set a default direction if magnitude is too small
-                dx = 1;
-                dy = 0;
-            }
-
-            // Set the ball's velocity to move away from the player
-            this.velocityX = dx * shootSpeed;
-            this.velocityY = dy * shootSpeed;
-
-            // Once the ball is shot, release it from the player
-            this.player.releaseBall();
-            this.player = null;
-            Log.d("Shoot", "Ball was shot");
-        }
     }
 
     public void reset(int resetX, int resetY) {

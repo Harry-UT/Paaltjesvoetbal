@@ -49,14 +49,8 @@ public class ShootButton {
         return distanceSquared <= (radius * 4.5f) * (radius * 4.5f);
     }
 
-    // Perform shoot action
-    public void shoot(int shootSpeed) {
-        if (ball != null) {
-            ball.shoot(shootSpeed);
-            Log.d("Shoot", "Ball shooter set!");
-        } else {
-            Log.d("Shoot", "Ball null for button");
-        }
+    public Ball getBall() {
+        return ball;
     }
 
     // Set the ball object for the shoot button
