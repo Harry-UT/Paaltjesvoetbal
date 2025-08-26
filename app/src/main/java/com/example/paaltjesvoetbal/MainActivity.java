@@ -2,6 +2,7 @@ package com.example.paaltjesvoetbal;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 
 public class MainActivity extends Activity {
@@ -17,15 +18,22 @@ public class MainActivity extends Activity {
                 android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Get screen resolution
-        int screenX = getResources().getDisplayMetrics().widthPixels;
-        int screenY = getResources().getDisplayMetrics().heightPixels + 30;
+        // Get display metrics to determine screen size and density
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int screenX = metrics.widthPixels;
+        int screenY = metrics.heightPixels;
 
-        // Get screen density (DPI)
-        int dpi = getResources().getDisplayMetrics().densityDpi;
+        float xInches = screenX / metrics.xdpi;
+        float yInches = screenY / metrics.ydpi;
+
+        float diagonalPx = (float)Math.sqrt(screenX*screenX + screenY*screenY);
+        float diagonalIn = (float)Math.sqrt(xInches*xInches + yInches*yInches);
+
+        float dpi = diagonalPx / diagonalIn;
 
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, screenY, dpi);
+        gameView = new GameView(this, screenX, screenY, (int) dpi);
 
         // Set the GameView as the content view
         setContentView(gameView);
