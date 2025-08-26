@@ -6,6 +6,7 @@ import android.graphics.Paint;
 
 public class ShootButton {
     private final Paint paint;
+    private final Paint innerPaint;
     private final float x;
     private final float y;
     private final float radius;
@@ -24,6 +25,8 @@ public class ShootButton {
         this.radius = radius;
         this.color = color;
         paint = new Paint();
+        innerPaint = new Paint();
+        innerPaint.setColor(color);
     }
 
     /** Draw the shoot button on the provided canvas
@@ -35,9 +38,8 @@ public class ShootButton {
         canvas.drawCircle(x, y, radius, paint);
 
         // Draw the inner circle using the 'color' field
-        paint.setColor(color); // Use the 'color' field for the inner circle
         float innerRadius = radius * 0.6f; // Smaller radius for the inner circle
-        canvas.drawCircle(x, y, innerRadius, paint);
+        canvas.drawCircle(x, y, innerRadius, innerPaint);
     }
 
     /**
@@ -51,14 +53,6 @@ public class ShootButton {
         float dy = touchY - y;
         float distanceSquared = dx * dx + dy * dy;
         return distanceSquared <= (radius * 4.5f) * (radius * 4.5f);
-    }
-
-    public int getColor() {
-        return color;
-    }
-
-    public void setColor(int color) {
-        this.color = color;
     }
 
     // Set the pointer ID that's currently touching the button
