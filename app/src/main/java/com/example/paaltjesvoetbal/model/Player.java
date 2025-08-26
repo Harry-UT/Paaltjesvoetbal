@@ -22,7 +22,7 @@ public class Player {
         this.y = y;
         this.radius = radius;
         this.color = color;
-        this.lastShootTime = 0;
+        this.lastShootTime = System.currentTimeMillis();
         this.number = playerNumber;
     }
 
