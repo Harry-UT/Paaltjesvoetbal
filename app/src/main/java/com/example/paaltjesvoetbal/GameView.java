@@ -762,16 +762,14 @@ public class GameView extends SurfaceView implements Runnable {
 
     public void shoot(Ball ball) {
         Player player = ball.getPlayer();
-        Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player");
+        Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player " + players.indexOf(player));
         if (player != null) {
 //            Log.d("Shoot", "Player is shooting the ball" + (player.getColor() == Color.BLUE));
             // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
             float dx = ball.getX() - player.getX();  // Ball's position minus Player's position (shoot away from player)
             float dy = ball.getY() - player.getY();  // Ball's position minus Player's position (shoot away from player)
-            // Swapped:
-            dx = player.getX() - ball.getX();
-            dy = player.getY() - ball.getY();
             // Normalize direction vector (dx, dy)
+            Log.d("Direction", "Direction before normalization: (" + dx + ", " + dy + ")");
             float length = (float) Math.sqrt(dx * dx + dy * dy);
             if (length != 0) {
                 dx /= length;
