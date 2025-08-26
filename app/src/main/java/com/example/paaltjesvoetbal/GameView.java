@@ -127,7 +127,7 @@ public class GameView extends SurfaceView implements Runnable {
     private ClientConnection clientConnection;
     private InetAddress server;
     private final int port = 3000;
-    private boolean needSync = true;
+    private boolean needSync = false;
     private float PPCM;
 
     /**
