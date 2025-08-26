@@ -415,8 +415,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-
-
     /**
      * Run method for the game thread
      */
