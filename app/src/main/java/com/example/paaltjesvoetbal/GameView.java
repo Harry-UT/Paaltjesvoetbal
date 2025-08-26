@@ -266,6 +266,7 @@ public class GameView extends SurfaceView implements Runnable {
             scorePaint.setTextSize(60);
             scorePaint.setAntiAlias(true); // Smooth text edges
             scorePaint.setTypeface(typeface); // Set custom font
+            scorePaint.setColor(playerColors[i]);
             scoresPaints.add(scorePaint);
         }
 
@@ -1020,8 +1021,23 @@ public class GameView extends SurfaceView implements Runnable {
             for (int i = 0; i < goalRegionsTwovTwo.size(); i++) { // Check goal in 2v2 goal regions
                 Region region = goalRegionsTwovTwo.get(i);
                 // If ball not in region, continue
-                if (!region.contains((int) ballX, (int) ballY)) {
+                if (!region.contains((int) ballX, (int) ballY) || (players.indexOf(shooter) == 0 && i == 0) ||
+                        (players.indexOf(shooter) == 2 && i == 0) ||
+                        (players.indexOf(shooter) == 1 && i == 1) ||
+                        (players.indexOf(shooter) == 3 && i == 1)) {
                     continue;
+                }
+
+                if (players.indexOf(shooter) == 0 || players.indexOf(shooter) == 2) {
+                    if (i == 0) {
+                        // Prevent scoring in own goal
+                        return;
+                    }
+                } else {
+                    if (i == 1) {
+                        // Prevent scoring in own goal
+                        return;
+                    }
                 }
 
                 // Scored in goal by player
@@ -1058,8 +1074,19 @@ public class GameView extends SurfaceView implements Runnable {
             for (int i = 0; i < goalRegions.size(); i++) {
                 Region region = goalRegions.get(i);
 
-                if (!region.contains((int) ballX, (int) ballY)) {
+                if (!region.contains((int) ballX, (int) ballY) || (players.indexOf(shooter) == 0 && i == 0) ||
+                        (players.indexOf(shooter) == 1 && i == 1) ||
+                        (players.indexOf(shooter) == 2 && i == 2) ||
+                        (players.indexOf(shooter) == 3 && i == 3)) {
                     continue;
+                }
+
+                // Prevent scoring in own goal
+                if ((players.indexOf(shooter) == 0 && i == 1) ||
+                        (players.indexOf(shooter) == 1 && i == 0) ||
+                        (players.indexOf(shooter) == 2 && i == 3) ||
+                        (players.indexOf(shooter) == 3 && i == 2)) {
+                    return;
                 }
 
                 if (lastGoal == i) {
