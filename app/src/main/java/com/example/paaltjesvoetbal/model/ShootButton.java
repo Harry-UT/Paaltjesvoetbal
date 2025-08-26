@@ -3,18 +3,22 @@ package com.example.paaltjesvoetbal.model;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.util.Log;
 
 public class ShootButton {
     private final Paint paint;
-    private Ball ball;
     private final float x;
     private final float y;
     private final float radius;
     private boolean isPressed;
     private int color;
-    private int touchID = -1; // Store the pointer ID for the current touch
+    private int pointerID = -1; // Store the pointer ID for the current touch
 
+    /** Constructor to initialize the shoot button
+     * @param x X-coordinate of the button center
+     * @param y Y-coordinate of the button center
+     * @param radius Radius of the button
+     * @param color Color of the inner circle of the button
+     */
     public ShootButton(float x, float y, float radius, int color) {
         this.x = x;
         this.y = y;
@@ -29,7 +33,7 @@ public class ShootButton {
      */
     public void draw(Canvas canvas) {
         // Draw the outer circle with color based on pressed state
-        paint.setColor(isPressed ? Color.DKGRAY : Color.LTGRAY);
+        paint.setColor(pointerID != -1 ? Color.DKGRAY : Color.LTGRAY);
         canvas.drawCircle(x, y, radius, paint);
 
         // Draw the inner circle using the 'color' field
@@ -51,15 +55,6 @@ public class ShootButton {
         return distanceSquared <= (radius * 4.5f) * (radius * 4.5f);
     }
 
-    public Ball getBall() {
-        return ball;
-    }
-
-    // Set the ball object for the shoot button
-    public void setBall(Ball ball) {
-        this.ball = ball;
-    }
-
     public int getColor() {
         return color;
     }
@@ -73,22 +68,18 @@ public class ShootButton {
         isPressed = pressed;
     }
 
-    // Set the pointer ID for the current touch
-    public void setTouchID(int pointerId) {
-        this.touchID = pointerId;
+    // Set the pointer ID that's currently touching the button
+    public void setPointerID(int pointerId) {
+        this.pointerID = pointerId;
     }
 
-    // Check if the button was touched by a specific pointer ID
+    // Check if the button is hold by a specific pointer ID
     public boolean wasTouchedBy(int pointer) {
-        return this.touchID == pointer;
+        return this.pointerID == pointer;
     }
 
     // Handle pointer release
     public void resetTouchID() {
-        this.touchID = -1;
-    }
-
-    public void resetBall() {
-        this.ball = null;
+        this.pointerID = -1;
     }
 }
