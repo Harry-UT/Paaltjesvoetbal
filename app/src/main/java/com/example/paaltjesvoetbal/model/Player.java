@@ -77,7 +77,9 @@ public class Player {
         return System.currentTimeMillis() - lastShootTime >= CONTROL_TIMEOUT;
     }
 
-    // Draw method for rendering the player
+    /** Draw the player on the canvas
+     * @param canvas the canvas to draw on
+     */
     public void draw(Canvas canvas) {
         Paint paint = new Paint();
         paint.setColor(color);
@@ -119,11 +121,19 @@ public class Player {
         return scorePosition;
     }
 
+    /** Reset player position
+     * @param x new x position
+     * @param y new y position
+     */
     public void resetPosition(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
+    /** Reset player position and score
+     * @param x new x position
+     * @param y new y position
+     */
     public void reset(int x, int y) {
         this.x = x;
         this.y = y;

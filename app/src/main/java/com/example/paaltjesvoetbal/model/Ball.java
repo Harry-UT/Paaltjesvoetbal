@@ -42,11 +42,6 @@ public class Ball {
     public void draw(Canvas canvas) {
         // Draw the ball with the gradient effect
         canvas.drawCircle(x, y, radius, ballPaint);
-//        drawNormalVectors(canvas);
-        // Log presence of shooter
-        if (shooter != null) {
-            Log.d("Shoot", "Ball has a shooter");
-        }
     }
 
     public Player getShooter() {
@@ -85,12 +80,11 @@ public class Ball {
         return dotProduct < 0;
     }
 
-
     public float getX() {
         return x;
     }
 
-    public synchronized void setX(float x) {
+    public  void setX(float x) {
         this.x = x;
     }
 
@@ -98,7 +92,7 @@ public class Ball {
         return y;
     }
 
-    public synchronized void setY(float y) {
+    public void setY(float y) {
         this.y = y;
     }
 
@@ -155,6 +149,10 @@ public class Ball {
         this.lastGoalpostIndex = index;
     }
 
+    /** Resets the ball to a specified position and clears its state
+     * @param resetX X coordinate to reset the ball to
+     * @param resetY Y coordinate to reset the ball to
+     */
     public void reset(int resetX, int resetY) {
         this.x = resetX;
         this.y = resetY;

@@ -64,6 +64,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
     private final int[][] playerPositions;
+    private final int[][] resetPlayerPositions;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -146,6 +147,7 @@ public class GameView extends SurfaceView implements Runnable {
         this.goalText = new FloatingText((int) (screenX / 2f), (int) (screenY / 2f), 60, 0);
         this.scoreIncrementText = new FloatingText(0,0, 40, 0);
         playerPositions = new int[][]{{(int) (screenX * 0.75f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.22f)}, {(int) (screenX * 0.25f), (int) (screenY * 0.78f)}, {(int) (screenX * 0.75f), (int) (screenY * 0.22f)}};
+        resetPlayerPositions = playerPositions.clone();
         holder = getHolder();
 
         // Initialize players, joysticks and shoot buttons
@@ -1740,8 +1742,11 @@ public class GameView extends SurfaceView implements Runnable {
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo, boolean isReset) {
         PLAYERCOUNT = playerCount;
         if (isReset) {
-            for (Ball ball: balls) {
+            for (Ball ball : balls) {
                 ball.reset((int) (screenX / 2f), (int) (screenY / 2f));
+            }
+            for (Player player : players) {
+                player.reset(playerPositions[players.indexOf(player)][0], playerPositions[players.indexOf(player)][1]);
             }
         }
         Log.d("SettingsDialog", "Change settings called");
