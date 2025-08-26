@@ -3,6 +3,7 @@ package com.example.paaltjesvoetbal;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 public class MainActivity extends Activity {
@@ -27,27 +28,17 @@ public class MainActivity extends Activity {
         float xInches = screenX / metrics.xdpi;
         float yInches = screenY / metrics.ydpi;
 
-        float diagonalPx = (float)Math.sqrt(screenX*screenX + screenY*screenY);
-        float diagonalIn = (float)Math.sqrt(xInches*xInches + yInches*yInches);
+        float diagonalPx = (float)Math.sqrt(screenX * screenX + screenY * screenY);
+        float diagonalIn = (float)Math.sqrt(xInches * xInches + yInches * yInches);
 
         float dpi = diagonalPx / diagonalIn;
 
-        int navBarHeight = 0;
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            navBarHeight = getResources().getDimensionPixelSize(resourceId);
-        }
-
         int drawableX = getResources().getDisplayMetrics().widthPixels;
-        int drawableY = getResources().getDisplayMetrics().heightPixels + navBarHeight;
+        int drawableY = getResources().getDisplayMetrics().heightPixels;
 
 
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, drawableX, drawableY, (int) dpi);
-        gameView.setOnApplyWindowInsetsListener((v, insets) -> {
-            insets.consumeSystemWindowInsets();
-            return insets;
-        });
+        gameView = new GameView(this, screenX, screenY, (int) dpi);
 
         // Set the GameView as the content view
         setContentView(gameView);

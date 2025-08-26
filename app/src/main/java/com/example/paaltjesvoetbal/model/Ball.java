@@ -11,6 +11,7 @@ public class Ball {
     private float velocityX, velocityY;
     private Paint ballPaint;
     private Player shooter = null;
+    private boolean shot = true;
     private int lastBouncedEdgeIndex = -1;
     private int lastGoalpostIndex = -1;
     public Ball(float x, float y, float radius) {
@@ -81,12 +82,12 @@ public class Ball {
         return radius;
     }
 
-    public void incrementXY() {
+    public void updatePosition() {
         this.x += velocityX;
         this.y += velocityY;
     }
 
-    public void updateVelocity(float dampingFactor) {
+    public void decreaseVelocity(float dampingFactor) {
         this.velocityX *= dampingFactor;
         this.velocityY *= dampingFactor;
     }
@@ -121,6 +122,14 @@ public class Ball {
 
     public void setLastGoalpostIndex(int index) {
         this.lastGoalpostIndex = index;
+    }
+
+    public boolean isShot() {
+        return this.shot;
+    }
+
+    public void setShot(boolean shot) {
+        this.shot = shot;
     }
 
     /** Resets the ball to a specified position and clears its state

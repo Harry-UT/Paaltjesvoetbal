@@ -13,7 +13,6 @@ public class Player {
     private Ball ball;
     private static final int CONTROL_TIMEOUT = 200;  // Time in milliseconds for collision timeout
     private long lastShootTime;  // Last time the ball was shot
-    private final int number;
     private final int[] scorePosition = new int[] { 0, 0 };
 
     // Constructor to initialize the player
@@ -23,7 +22,6 @@ public class Player {
         this.radius = radius;
         this.color = color;
         this.lastShootTime = System.currentTimeMillis();
-        this.number = playerNumber;
     }
 
     public float getX() {
@@ -75,9 +73,13 @@ public class Player {
 
     // Method to release the ball (after shooting it)
     public void releaseBall() {
-        this.lastShootTime = System.currentTimeMillis();
+        lastShootTime = System.currentTimeMillis();
+        ball = null;
     }
 
+    /** Check if the player can take the ball (based on the timeout)
+     * @return true if the player can take the ball, false otherwise
+     */
     public boolean canTakeBall() {
         return System.currentTimeMillis() - lastShootTime >= CONTROL_TIMEOUT;
     }
@@ -111,10 +113,6 @@ public class Player {
 
     public void resetScore() {
         score = 0;
-    }
-
-    public int getNumber() {
-        return number;
     }
 
     public void setScorePosition(int x, int y) {

@@ -43,6 +43,9 @@
         <mxCell id="kj9L5W7UNKf32SmJq8hv-28" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Shooting ball&lt;/h1&gt;&lt;div&gt;When a shootbutton is clicked, check whether the corresponding player has a ball, if so shoot the ball away, and remove the ball from the player&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="40" y="170" width="180" height="130" as="geometry" />
         </mxCell>
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-35" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Updating ball&lt;/h1&gt;&lt;div&gt;When the ball is having a shooter and it&#39;s not shot yet, follow player. Else update with velocity&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="490" y="50" width="180" height="120" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

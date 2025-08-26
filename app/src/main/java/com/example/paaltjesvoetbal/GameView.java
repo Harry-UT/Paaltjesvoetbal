@@ -660,35 +660,77 @@ public class GameView extends SurfaceView implements Runnable {
      * Update the positions of the balls
      */
     private void updateBalls() {
-        for (Ball ball : balls) {
-            if (ball.getShooter() == null) {
-                // Check whether the ball has to bounce
-                checkHorVertBounce(ball);
-                checkEdgeCollision(ball);
-                if (PLAYERCOUNT < 4) {
+        if (needSync) {
+            synchronized (balls) {
+                for (Ball ball : balls) {
+                    if (ball.isShot()) {                    // Check whether the ball has to bounce
+                        checkHorVertBounce(ball);
+                        checkEdgeCollision(ball);
+                        if (PLAYERCOUNT < 4) {
 //                    checkGoalLineCollision(ball); Todo: fix
-                }
+                        }
 
-                // Update ball position based on its velocity
-                ball.incrementXY();
-                // Decrement the ball's velocity
-                ball.updateVelocity(BALL_DAMPING_FACTOR);
-            } else {
-                // Update the ball's position based on the player's direction
-                float direction = ball.getShooter().getDirection();  // Get the player's direction (angle in radians)
-                if (direction != 0) {
-                    // Define a distance to move the ball from the player (e.g., just in front of the player)
-                    float combinedRadius = ball.getShooter().getRadius() + ball.getRadius(); // Combine player and ball radii
+                        // Update ball position based on its velocity
+                        Log.d("Ball", "Updating ball position: (" + ball.getX() + ", " + ball.getY() + ") with velocity (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
+                        ball.updatePosition();
+                        Log.d("Ball", "New ball position: (" + ball.getX() + ", " + ball.getY() + ")");
+                        // Decrement the ball's velocity
+                        ball.decreaseVelocity(BALL_DAMPING_FACTOR);
+                    } else {
+                        if (ball.getShooter() != null) {
+                            // Update the ball's position based on the player's direction
+                            float direction = ball.getShooter().getDirection();  // Get the player's direction (angle in radians)
+                            if (direction != 0) {
+                                // Define a distance to move the ball from the player (e.g., just in front of the player)
+                                float combinedRadius = ball.getShooter().getRadius() + ball.getRadius(); // Combine player and ball radii
 
-                    // Calculate new position based on direction, adjusted by combined radius
-                    ball.setX((float) (ball.getShooter().getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
-                    ball.setY((float) (ball.getShooter().getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
+                                // Calculate new position based on direction, adjusted by combined radius
+                                ball.setX((float) (ball.getShooter().getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
+                                ball.setY((float) (ball.getShooter().getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
+                            }
+                        }
+                    }
+
+                    // If bouncing happened longer than cooldown ago, allow scoring so check for goal
+                    if (!scored && System.currentTimeMillis() - lastBounceTime > 200) { // Prevent immediate goal after bounce
+                        checkGoal(ball);
+                    }
                 }
             }
+        } else {
+            for (Ball ball : balls) {
+                if (ball.isShot()) {                    // Check whether the ball has to bounce
+                    checkHorVertBounce(ball);
+                    checkEdgeCollision(ball);
+                    if (PLAYERCOUNT < 4) {
+//                    checkGoalLineCollision(ball); Todo: fix
+                    }
 
-            // If bouncing happened longer than cooldown ago, allow scoring so check for goal
-            if (!scored && System.currentTimeMillis() - lastBounceTime > 200) { // Prevent immediate goal after bounce
-                checkGoal(ball);
+                    // Update ball position based on its velocity
+                    Log.d("Ball", "Updating ball position: (" + ball.getX() + ", " + ball.getY() + ") with velocity (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
+                    ball.updatePosition();
+                    Log.d("Ball", "New ball position: (" + ball.getX() + ", " + ball.getY() + ")");
+                    // Decrement the ball's velocity
+                    ball.decreaseVelocity(BALL_DAMPING_FACTOR);
+                } else {
+                    if (ball.getShooter() != null) {
+                        // Update the ball's position based on the player's direction
+                        float direction = ball.getShooter().getDirection();  // Get the player's direction (angle in radians)
+                        if (direction != 0) {
+                            // Define a distance to move the ball from the player (e.g., just in front of the player)
+                            float combinedRadius = ball.getShooter().getRadius() + ball.getRadius(); // Combine player and ball radii
+
+                            // Calculate new position based on direction, adjusted by combined radius
+                            ball.setX((float) (ball.getShooter().getX() + (float) Math.cos(direction) * combinedRadius * 1.1));
+                            ball.setY((float) (ball.getShooter().getY() + (float) Math.sin(direction) * combinedRadius * 1.1));
+                        }
+                    }
+                }
+
+                // If bouncing happened longer than cooldown ago, allow scoring so check for goal
+                if (!scored && System.currentTimeMillis() - lastBounceTime > 200) { // Prevent immediate goal after bounce
+                    checkGoal(ball);
+                }
             }
         }
     }
@@ -773,28 +815,29 @@ public class GameView extends SurfaceView implements Runnable {
      * @param ball the ball to be possibly shot
      */
     public void shoot(Ball ball) {
-        Player player = ball.getShooter();
-        Log.d("Shoot", player == null ? "Player null for ball" : "Ball has a player " + players.indexOf(player));
-        if (player != null) {
-            ball.setShooter(player);
-//            Log.d("Shoot", "Player is shooting the ball" + (player.getColor() == Color.BLUE));
+        Player shooter = ball.getShooter();
+        Log.d("Shoot", shooter == null ? "Player null for ball" : "Ball has player " + players.indexOf(shooter));
+        if (shooter != null) {
+            ball.setShooter(shooter);
             // Calculate the direction from ball to player (ballX - playerX, ballY - playerY)
-            float dx = ball.getX() - player.getX();  // Ball's position minus Player's position (shoot away from player)
-            float dy = ball.getY() - player.getY();  // Ball's position minus Player's position (shoot away from player)
-            Log.d("Direction", "Direction before normalization: (" + dx + ", " + dy + ")");
+            float dx = ball.getX() - shooter.getX();  // Ball's position minus Player's position (shoot away from player)
+            float dy = ball.getY() - shooter.getY();  // Ball's position minus Player's position (shoot away from player)
+            Log.d("Shoot", "Direction before normalization: (" + dx + ", " + dy + ")");
             // Normalize direction vector (dx, dy)
             float length = (float) Math.sqrt(dx * dx + dy * dy);
             if (length != 0) {
                 dx /= length;
                 dy /= length;
             }
+            Log.d("Shoot", "Direction after normalization: (" + dx + ", " + dy + ")");
 
             // Set the ball's velocity to move away from the player
             ball.setVelocityX(dx * BALL_SPEED);
             ball.setVelocityY(dy * BALL_SPEED);
 
             // Once the ball is shot, release it from the player
-            player.releaseBall();
+            shooter.releaseBall();
+            ball.setShot(true);
             Log.d("Shoot", "Ball was shot");
         }
     }
@@ -969,7 +1012,7 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
-     * Check if a goal has been scored by a player
+     * Check if the ball is in a goal region which means a goal has been scored
      * @param ball the ball object to check
      */
     private void checkGoal(Ball ball) {
@@ -980,10 +1023,10 @@ public class GameView extends SurfaceView implements Runnable {
         if (shooter == null) return;
 
         if (twoVtwoMode) {
-            for (int i = 0; i < goalRegionsTwovTwo.size(); i++) {
+            for (int i = 0; i < goalRegionsTwovTwo.size(); i++) { // Check goal in 2v2 goal regions
 
             }
-        } else {
+        } else { // Check goal in normal goal regions
             for (int i = 0; i < goalRegions.size(); i++) {
                 Region region = goalRegions.get(i);
 
@@ -991,27 +1034,24 @@ public class GameView extends SurfaceView implements Runnable {
                     continue;
                 }
 
-                if (lastGoal == i && shooter != null) {
+                if (lastGoal == i) {
                     if (now - lastGoalTime < 200) { // 200 ms cooldown
                         int shooterIndex = players.indexOf(shooter);
 
-                        // Check if the shooter is not the same as the last shooter and within bounds
-                        if (i != shooter.getNumber() && i < players.size()) {
-                            // Scored in goal by player!
-                            scored(i, shooter);
-                            lastShooter = shooter;
+                        // Scored in goal by player!
+                        scored(i, shooter);
+                        lastShooter = shooter;
 
-                            int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
-                            scoreIncrementText = new FloatingText(
-                                    shooter.getScorePosition()[0],
-                                    shooter.getScorePosition()[1],
-                                    40,
-                                    rotation
-                            );
+                        int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+                        scoreIncrementText = new FloatingText(
+                                shooter.getScorePosition()[0],
+                                shooter.getScorePosition()[1],
+                                40,
+                                rotation
+                        );
 
-                            for (Star star : stars) {
-                                star.setColor(shooter.getColor());
-                            }
+                        for (Star star : stars) {
+                            star.setColor(shooter.getColor());
                         }
 
                         lastGoal = -1;
@@ -1465,9 +1505,11 @@ public class GameView extends SurfaceView implements Runnable {
                                 for (ShootButton button : shootButtons) {
                                     if (button.wasTouchedBy(pointerId)) {
                                         Player shootingPlayer = players.get(shootButtons.indexOf(button));
-                                        if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex)) && shootingPlayer.getBall() != null) {
-                                            shoot(shootingPlayer.getBall());
+                                        if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
                                             soundManager.playShootSound();
+                                            if (shootingPlayer.getBall() != null) {
+                                                shoot(shootingPlayer.getBall());
+                                            }
                                         }
                                         button.resetTouchID();
                                         break;
@@ -1478,9 +1520,11 @@ public class GameView extends SurfaceView implements Runnable {
                             for (ShootButton button : shootButtons) {
                                 if (button.wasTouchedBy(pointerId)) {
                                     Player shootingPlayer = players.get(shootButtons.indexOf(button));
-                                    if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex)) && shootingPlayer.getBall() != null) {
-                                        shoot(shootingPlayer.getBall());
+                                    if (button.isTouched(event.getX(actionIndex), event.getY(actionIndex))) {
                                         soundManager.playShootSound();
+                                        if (shootingPlayer.getBall() != null) {
+                                            shoot(shootingPlayer.getBall());
+                                        }
                                     }
                                     button.resetTouchID();
                                     break;
@@ -1710,12 +1754,9 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void onPlayerHitBall(Player player, Ball ball) {
         if (player.canTakeBall()) {
-            if (ball.getShooter() != null) {
-                ball.getShooter().setBall(null);
-            }
-            ball.setShooter(player);
-            player.setBall(ball);
-            ball.resetShooter();
+            player.setBall(ball); // Set the ball to the player
+            ball.setShooter(player); // Set the player as the (futuristic) shooter of the ball
+            ball.setShot(false);
 
             float deltaX = ball.getX() - player.getX();
             float deltaY = ball.getY() - player.getY();
@@ -1847,6 +1888,7 @@ public class GameView extends SurfaceView implements Runnable {
     public void changeSettings(int playerCount, int playerSpeed, int ballSpeed, boolean online, boolean twoVtwo, boolean isReset) {
         PLAYERCOUNT = playerCount;
         if (isReset) {
+            PLAYERCOUNT = 4;
             for (Ball ball : balls) {
                 ball.reset((int) (screenX / 2f), (int) (screenY / 2f));
             }
