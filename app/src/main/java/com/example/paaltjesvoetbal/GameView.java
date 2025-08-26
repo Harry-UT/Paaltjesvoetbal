@@ -1028,18 +1028,6 @@ public class GameView extends SurfaceView implements Runnable {
                     continue;
                 }
 
-                if (players.indexOf(shooter) == 0 || players.indexOf(shooter) == 2) {
-                    if (i == 0) {
-                        // Prevent scoring in own goal
-                        return;
-                    }
-                } else {
-                    if (i == 1) {
-                        // Prevent scoring in own goal
-                        return;
-                    }
-                }
-
                 // Scored in goal by player
                 int shooterIndex = players.indexOf(shooter);
 
