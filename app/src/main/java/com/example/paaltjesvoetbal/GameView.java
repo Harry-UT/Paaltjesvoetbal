@@ -116,7 +116,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.bungee);
     private final List<int[]> originalScoreTextPositions = new ArrayList<>(); // Contains the x and y of the score text per player
     private final List<int[]> scoreTextPositions = new ArrayList<>(); // Contains the x and y of the score text per player
-    private final List<int[]> teamScorePositions = new ArrayList<>(); // Contains the x and y of the score text per team in 2v2 mode
+    private final List<int[]> teamScoreTextPositions = new ArrayList<>(); // Contains the x and y of the score text per team in 2v2 mode
     private final List<Float> scoreRotations = new ArrayList<>(); // Contains the rotation of the score text per player
     private final Paint edgePaint = new Paint();
     private final Paint fpsPaint = new Paint();
@@ -611,16 +611,20 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Determine the score text positions for 2v2 mode
+     */
     private void determineScoreTextPositionsTwovTwo() {
-        for (int i = 0; i < teams.size(); i++) {
-            int xText = screenX / 2;
-            int yText;
-            if (i == 1) {
-                yText = (int) (screenX * 0.4f);
-            } else {
-                yText = (int) (screenY - screenX * 0.4f);
-            }
-            teams.get(i).setScorePosition(xText, yText);
+        for (int i = 0; i < 2; i++) {
+            // Get team goal line and its middle point
+            Vector goal = goalLinesTwovTwo.get(i);
+            float middleX = goal.getMidX();
+            float middleY = goal.getMidY();
+
+            // Calculate text position which has to be 1 cm to the middle of the screen
+            int xText = (int) (middleX);
+            int yText = (int) (middleY + (i == 0 ? -1 : 1) * 1 * PPCM); // Move up for team 0, down for team 1
+            teamScoreTextPositions.add(new int[]{xText, yText}); // Initially the same, will be centered later
         }
     }
 
@@ -1399,11 +1403,11 @@ public class GameView extends SurfaceView implements Runnable {
                         canvas.save();
                         int rotationAngle = (i == 0) ? 0 : 180;
                         // Rotate around the text position
-                        canvas.rotate(rotationAngle, teams.get(i).getScorePosition()[0], teams.get(i).getScorePosition()[1]);
+                        canvas.rotate(rotationAngle, teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1]);
 
                         // Draw the text
                         Team team = teams.get(i);
-                        canvas.drawText(String.valueOf(team.getScore()), team.getScorePosition()[0], team.getScorePosition()[1], teamScoresPaints.get(i));
+                        canvas.drawText(String.valueOf(team.getScore()), teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1], teamScoresPaints.get(i));
 
                         // Restore canvas to avoid affecting other drawings
                         canvas.restore();
@@ -1415,11 +1419,11 @@ public class GameView extends SurfaceView implements Runnable {
                     canvas.save();
                     int rotationAngle = (i == 0) ? 0 : 180;
                     // Rotate around the text position
-                    canvas.rotate(rotationAngle, teams.get(i).getScorePosition()[0], teams.get(i).getScorePosition()[1]);
+                    canvas.rotate(rotationAngle, teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1]);
 
                     // Draw the text
                     Team team = teams.get(i);
-                    canvas.drawText(String.valueOf(team.getScore()), team.getScorePosition()[0], team.getScorePosition()[1], teamScoresPaints.get(i));
+                    canvas.drawText(String.valueOf(team.getScore()), teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1], teamScoresPaints.get(i));
 
                     // Restore canvas to avoid affecting other drawings
                     canvas.restore();
