@@ -128,6 +128,7 @@ public class GameView extends SurfaceView implements Runnable {
     private InetAddress server;
     private final int port = 3000;
     private boolean needSync = true;
+    private float PPCM;
 
     /**
      * Constructor for the GameView class
@@ -138,6 +139,8 @@ public class GameView extends SurfaceView implements Runnable {
     public GameView(Context context, int screenX, int screenY, int dpi) {
         super(context);
         Log.d("DPI", "dpi: " + dpi);
+        PPCM = dpi / 2.54f; // pixels per centimeter
+        Log.d("PPCM", "ppcm: " + PPCM);
         soundManager = SoundManager.getInstance(context);
 
         setKeepScreenOn(true);
@@ -695,7 +698,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
 
             // Log presence of shooter for ball
-            Log.d("Ball", "Ball shooter: " + ball.getShooter());
+//            Log.d("Ball", "Ball shooter: " + ball.getShooter());
             // If the ball was recently bounced, don't check for goal within 200ms
             if (!scored && System.currentTimeMillis() - lastBounceTime > 200) { // Prevent immediate goal after bounce
                 checkGoal(ball);
@@ -1158,12 +1161,13 @@ public class GameView extends SurfaceView implements Runnable {
         }
 
 
-//        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 
         drawScores(canvas);
 
         // Draw the balls
         if (needSync) {
+            Log.d("GameView", "Drawing with synchronization");
             synchronized (joysticks) {
                 for (Joystick joystick : joysticks) {
                     joystick.draw(canvas);  // Call the draw method for each joystick
@@ -1223,8 +1227,11 @@ public class GameView extends SurfaceView implements Runnable {
         // Draw fps
         canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
 
+        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+
         // Unlock the canvas and post the updates
         holder.unlockCanvasAndPost(canvas);
+        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
     }
 
     /**
