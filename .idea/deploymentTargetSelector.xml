@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="Paaltjes_voetbal">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-08-27T20:32:19.608669Z">
+        <DropdownSelection timestamp="2025-08-27T20:57:46.107154100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="Default" identifier="serial=192.168.178.21:5555;connection=07d0c777" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M92LS4VY" />
             </handle>
           </Target>
         </DropdownSelection>

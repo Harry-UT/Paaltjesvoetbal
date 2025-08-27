@@ -1726,6 +1726,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     private void onPlayerHitBall(Player player, Ball ball) {
         if (player.canTakeBall()) {
+            lastBouncedEdgeIndex = -1;
             if (ball.getShooter() != null && ball.getShooter() != player) {
                 ball.getShooter().releaseBall(); // Release the ball from the previous shooter
             }
