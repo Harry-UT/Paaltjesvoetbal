@@ -836,6 +836,7 @@ public class GameView extends SurfaceView implements Runnable {
                     ball.setVelocityX((float) (velocityX - 2 * dot * normalX));
                     ball.setVelocityY((float) (velocityY - 2 * dot * normalY));
                     lastBouncedEdgeIndex = -1;
+                    lastBounceTime = System.currentTimeMillis();
                 }
             }
         } else {
@@ -857,12 +858,14 @@ public class GameView extends SurfaceView implements Runnable {
             }
 
             for (int i = 0; i < edgesToCheck.size(); i++) {
-                if (lastBouncedEdgeIndex == i) continue;
-
                 Vector edge = edgesToCheck.get(i);
+
+                if (lastBouncedEdgeIndex == bounceEdges.indexOf(edge)) continue;
+
                 double distance = edge.distanceToPoint(ball.getX(), ball.getY());
-                if (distance <= ball.getRadius()) {
-                    lastBouncedEdgeIndex = i;
+                if (distance <= ball.getRadius()) { // Collision detected
+                    Log.d("Bounce", "Ball collided with edge " + bounceEdges.indexOf(edge));
+                    lastBouncedEdgeIndex = bounceEdges.indexOf(edge);
                     lastBounceTime = System.currentTimeMillis();
 
                     double edgeDX = edge.getX2() - edge.getX1();
@@ -870,6 +873,17 @@ public class GameView extends SurfaceView implements Runnable {
                     double edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
                     double normalX = -edgeDY / edgeLength;
                     double normalY = edgeDX / edgeLength;
+
+                    // Direction from ball to closest point on edge
+                    double ballDX = ball.getX() - edge.getX1();
+                    double ballDY = ball.getY() - edge.getY1();
+                    double t = (ballDX * edgeDX + ballDY * edgeDY) / (edgeLength * edgeLength);
+                    t = Math.max(0, Math.min(1, t));
+                    double closestX = edge.getX1() + t * edgeDX;
+                    double closestY = edge.getY1() + t * edgeDY;
+                    double dirX = closestX - ball.getX();
+                    double dirY = closestY - ball.getY();
+                    Log.d("Bounce", "Direction from ball to closest point on edge: dx=" + dirX + ", dy=" + dirY);
 
                     double velocityX = ball.getVelocityX();
                     double velocityY = ball.getVelocityY();
@@ -881,7 +895,6 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
     }
-
 
     /**
      * Resolve overlap between ball and edge by moving the ball out along the normal vector
