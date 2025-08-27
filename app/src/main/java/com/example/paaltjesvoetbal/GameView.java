@@ -64,7 +64,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
     private int[][] playerPositions;
-    private final boolean allowEnteringOtherGoals = true;
+    private final boolean allowEnteringOtherGoals = false;
     private int lastBouncedEdgeIndex = -1;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
@@ -469,6 +469,7 @@ public class GameView extends SurfaceView implements Runnable {
         for (Vector edge : diagonalEdges) {
             Vector[] bounceVectors = edge.split(goalWidth);
             bounceEdges.addAll(Arrays.asList(bounceVectors));
+            Log.d("Check", "Added bounce edges, total count: " + bounceEdges.size());
         }
     }
 
@@ -820,86 +821,66 @@ public class GameView extends SurfaceView implements Runnable {
     public void checkEdgeCollision(Ball ball) {
         if (twoVtwoMode) {
             for (Vector edge : bounceEdgesTwovTwo) {
-                // Get distance from ball to the vector
                 double distance = edge.distanceToPoint(ball.getX(), ball.getY());
                 if (distance <= ball.getRadius()) {
-                    // Calculate edge normal
                     double edgeDX = edge.getX2() - edge.getX1();
                     double edgeDY = edge.getY2() - edge.getY1();
                     double edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
                     double normalX = -edgeDY / edgeLength;
                     double normalY = edgeDX / edgeLength;
 
-                    // Reflect velocity
                     double velocityX = ball.getVelocityX();
                     double velocityY = ball.getVelocityY();
                     double dot = velocityX * normalX + velocityY * normalY;
-                    ball.setVelocityX((float) (ball.getVelocityX() - 2 * dot * normalX));
-                    ball.setVelocityY((float) (ball.getVelocityY() - 2 * dot * normalY));
-                    lastBouncedEdgeIndex = -1; // Reset last bounced edge
+                    ball.setVelocityX((float) (velocityX - 2 * dot * normalX));
+                    ball.setVelocityY((float) (velocityY - 2 * dot * normalY));
+                    lastBouncedEdgeIndex = -1;
                 }
             }
         } else {
-            // Initialize a list holding the edges to check for bounce
             List<Vector> edgesToCheck = new ArrayList<>();
             switch (PLAYERCOUNT) {
                 case 2:
-                    // Include only the bottom right and top left bounce edges
-                    edgesToCheck.addAll(bounceEdges.subList(0, 4));
-                    edgesToCheck.addAll(diagonalEdges.subList(1, 3));
+                    edgesToCheck.addAll(new ArrayList<>(bounceEdges.subList(0, 4)));
+                    edgesToCheck.addAll(new ArrayList<>(diagonalEdges.subList(1, 3)));
                     break;
                 case 3:
-                    // Include the bottom right, top left and bottom left bounce edges
-                    edgesToCheck.addAll(bounceEdges.subList(0,6));
+                    edgesToCheck.addAll(new ArrayList<>(bounceEdges.subList(0, 6)));
                     edgesToCheck.add(diagonalEdges.get(1));
                     break;
                 case 4:
-                    edgesToCheck.addAll(bounceEdges); // Include all edges
+                    edgesToCheck.addAll(new ArrayList<>(bounceEdges));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + PLAYERCOUNT);
             }
 
-            // Log the lenghts of the edges to check
-//            Log.d("EdgeCheck", "Checking edges:");
-//            for (int i = 0; i < edgesToCheck.size(); i++) {
-//                Vector edge = edgesToCheck.get(i);
-//                double dx = edge.getX2() - edge.getX1();
-//                double dy = edge.getY2() - edge.getY1();
-//                double length = Math.sqrt(dx * dx + dy * dy);
-//                Log.d("EdgeCheck", "Edge " + i + " length: " + length);
-//            }
-
             for (int i = 0; i < edgesToCheck.size(); i++) {
+                if (lastBouncedEdgeIndex == i) continue;
+
                 Vector edge = edgesToCheck.get(i);
-                if (lastBouncedEdgeIndex == i) {
-                    continue; // Skip this edge if it was the last one bounced off
-                }
-                // Get distance from ball to the vector (not infinite line)
                 double distance = edge.distanceToPoint(ball.getX(), ball.getY());
-                if (distance <= ball.getRadius()) { // Collision detected
-                    Log.d("Bounce", "Ball collided with edge index " + i + " at distance " + distance);
+                if (distance <= ball.getRadius()) {
                     lastBouncedEdgeIndex = i;
                     lastBounceTime = System.currentTimeMillis();
-                    // Calculate edge normal
+
                     double edgeDX = edge.getX2() - edge.getX1();
                     double edgeDY = edge.getY2() - edge.getY1();
                     double edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
                     double normalX = -edgeDY / edgeLength;
                     double normalY = edgeDX / edgeLength;
-                    // Reflect velocity
+
                     double velocityX = ball.getVelocityX();
                     double velocityY = ball.getVelocityY();
                     double dot = velocityX * normalX + velocityY * normalY;
-                    ball.setVelocityX((float) (ball.getVelocityX() - 2 * dot
-                            * normalX));
-                    ball.setVelocityY((float) (ball.getVelocityY() - 2 * dot
-                            * normalY));
-                    break; // Exit after first collision to avoid multiple reflections
+                    ball.setVelocityX((float) (velocityX - 2 * dot * normalX));
+                    ball.setVelocityY((float) (velocityY - 2 * dot * normalY));
+                    break;
                 }
             }
         }
     }
+
 
     /**
      * Resolve overlap between ball and edge by moving the ball out along the normal vector
@@ -1594,72 +1575,76 @@ public class GameView extends SurfaceView implements Runnable {
     private void updatePlayers() {
         List<Player> playerList = twoVtwoMode ? players : players.subList(0, PLAYERCOUNT);
         for (Player player : playerList) {
-            float direction = player.getDirection();  // The direction set by joystick
+            float direction = player.getDirection();
             if (direction != 0) {
                 float moveX = PLAYERSPEED * (float) Math.cos(direction);
                 float moveY = PLAYERSPEED * (float) Math.sin(direction);
                 float newX = player.getX() + moveX;
                 float newY = player.getY() + moveY;
 
-                // Prevent players from going through walls (clamping)
-                List<Vector> edges = new ArrayList<>();
+                List<Vector> edges;
                 if (allowEnteringOtherGoals) {
-                    edges.addAll(twoVtwoMode ? bounceEdgesTwovTwo : bounceEdges);
+                    edges = new ArrayList<>(twoVtwoMode ? bounceEdgesTwovTwo : bounceEdges);
                 } else {
                     switch (players.indexOf(player)) {
                         case 0:
-                            edges = (twoVtwoMode) ? bounceEdgesTwovTwo.subList(0, 2) : bounceEdges.subList(0, 2);
-                            if (!twoVtwoMode) edges.addAll(diagonalEdges.subList(1, 4));
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(0, 2)
+                                    : bounceEdges.subList(0, 2));
+                            if (!twoVtwoMode)
+                                edges.addAll(diagonalEdges.subList(1, 4));
                             break;
                         case 1:
-                            edges = (twoVtwoMode) ? bounceEdgesTwovTwo.subList(2, 3) : bounceEdges.subList(2, 4);
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(2, 3)
+                                    : bounceEdges.subList(2, 4));
                             if (!twoVtwoMode) {
                                 edges.add(diagonalEdges.get(0));
                                 edges.addAll(diagonalEdges.subList(2, 4));
                             }
                             break;
                         case 2:
-                            edges = (twoVtwoMode) ? bounceEdgesTwovTwo.subList(0, 2) : bounceEdges.subList(4, 6);
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(0, 2)
+                                    : bounceEdges.subList(4, 6));
                             if (!twoVtwoMode) {
                                 edges.addAll(diagonalEdges.subList(0, 2));
                                 edges.add(diagonalEdges.get(3));
                             }
                             break;
                         case 3:
-                            edges = (twoVtwoMode) ? bounceEdgesTwovTwo.subList(2, 3) : bounceEdges.subList(6, 8);
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(2, 3)
+                                    : bounceEdges.subList(6, 8));
                             if (!twoVtwoMode) {
                                 edges.addAll(diagonalEdges.subList(0, 3));
                             }
                             break;
                         default:
-                            edges = twoVtwoMode ? bounceEdgesTwovTwo : bounceEdges;
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo
+                                    : bounceEdges);
                             break;
                     }
                 }
+
                 for (int i = 0; i < edges.size(); i++) {
                     Vector edge = edges.get(i);
-                    float dist; // Initialize with a large distance
-
-                    dist = (float) edge.distanceToPoint(player.getX(), player.getY());
+                    float dist = (float) edge.distanceToPoint(player.getX(), player.getY());
 
                     if (dist < player.getRadius()) {
-//                        Log.d("EdgeClamp", "Player " + players.indexOf(player) + " clamped at edge " + i + ", distance: " + dist);
-
                         double dx = edge.getX2() - edge.getX1();
                         double dy = edge.getY2() - edge.getY1();
                         double len = Math.sqrt(dx * dx + dy * dy);
 
-                        // Wall normal
                         double nx = -dy / len;
                         double ny = dx / len;
 
-                        // Flip normal for specific edges
                         if ((i == 0 || i == 1) && twoVtwoMode) {
                             nx = -nx;
                             ny = -ny;
                         }
 
-                        // Only project if moving INTO the wall
                         double moveDot = moveX * nx + moveY * ny;
                         if (moveDot < 0) {
                             moveX -= (float) (moveDot * nx);
@@ -1671,17 +1656,15 @@ public class GameView extends SurfaceView implements Runnable {
                     }
                 }
 
-
-                // Clamp player position within screen bounds
                 newX = Math.max(player.getRadius(), Math.min(newX, screenX - player.getRadius()));
                 newY = Math.max(player.getRadius(), Math.min(newY, screenY - player.getRadius()));
 
-                // Set the final position after checking bounds
                 player.setX(newX);
                 player.setY(newY);
             }
         }
     }
+
 
     /**
      * Start the game thread
