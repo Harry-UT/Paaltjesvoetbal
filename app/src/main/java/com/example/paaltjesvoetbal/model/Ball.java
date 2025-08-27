@@ -12,8 +12,6 @@ public class Ball {
     private Paint ballPaint;
     private Player shooter = null;
     private boolean shot = true;
-    private int lastBouncedEdgeIndex = -1;
-    private int lastGoalpostIndex = -1;
     public Ball(float x, float y, float radius) {
         this.x = x;
         this.y = y;
@@ -66,7 +64,7 @@ public class Ball {
         return x;
     }
 
-    public  void setX(float x) {
+    public void setX(float x) {
         this.x = x;
     }
 
@@ -106,22 +104,6 @@ public class Ball {
 
     public float getVelocityY() {
         return this.velocityY;
-    }
-
-    public int getLastBouncedEdgeIndex() {
-        return this.lastBouncedEdgeIndex;
-    }
-
-    public void setLastBouncedEdgeIndex(int index) {
-        this.lastBouncedEdgeIndex = index;
-    }
-
-    public int getLastGoalpostIndex() {
-        return this.lastGoalpostIndex;
-    }
-
-    public void setLastGoalpostIndex(int index) {
-        this.lastGoalpostIndex = index;
     }
 
     public boolean isShot() {

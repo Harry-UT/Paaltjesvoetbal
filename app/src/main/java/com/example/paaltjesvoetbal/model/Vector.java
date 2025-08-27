@@ -61,6 +61,7 @@ public class Vector {
         canvas.drawLine((float) x1, (float) y1, (float) x2, (float) y2, paint);
     }
 
+    // Get distance from point (x, y) to the line segment
     public double distanceToPoint(double x, double y) {
         double dx = x2 - x1;
         double dy = y2 - y1;
@@ -93,6 +94,9 @@ public class Vector {
         return (float) ((x1 + x2) / 2);
     }
 
+    /** Calculate the length of the vector
+     * @return Length of the vector
+     */
     public float getMidY() {
         return (float) ((y1 + y2) / 2);
     }

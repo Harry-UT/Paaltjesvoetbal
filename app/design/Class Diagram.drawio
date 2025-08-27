@@ -46,6 +46,9 @@
         <mxCell id="kj9L5W7UNKf32SmJq8hv-35" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Updating ball&lt;/h1&gt;&lt;div&gt;When the ball is having a shooter and it&#39;s not shot yet, follow player. Else update with velocity&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="490" y="50" width="180" height="120" as="geometry" />
         </mxCell>
+        <mxCell id="kj9L5W7UNKf32SmJq8hv-36" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Bouncing ball&lt;/h1&gt;&lt;div&gt;Compute the bouncing direction and bounce.&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Track the latest edge that the ball bounced from, don&#39;t allow bouncing from that one, nor the corresponding goal post.&lt;/span&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="490" y="160" width="180" height="230" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

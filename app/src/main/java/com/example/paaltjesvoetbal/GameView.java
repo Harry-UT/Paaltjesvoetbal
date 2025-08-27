@@ -65,6 +65,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
     private int[][] playerPositions;
     private final boolean allowEnteringOtherGoals = false;
+    private int lastBouncedEdgeIndex = -1;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
     private final int PLAYERRADIUS = 30;
@@ -94,7 +95,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final ReentrantLock pingLock = new ReentrantLock();
     private final Condition pingReceived = pingLock.newCondition();
     private boolean pingResponse = false;
-    private long lastBounceTime = 0;
+    private long lastBounceTime = System.currentTimeMillis();
     private float lastGoalTime;
     private Player lastShooter;
     private int lastGoal;
@@ -655,7 +656,9 @@ public class GameView extends SurfaceView implements Runnable {
                     }
                 }
             } else {
+                long timeNow = System.currentTimeMillis();
                 updateBalls();
+//                Log.d("Performance", "Time taken to update balls: " + (System.currentTimeMillis() - timeNow) + " ms");
                 checkPlayerBallCollision();
                 updatePlayers();
             }
@@ -731,7 +734,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (ball.getX() - ball.getRadius() < 0) {
             if (ball.getVelocityX() < 0) {
                 ball.setVelocityX(-ball.getVelocityX());  // Reverse horizontal direction
-                ball.setLastBouncedEdgeIndex(-1);      // Reset last bounced edge
+                lastBouncedEdgeIndex = -1;      // Reset last bounced edge
                 Log.d("Bounce", "Ball collided with left edge");
             }
         }
@@ -740,7 +743,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (ball.getX() + ball.getRadius() > screenX) {
             if (ball.getVelocityX() > 0) {
                 ball.setVelocityX(-ball.getVelocityX());  // Reverse horizontal direction
-                ball.setLastBouncedEdgeIndex(-1);      // Reset last bounced edge
+                lastBouncedEdgeIndex = -1;      // Reset last bounced edge
                 Log.d("Bounce", "Ball collided with right edge");
             }
         }
@@ -749,7 +752,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (ball.getY() - ball.getRadius() < 0) {
             if (ball.getVelocityY() < 0) {
                 ball.setVelocityY(-ball.getVelocityY());  // Reverse vertical direction
-                ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
                 Log.d("Bounce", "Ball collided with top edge");
             }
         }
@@ -758,7 +761,7 @@ public class GameView extends SurfaceView implements Runnable {
         if (ball.getY() + ball.getRadius() > screenY) {
             if (ball.getVelocityY() > 0) {
                 ball.setVelocityY(-ball.getVelocityY());  // Reverse vertical direction
-                ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                lastBouncedEdgeIndex = -1; // Reset last bounced edge
                 Log.d("Bounce", "Ball collided with bottom edge");
             }
         }
@@ -771,7 +774,7 @@ public class GameView extends SurfaceView implements Runnable {
                 if (distance <= ball.getRadius()) {
                     // Invert ball velocity
                     ball.setVelocityX(-ball.getVelocityX());
-                    ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                    lastBouncedEdgeIndex = -1; // Reset last bounced edge
                 }
             }
         }
@@ -812,7 +815,6 @@ public class GameView extends SurfaceView implements Runnable {
 
     /**
      * Check for collisions between the ball and the defined edge vectors of the goals
-     *
      * @param ball the ball to check for collisions
      */
     public void checkEdgeCollision(Ball ball) {
@@ -834,119 +836,72 @@ public class GameView extends SurfaceView implements Runnable {
                     double dot = velocityX * normalX + velocityY * normalY;
                     ball.setVelocityX((float) (ball.getVelocityX() - 2 * dot * normalX));
                     ball.setVelocityY((float) (ball.getVelocityY() - 2 * dot * normalY));
-
-                    ball.setLastBouncedEdgeIndex(-1); // Reset last bounced edge
+                    lastBouncedEdgeIndex = -1; // Reset last bounced edge
                 }
             }
         } else {
-            for (int edgeVectorIndex = 0; edgeVectorIndex < bounceEdges.size(); edgeVectorIndex++) {
-                long currentTime = System.currentTimeMillis();
-                double postRadius = 6; // Radius of the goalpost
+            // Initialize a list holding the edges to check for bounce
+            List<Vector> edgesToCheck = new ArrayList<>();
+            switch (PLAYERCOUNT) {
+                case 2:
+                    // Include only the bottom right and top left bounce edges
+                    edgesToCheck.addAll(bounceEdges.subList(0, 4));
+                    edgesToCheck.addAll(diagonalEdges.subList(1, 3));
+                    break;
+                case 3:
+                    // Include the bottom right, top left and bottom left bounce edges
+                    edgesToCheck.addAll(bounceEdges.subList(0,6));
+                    edgesToCheck.add(diagonalEdges.get(1));
+                    break;
+                case 4:
+                    edgesToCheck.addAll(bounceEdges); // Include all edges
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + PLAYERCOUNT);
+            }
 
-                // If still within the cooldown period, don't allow another bounce
-                if ((ball.getLastBouncedEdgeIndex() == edgeVectorIndex && ball.getLastGoalpostIndex() != edgeVectorIndex) && (currentTime - lastBounceTime < BALL_BOUNCE_COOLDOWN_MS)) {
-                    return;
+            for (int i = 0; i < edgesToCheck.size(); i++) {
+                Vector edge = edgesToCheck.get(i);
+                if (lastBouncedEdgeIndex == i) {
+                    continue; // Skip this edge if it was the last one bounced off
                 }
-
-                Vector edge = bounceEdges.get(edgeVectorIndex);
-                double x1 = edge.getX1();
-                double y1 = edge.getY1();
-                double x2 = edge.getX2();
-                double y2 = edge.getY2();
-                double edgeDX = x2 - x1;
-                double edgeDY = y2 - y1;
-
-                double ballDX = ball.getX() - x1;
-                double ballDY = ball.getY() - y1;
-                double dotProduct = ballDX * edgeDX + ballDY * edgeDY;
-                double edgeLengthSquared = edgeDX * edgeDX + edgeDY * edgeDY;
-                double projection = dotProduct / edgeLengthSquared;
-
-                // Handle goalpost collision (if near the endpoints)
-                if (goalLines != null && !((goalLines.size() == 1 && (edgeVectorIndex == 4 || edgeVectorIndex == 5)) || (goalLines.size() == 2 && (edgeVectorIndex == 6 || edgeVectorIndex == 7)))) {
-                    double distanceToStart = Math.sqrt(Math.pow(ball.getX() - x1, 2) + Math.pow(ball.getY() - y1, 2));
-                    double distanceToEnd = Math.sqrt(Math.pow(ball.getX() - x2, 2) + Math.pow(ball.getY() - y2, 2));
-
-                    double goalpostX = (distanceToStart <= (postRadius + ball.getRadius())) ? x1 : x2;
-                    double goalpostY = (distanceToStart <= (postRadius + ball.getRadius())) ? y1 : y2;
-
-                    // Check if the ball is within the goalpost radius
-                    // And make sure only the intended goalposts are checked
-                    boolean sameGoalPost = (ball.getLastGoalpostIndex() == edgeVectorIndex) || (ball.getLastGoalpostIndex() == 3 && edgeVectorIndex == 6) || (ball.getLastGoalpostIndex() == 6 && edgeVectorIndex == 3) || (ball.getLastGoalpostIndex() == 4 && edgeVectorIndex == 1) || (ball.getLastGoalpostIndex() == 1 && edgeVectorIndex == 4);
-                    if (((distanceToStart <= (postRadius + ball.getRadius()) || distanceToEnd <= (postRadius + ball.getRadius())) &&
-                            (goalpostX > 0 && goalpostX < screenX)) && !sameGoalPost && (goalpostX > (double) screenX / 2 + 5 || goalpostX < (double) screenX / 2 - 5)) {
-                        Log.d("Bounce", "Ball collided with goalpost " + edgeVectorIndex);
-                        Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
-                        Log.d("Bounce", "GoalpostX: " + goalpostX);
-                        // Log screenx / 2
-                        Log.d("Bounce", "Screenx / 2: " + screenX / 2);
-
-                        ball.setLastBouncedEdgeIndex(edgeVectorIndex);
-                        ball.setLastGoalpostIndex(edgeVectorIndex);
-                        lastBounceTime = currentTime;
-
-                        double normalX = ball.getX() - goalpostX;
-                        double normalY = ball.getY() - goalpostY;
-                        double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
-                        normalX /= normalLength;
-                        normalY /= normalLength;
-
-                        ball.reflect(normalX, normalY);
-//                    resolveOverlap(normalX, normalY, postRadius - Math.min(distanceToStart, distanceToEnd));
-                        Log.d("Bounce", "Ball velocity: (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
-                        return;
-                    }
-                }
-
-                // Normal edge collision
-                double closestX, closestY;
-                if (projection < 0) {
-                    closestX = x1;
-                    closestY = y1;
-                } else if (projection > 1) {
-                    closestX = x2;
-                    closestY = y2;
-                } else {
-                    closestX = x1 + projection * edgeDX;
-                    closestY = y1 + projection * edgeDY;
-                }
-
-                double distanceToEdge = Math.sqrt(Math.pow(ball.getX() - closestX, 2) + Math.pow(ball.getY() - closestY, 2));
-
-                if (distanceToEdge <= ball.getRadius()) {
-                    Log.d("Bounce", "Ball collided with edge " + edgeVectorIndex);
-                    Log.d("Bounce", "Time since last bounce: " + (System.currentTimeMillis() - lastBounceTime));
-                    Log.d("Bounce", "Last bounce edge: " + ball.getLastBouncedEdgeIndex());
-                    ball.setLastBouncedEdgeIndex(edgeVectorIndex);
-                    ball.setLastGoalpostIndex(-1);
-                    lastBounceTime = currentTime;
-
-                    double normalX = -edgeDY;
-                    double normalY = edgeDX;
-                    double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
-                    normalX /= normalLength;
-                    normalY /= normalLength;
-
-                    // Ensure the ball bounces in the correct direction (ball passed through the edge case)
-                    if ((ball.getVelocityX() * normalX + ball.getVelocityY() * normalY) > 0) {
-                        normalX = -normalX;
-                        normalY = -normalY;
-                    }
-
-                    ball.reflect(normalX, normalY);
-//                resolveOverlap(normalX, normalY, radius - distanceToEdge);
-
-                    Log.d("Bounce", "Ball velocity: (" + ball.getVelocityX() + ", " + ball.getVelocityY() + ")");
+                // Get distance from ball to the vector (not infinite line)
+                double distance = edge.distanceToPoint(ball.getX(), ball.getY());
+                if (distance <= ball.getRadius()) {
+                    lastBouncedEdgeIndex = i;
+                    lastBounceTime = System.currentTimeMillis();
+                    // Calculate edge normal
+                    double edgeDX = edge.getX2() - edge.getX1();
+                    double edgeDY = edge.getY2() - edge.getY1();
+                    double edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
+                    double normalX = -edgeDY / edgeLength;
+                    double normalY = edgeDX / edgeLength;
+                    // Reflect velocity
+                    double velocityX = ball.getVelocityX();
+                    double velocityY = ball.getVelocityY();
+                    double dot = velocityX * normalX + velocityY * normalY;
+                    ball.setVelocityX((float) (ball.getVelocityX() - 2 * dot
+                            * normalX));
+                    ball.setVelocityY((float) (ball.getVelocityY() - 2 * dot
+                            * normalY));
+                    break; // Exit after first collision to avoid multiple reflections
                 }
             }
         }
     }
 
-    private void resolveOverlap(double normalX, double normalY, double overlap) {
-//        if (overlap > 0) {
-//            setX((float) (ball.getX() + normalX * overlap));
-//            setY((float) (ball.getY() + normalY * overlap));
-//        }
+    /**
+     * Resolve overlap between ball and edge by moving the ball out along the normal vector
+     * @param ball     the ball object
+     * @param normalX  x component of the edge normal
+     * @param normalY  y component of the edge normal
+     * @param overlap  amount of overlap to resolve
+     */
+    private void resolveOverlap(Ball ball, double normalX, double normalY, double overlap) {
+        if (overlap > 0) {
+            ball.setX((float) (ball.getX() + normalX * overlap));
+            ball.setY((float) (ball.getY() + normalY * overlap));
+        }
     }
 
     /**
