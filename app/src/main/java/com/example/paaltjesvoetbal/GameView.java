@@ -64,7 +64,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final List<ShootButton> shootButtons;
     private final int[] playerColors = {Color.BLUE, Color.RED, Color.GREEN, 0xFFFFEB04};
     private int[][] playerPositions;
-    private final boolean allowEnteringOtherGoals = false;
+    private final boolean allowEnteringOtherGoals = true;
     private int lastBouncedEdgeIndex = -1;
     private int PLAYERSPEED = 4;
     private int BALL_SPEED = 18;
@@ -860,6 +860,16 @@ public class GameView extends SurfaceView implements Runnable {
                     throw new IllegalStateException("Unexpected value: " + PLAYERCOUNT);
             }
 
+            // Log the lenghts of the edges to check
+//            Log.d("EdgeCheck", "Checking edges:");
+//            for (int i = 0; i < edgesToCheck.size(); i++) {
+//                Vector edge = edgesToCheck.get(i);
+//                double dx = edge.getX2() - edge.getX1();
+//                double dy = edge.getY2() - edge.getY1();
+//                double length = Math.sqrt(dx * dx + dy * dy);
+//                Log.d("EdgeCheck", "Edge " + i + " length: " + length);
+//            }
+
             for (int i = 0; i < edgesToCheck.size(); i++) {
                 Vector edge = edgesToCheck.get(i);
                 if (lastBouncedEdgeIndex == i) {
@@ -1579,52 +1589,6 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
-     * Calculate the shortest distance from a point (player) to a line (edge)
-     *
-     * @param edge   the line represented as a Vector
-     * @param player the player object representing the point
-     * @return the shortest distance from the point to the line
-     */
-    private double pointToLineDist(Vector edge, Player player) {
-        double x0 = player.getX();
-        double y0 = player.getY();
-        double x1 = edge.getX1();
-        double y1 = edge.getY1();
-        double x2 = edge.getX2();
-        double y2 = edge.getY2();
-        double numerator = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1);
-        double denominator = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-        return numerator / denominator;
-    }
-
-    /**
-     * Calculate the shortest distance from a point (player) to a line segment (edge)
-     *
-     * @param edge   the line segment represented as a Vector
-     * @param player the player object representing the point
-     * @return the shortest distance from the point to the line segment
-     */
-    private double pointToLineSegmentDistOwnGoal(Vector edge, Player player) {
-        double x0 = player.getX(), y0 = player.getY();
-        double x1 = edge.getX1(), y1 = edge.getY1();
-        double x2 = edge.getX2(), y2 = edge.getY2();
-
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        double lengthSquared = dx * dx + dy * dy;
-
-        if (lengthSquared == 0) return Math.sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
-
-        double t = ((x0 - x1) * dx + (y0 - y1) * dy) / lengthSquared;
-        t = Math.max(0, Math.min(1, t)); // Clamp t to [0,1]
-
-        double projX = x1 + t * dx;
-        double projY = y1 + t * dy;
-
-        return Math.sqrt((x0 - projX) * (x0 - projX) + (y0 - projY) * (y0 - projY));
-    }
-
-    /**
      * Update the player positions based on joystick input
      */
     private void updatePlayers() {
@@ -1676,7 +1640,7 @@ public class GameView extends SurfaceView implements Runnable {
                     Vector edge = edges.get(i);
                     float dist; // Initialize with a large distance
 
-                    dist = (float) pointToLineSegmentDistOwnGoal(edge, player);
+                    dist = (float) edge.distanceToPoint(player.getX(), player.getY());
 
                     if (dist < player.getRadius()) {
 //                        Log.d("EdgeClamp", "Player " + players.indexOf(player) + " clamped at edge " + i + ", distance: " + dist);
