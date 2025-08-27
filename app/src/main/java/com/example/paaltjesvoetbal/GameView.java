@@ -655,11 +655,11 @@ public class GameView extends SurfaceView implements Runnable {
         if (needSync) {
             synchronized (balls) {
                 for (Ball ball : balls) {
-                    if (ball.isShot()) {                    // Check whether the ball has to bounce
-                        checkHorVertBounce(ball);
-                        checkEdgeCollision(ball);
+                    if (ball.isShot()) {
+                        checkHorVertBounce(ball); // Check for bounce on horizontal and vertical edges
+                        checkEdgeCollision(ball); // Check for collision with goal edges
                         if (PLAYERCOUNT < 4) {
-//                             checkGoalLineCollision(ball); Todo: fix
+                            //  checkGoalLineCollision(ball); Todo: fix
                         }
 
                         // Update ball position based on its velocity
@@ -782,11 +782,6 @@ public class GameView extends SurfaceView implements Runnable {
                 Log.d("Bounce", "Ball collided with bottom edge");
             }
         }
-
-        // Check for collisions with the diagonal edges
-//        for (int i = 0; i < bounceEdges.size(); i++) {
-//            checkEdgeCollision(i, screenX, goalLines);
-//        }
 
         // Check for collisions with the vertical goal edges
         if (!twoVtwoMode) {
@@ -1067,14 +1062,6 @@ public class GameView extends SurfaceView implements Runnable {
                         (players.indexOf(shooter) == 2 && i == 2) ||
                         (players.indexOf(shooter) == 3 && i == 3)) {
                     continue;
-                }
-
-                // Prevent scoring in own goal
-                if ((players.indexOf(shooter) == 0 && i == 1) ||
-                        (players.indexOf(shooter) == 1 && i == 0) ||
-                        (players.indexOf(shooter) == 2 && i == 3) ||
-                        (players.indexOf(shooter) == 3 && i == 2)) {
-                    return;
                 }
 
                 if (lastGoal == i) {
