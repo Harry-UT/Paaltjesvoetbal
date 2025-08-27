@@ -75,7 +75,7 @@ public class GameView extends SurfaceView implements Runnable {
     private final int SHOOTBUTTONRADIUS = 50;
     private final int GOALPOSTRADIUS = 5;
     private int PLAYERCOUNT = 4;
-    private static final long BALL_BOUNCE_COOLDOWN_MS = 100; // 100ms cooldown
+    private static final long BALL_BOUNCE_COOLDOWN_MS = 200; // 100ms cooldown
     private static final float BALL_DAMPING_FACTOR = 0.985F;
     private final boolean debug = false;
 
@@ -680,7 +680,7 @@ public class GameView extends SurfaceView implements Runnable {
                     // Update the ball's position based on the player's direction
                     float direction = ball.getShooter().getDirection();  // Get the player's direction (angle in radians)
                     if (direction != 0) {
-                        // Define a distance to move the ball from the player (e.g., just in front of the player)
+                        // Define a distance to move the ball from the player, in front in this case
                         float combinedRadius = ball.getShooter().getRadius() + ball.getRadius(); // Combine player and ball radii
 
                         // Calculate new position based on direction, adjusted by combined radius
@@ -691,7 +691,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
 
             // If bouncing happened longer than cooldown ago, allow scoring so check for goal
-            if (!scored && System.currentTimeMillis() - lastBounceTime > 200) { // Prevent immediate goal after bounce
+            if (!scored && System.currentTimeMillis() - lastBounceTime > BALL_BOUNCE_COOLDOWN_MS) { // Prevent immediate goal after bounce
                 checkGoal(ball);
             }
         }
@@ -995,31 +995,29 @@ public class GameView extends SurfaceView implements Runnable {
                 }
 
                 if (lastGoal == i) {
-                    if (now - lastGoalTime < 200) { // 200 ms cooldown
-                        int shooterIndex = players.indexOf(shooter);
+                    int shooterIndex = players.indexOf(shooter);
 
-                        // Scored in goal by player!
-                        scored(i, shooter);
-                        lastShooter = shooter;
+                    // Scored in goal by player!
+                    scored(i, shooter);
+                    lastShooter = shooter;
 
-                        // Get rotation of GOAL! text based on side of screen the shooter is on
-                        int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
-                        // Create floating text for score increment
-                        scoreIncrementText = new FloatingText(
-                                scoreTextPositions.get(shooterIndex)[0],
-                                scoreTextPositions.get(shooterIndex)[1],
-                                40,
-                                rotation
-                        );
+                    // Get rotation of GOAL! text based on side of screen the shooter is on
+                    int rotation = (shooterIndex == 1 || shooterIndex == 3) ? 180 : 0;
+                    // Create floating text for score increment
+                    scoreIncrementText = new FloatingText(
+                            scoreTextPositions.get(shooterIndex)[0],
+                            scoreTextPositions.get(shooterIndex)[1],
+                            40,
+                            rotation
+                    );
 
-                        for (Star star : stars) {
-                            star.setColor(shooter.getColor());
-                        }
-
-                        lastGoal = -1;
-                        ball.resetShooter();
-                        break;
+                    for (Star star : stars) {
+                        star.setColor(shooter.getColor());
                     }
+
+                    lastGoal = -1;
+                    ball.resetShooter();
+                    break;
                 } else {
                     lastGoalTime = now;
                     lastGoal = i;
