@@ -801,6 +801,7 @@ public class GameView extends SurfaceView implements Runnable {
                 dx /= length;
                 dy /= length;
             }
+            //
             Log.d("Shoot", "Direction after normalization: (" + dx + ", " + dy + ")");
 
             // Set the ball's velocity to move away from the player
