@@ -1224,55 +1224,21 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
 
-//        Log.d("GameView", "Draw time 1: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-
         drawScores(canvas);
 
-//        Log.d("GameView", "Draw time after scores: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-        // Draw the balls
         if (needSync) {
-            Log.d("GameView", "Drawing with synchronization");
             synchronized (joysticks) {
-                for (int i = 0; i < PLAYERCOUNT; i++) {
-//                Log.d("GameView", "Time for first circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-                    joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
-//                Log.d("GameView", "Time for second circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+                synchronized (players) {
+                    synchronized (balls) {
+                        synchronized (shootButtons) {
+                            drawItems(canvas);
+                        }
+                    }
                 }
-            }
-            synchronized (balls) {
-                for (Ball ball : balls) {
-                    ball.draw(canvas);
-                }
-            }
-            synchronized (shootButtons) {
-                for (int i = 0; i < PLAYERCOUNT; i++) {
-                    shootButtons.get(i).draw(canvas);
-                }
-            }
-            synchronized (players) {
-                for (int i = 0; i < PLAYERCOUNT; i++) {
-                    players.get(i).draw(canvas);
-                }
+
             }
         } else {
-//            Log.d("GameView", "Drawing without synchronization: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            for (int i = 0; i < PLAYERCOUNT; i++) {
-//                Log.d("GameView", "Time for first circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-                joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
-//                Log.d("GameView", "Time for second circle: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            }
-//            Log.d("GameView", "Draw time after joysticks: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            for (Ball ball : balls) {
-                ball.draw(canvas);
-            }
-//            Log.d("GameView", "Draw time after balls: " + (System.nanoTime() - startTime) / 1_000_000+ " ms");
-            for (int i = 0; i < PLAYERCOUNT; i++) {
-                shootButtons.get(i).draw(canvas);
-            }
-//            Log.d("GameView", "Draw time after buttons: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-            for (int i = 0; i < PLAYERCOUNT; i++) {
-                players.get(i).draw(canvas);
-            }
+            drawItems(canvas);
         }
         // Draw indexes at the begin points of diagonalEdges for debugging
         if (debug) {
@@ -1317,6 +1283,21 @@ public class GameView extends SurfaceView implements Runnable {
         Log.d("GameView", "Draw time after holder: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
     }
 
+    private void drawItems(Canvas canvas) {
+        for (int i = 0; i < PLAYERCOUNT; i++) {
+            joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
+        }
+        for (Ball ball : balls) {
+            ball.draw(canvas);
+        }
+        for (int i = 0; i < PLAYERCOUNT; i++) {
+            shootButtons.get(i).draw(canvas);
+        }
+        for (int i = 0; i < PLAYERCOUNT; i++) {
+            players.get(i).draw(canvas);
+        }
+    }
+
     /**
      * Draw the scores of the players on the screen
      *
@@ -1343,36 +1324,10 @@ public class GameView extends SurfaceView implements Runnable {
         } else { // draw scores of the 2 teams
             if (needSync) {
                 synchronized (teams) {
-                    for (int i = 0; i < 2; i++) {
-                        // Save the current canvas state
-                        canvas.save();
-                        int rotationAngle = (i == 0) ? 0 : 180;
-                        // Rotate around the text position
-                        canvas.rotate(rotationAngle, teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1]);
-
-                        // Draw the text
-                        Team team = teams.get(i);
-                        canvas.drawText(String.valueOf(team.getScore()), teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1], teamScoresPaints.get(i));
-
-                        // Restore canvas to avoid affecting other drawings
-                        canvas.restore();
-                    }
+                    drawTeams(canvas);
                 }
             } else {
-                for (int i = 0; i < 2; i++) {
-                    // Save the current canvas state
-                    canvas.save();
-                    int rotationAngle = (i == 0) ? 0 : 180;
-                    // Rotate around the text position
-                    canvas.rotate(rotationAngle, teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1]);
-
-                    // Draw the text
-                    Team team = teams.get(i);
-                    canvas.drawText(String.valueOf(team.getScore()), teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1], teamScoresPaints.get(i));
-
-                    // Restore canvas to avoid affecting other drawings
-                    canvas.restore();
-                }
+                drawTeams(canvas);
             }
         }
 
@@ -1403,6 +1358,23 @@ public class GameView extends SurfaceView implements Runnable {
             }
         } else {
             GOALText.reset(screenX, screenY);
+        }
+    }
+
+    private void drawTeams(Canvas canvas) {
+        for (int i = 0; i < 2; i++) {
+            // Save the current canvas state
+            canvas.save();
+            int rotationAngle = (i == 0) ? 0 : 180;
+            // Rotate around the text position
+            canvas.rotate(rotationAngle, teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1]);
+
+            // Draw the text
+            Team team = teams.get(i);
+            canvas.drawText(String.valueOf(team.getScore()), teamScoreTextPositions.get(i)[0], teamScoreTextPositions.get(i)[1], teamScoresPaints.get(i));
+
+            // Restore canvas to avoid affecting other drawings
+            canvas.restore();
         }
     }
 
