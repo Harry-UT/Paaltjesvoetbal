@@ -65,29 +65,24 @@ public class Vector {
     public double distanceToPoint(double x, double y) {
         double dx = x2 - x1;
         double dy = y2 - y1;
-
         double lengthSquared = dx * dx + dy * dy;
+
         if (lengthSquared == 0) {
-            // Edge case: The vector is a single point
-            return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+            // Edge is a single point
+            return Math.hypot(x - x1, y - y1);
         }
 
-        // Compute the projection of (x, y) onto the line
+        // Projection factor t of point onto line
         double t = ((x - x1) * dx + (y - y1) * dy) / lengthSquared;
 
-        if (t < 0) {
-            // Closest to (x1, y1)
-            return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
-        } else if (t > 1) {
-            // Closest to (x2, y2)
-            return Math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
-        }
+        // Clamp t to [0, 1] to stay within segment
+        t = Math.max(0, Math.min(1, t));
 
         // Closest point on the segment
         double projX = x1 + t * dx;
         double projY = y1 + t * dy;
 
-        return Math.sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY));
+        return Math.hypot(x - projX, y - projY);
     }
 
     public float getMidX() {
