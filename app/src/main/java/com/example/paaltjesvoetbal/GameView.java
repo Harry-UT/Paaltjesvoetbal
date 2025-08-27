@@ -867,7 +867,7 @@ public class GameView extends SurfaceView implements Runnable {
                 }
                 // Get distance from ball to the vector (not infinite line)
                 double distance = edge.distanceToPoint(ball.getX(), ball.getY());
-                if (distance <= ball.getRadius()) {
+                if (distance <= ball.getRadius()) { // Collision detected
                     lastBouncedEdgeIndex = i;
                     lastBounceTime = System.currentTimeMillis();
                     // Calculate edge normal
