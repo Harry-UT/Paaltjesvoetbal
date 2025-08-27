@@ -1697,28 +1697,29 @@ public class GameView extends SurfaceView implements Runnable {
                 float newX = player.getX() + moveX;
                 float newY = player.getY() + moveY;
 
-                // Clamp player position within field bounds (not in corners)
-                for (int i = 0; i < bounceEdges.size(); i++) {
-                    Vector edge = bounceEdges.get(i);
+                // Prevent players from going through walls (clamping)
+                List<Vector> edges = twoVtwoMode ? bounceEdgesTwovTwo : bounceEdges;
+                for (int i = 0; i < edges.size(); i++) {
+                    Vector edge = edges.get(i);
                     float dist; // Initialize with a large distance
 
-                    switch (players.indexOf(player)) {
-                        case 0:
-                            dist = (i == 0 || i == 1) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
-                            break;
-                        case 1:
-                            dist = (i == 2 || i == 3) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
-                            break;
-                        case 2:
-                            dist = (i == 4 || i == 5) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
-                            break;
-                        case 3:
-                            dist = (i == 6 || i == 7) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
-                            break;
-                        default:
-                            dist = (float) pointToLineDist(edge, player);
-                            break;
-                    }
+//                    switch (players.indexOf(player)) {
+//                        case 0:
+//                            dist = (i == 0 || i == 1) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+//                            break;
+//                        case 1:
+//                            dist = (i == 2 || i == 3) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+//                            break;
+//                        case 2:
+//                            dist = (i == 4 || i == 5) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+//                            break;
+//                        case 3:
+//                            dist = (i == 6 || i == 7) ? (float) pointToLineSegmentDistOwnGoal(edge, player) : (float) pointToLineDist(edge, player);
+//                            break;
+//                        default:
+//                            dist = (float) pointToLineDist(edge, player);
+//                            break;
+//                    }
                     dist = (float) pointToLineSegmentDistOwnGoal(edge, player);
 
                     if (dist < player.getRadius()) {
