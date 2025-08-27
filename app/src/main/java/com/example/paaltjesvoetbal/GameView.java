@@ -492,18 +492,6 @@ public class GameView extends SurfaceView implements Runnable {
      * Determine the positions of the goal posts based on the goal lines
      */
     private void determineGoalPosts() {
-//        double x = goalLines.get(0).getX2();
-//        double y = goalLines.get(0).getY2();
-//        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
-//        x = goalLines.get(0).getX1();
-//        y = goalLines.get(0).getY1();
-//        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
-//        x = goalLines.get(1).getX1();
-//        y = goalLines.get(1).getY1();
-//        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
-//        x = goalLines.get(1).getX2();
-//        y = goalLines.get(1).getY2();
-//        goalPosts.add(new GoalPost((float) x, (float) y, GOALPOSTRADIUS));
         for (Vector goalLine : goalLines) {
             goalPosts.add(new GoalPost((float) goalLine.getX1(), (float) goalLine.getY1(), GOALPOSTRADIUS));
             goalPosts.add(new GoalPost((float) goalLine.getX2(), (float) goalLine.getY2(), GOALPOSTRADIUS));
