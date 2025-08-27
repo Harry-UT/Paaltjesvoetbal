@@ -897,20 +897,6 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
     /**
-     * Resolve overlap between ball and edge by moving the ball out along the normal vector
-     * @param ball     the ball object
-     * @param normalX  x component of the edge normal
-     * @param normalY  y component of the edge normal
-     * @param overlap  amount of overlap to resolve
-     */
-    private void resolveOverlap(Ball ball, double normalX, double normalY, double overlap) {
-        if (overlap > 0) {
-            ball.setX((float) (ball.getX() + normalX * overlap));
-            ball.setY((float) (ball.getY() + normalY * overlap));
-        }
-    }
-
-    /**
      * Handle the scoring of a goal by a player
      *
      * @param goal   the goal number
@@ -2123,9 +2109,7 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Handle disconnection from the server
      */
-    public void handleDisconnect() {
-
-    }
+    public void handleDisconnect() {}
 
     public void receiveUpdate(String message, String sender, String timestamp) {
         // Handle incoming messages from the server
