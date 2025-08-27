@@ -1546,6 +1546,22 @@ public class GameView extends SurfaceView implements Runnable {
                     edges = new ArrayList<>(twoVtwoMode ? bounceEdgesTwovTwo : bounceEdges);
                 } else {
                     switch (players.indexOf(player)) {
+                        case 0:
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(0, 2)
+                                    : bounceEdges.subList(0, 2));
+                            if (!twoVtwoMode)
+                                edges.addAll(diagonalEdges.subList(1, 4));
+                            break;
+                        case 1:
+                            edges = new ArrayList<>(twoVtwoMode
+                                    ? bounceEdgesTwovTwo.subList(2, 3)
+                                    : bounceEdges.subList(2, 4));
+                            if (!twoVtwoMode) {
+                                edges.add(diagonalEdges.get(0));
+                                edges.addAll(diagonalEdges.subList(2, 4));
+                            }
+                            break;
                         case 2:
                             edges = new ArrayList<>(twoVtwoMode
                                     ? bounceEdgesTwovTwo.subList(0, 2)
