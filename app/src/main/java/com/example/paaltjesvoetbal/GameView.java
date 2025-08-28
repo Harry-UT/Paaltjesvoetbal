@@ -1585,6 +1585,7 @@ public class GameView extends SurfaceView implements Runnable {
                                     : bounceEdges);
                             break;
                     }
+                    if (!twoVtwoMode) edges.addAll(verticalGoalEdges);
                 }
 
                 for (int i = 0; i < edges.size(); i++) {
