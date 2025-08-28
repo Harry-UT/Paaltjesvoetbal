@@ -444,9 +444,12 @@ public class GameView extends SurfaceView implements Runnable {
 
             // --- Sleep to maintain 60 FPS ---
             long frameTime = System.nanoTime() - now;
-            long sleepTime = (OPTIMAL_TIME - frameTime) / 1_000_000;
+            long sleepTime = Math.max(0, (OPTIMAL_TIME - frameTime) / 1_000_000);
             if (sleepTime > 0) {
-                try { Thread.sleep(sleepTime); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException ignored) {
+                }
             }
         }
     }
@@ -456,7 +459,6 @@ public class GameView extends SurfaceView implements Runnable {
     protected void onDraw(Canvas canvas) {
         synchronized (lock) {
             long now = System.nanoTime();
-            frames++;
 
             // Update FPS every second
             if (now - fpsTimer >= 1_000_000_000) {
@@ -474,44 +476,26 @@ public class GameView extends SurfaceView implements Runnable {
                 }
             } else {
                 canvas.drawBitmap(staticLayer, 0, 0, null);
-                for (int i = 0; i < PLAYERCOUNT * 2; i++) {
-                    int goalPostX = (int) goalPosts.get(i).getX();
-                    int goalPostY = (int) goalPosts.get(i).getY();
-                    canvas.drawCircle(goalPostX, goalPostY, 5, goalPostPaint);
-                    if (debug) {
-                        canvas.drawText(String.valueOf(i), goalPostX + 10, goalPostY + 10, fpsPaint);
-                    }
-                }
-                if (PLAYERCOUNT < 4) {
-                    if (PLAYERCOUNT == 2) {
-                        goalLines.get(2).draw(canvas);
-                        goalLines.get(3).draw(canvas);
-                    } else if (PLAYERCOUNT == 3) {
-                        goalLines.get(3).draw(canvas);
-                    }
-                }
+                // Draw goal posts
+                drawGoalPosts(canvas);
+                // Draw unused goal lines in less than 4 player mode
+                drawUnusedGoalLines(canvas);
                 if (debug) {
                     drawNormalVectorsInwards(canvas);
                     drawNormalVectorsOutwards(canvas);
                 }
             }
 
+            // Draw the score texts
             drawScores(canvas);
 
-            if (needSync) {
-                synchronized (joysticks) {
-                    synchronized (players) {
-                        synchronized (balls) {
-                            synchronized (shootButtons) {
-                                drawItems(canvas);
-                            }
-                        }
-                    }
-                }
-            } else drawItems(canvas);
+            // Draw the dynamic items (players, balls, joysticks, shoot buttons)
+            drawDynamicItems(canvas);
 
-            if (scored) displayStarsAnimation(canvas);
-            else {
+            // Draw stars if scored
+            if (scored) {
+                displayStarsAnimation(canvas);
+            } else {
                 boolean allZero = true;
                 for (Player p : players) if (p.getScore() != 0) allZero = false;
                 if (!allZero) for (Star s : stars) {
@@ -522,11 +506,71 @@ public class GameView extends SurfaceView implements Runnable {
 
             // --- Draw FPS overlay ---
             canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
+            frames++;
 
-            invalidate(); // trigger next frame
+            postInvalidateOnAnimation(); // trigger next frame
         }
     }
 
+    /**
+     * Update the game state
+     */
+    private void update() {
+        if (onlineMode) {
+            updateOnline();
+            return;
+        }
+
+        if (needSync) {
+            synchronized (players) {
+                synchronized (balls) {
+                    updateBalls();
+                    checkPlayerBallCollision();
+                    updatePlayers();
+                }
+            }
+        } else {
+            updateBalls();
+            checkPlayerBallCollision();
+            updatePlayers();
+        }
+
+        centerScoreTexts();
+    }
+
+    private void drawGoalPosts(Canvas canvas) {
+        for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+            int goalPostX = (int) goalPosts.get(i).getX();
+            int goalPostY = (int) goalPosts.get(i).getY();
+            canvas.drawCircle(goalPostX, goalPostY, 5, goalPostPaint);
+            if (debug) {
+                canvas.drawText(String.valueOf(i), goalPostX + 10, goalPostY + 10, fpsPaint);
+            }
+        }
+    }
+
+    private void drawUnusedGoalLines(Canvas canvas) {
+        if (PLAYERCOUNT < 4) {
+            if (PLAYERCOUNT == 2) {
+                goalLines.get(2).draw(canvas);
+                goalLines.get(3).draw(canvas);
+            } else if (PLAYERCOUNT == 3) {
+                goalLines.get(3).draw(canvas);
+            }
+        }
+    }
+
+    private void drawDynamicItems(Canvas canvas) {
+        if (needSync) {
+            synchronized (players) { // sync only necessary collections
+                synchronized (balls) {
+                    drawItems(canvas);
+                }
+            }
+        } else {
+            drawItems(canvas);
+        }
+    }
 
     /**
      * Determine the edges for ball bounce based on the screen dimensions
@@ -695,33 +739,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-    /**
-     * Update the game state
-     */
-    private void update() {
-        if (onlineMode) {
-            updateOnline();
-        } else {
-            if (needSync) {
-                synchronized (players) {
-                    synchronized (balls) {
-                        updateBalls();
-                        checkPlayerBallCollision();
-                        updatePlayers();
-                    }
-                }
-            } else {
-                long timeNow = System.currentTimeMillis();
-                updateBalls();
-//                Log.d("Performance", "Time taken to update balls: " + (System.currentTimeMillis() - timeNow) + " ms");
-                checkPlayerBallCollision();
-                updatePlayers();
-            }
-
-            centerScoreTexts();
-        }
-    }
-
     private void updateOnline() {
 
     }
@@ -871,6 +888,7 @@ public class GameView extends SurfaceView implements Runnable {
 
     /**
      * Check for collisions between the ball and the defined edge vectors of the goals
+     *
      * @param ball the ball to check for collisions
      */
     public void checkEdgeCollision(Ball ball) {
@@ -1323,8 +1341,6 @@ public class GameView extends SurfaceView implements Runnable {
 //        Log.d("FPSTRACK", "Unlock canvas time: " + (System.nanoTime() - start) / 1_000_000 + " ms");
 //        Log.d("FPSTRACK", "Total draw time: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
 //    }
-
-
     private void drawItems(Canvas canvas) {
         for (int i = 0; i < PLAYERCOUNT; i++) {
             joysticks.get(i).draw(canvas);  // Call the draw method for each joystick
@@ -2167,7 +2183,8 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Handle disconnection from the server
      */
-    public void handleDisconnect() {}
+    public void handleDisconnect() {
+    }
 
     public void receiveUpdate(String message, String sender, String timestamp) {
         // Handle incoming messages from the server

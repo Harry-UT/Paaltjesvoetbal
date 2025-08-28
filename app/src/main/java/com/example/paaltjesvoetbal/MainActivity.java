@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
         int drawableY = getDrawableY();
 
         // Initialize the GameView with the Activity context
-        gameView = new GameView(this, screenX, drawableY, (int) dpi);
+        gameView = new GameView(this, screenX, drawableY - 30, (int) dpi);
 
         // Set the GameView as the content view
         setContentView(gameView);
