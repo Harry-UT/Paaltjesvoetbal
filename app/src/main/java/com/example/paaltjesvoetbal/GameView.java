@@ -149,6 +149,8 @@ public class GameView extends SurfaceView implements Runnable {
     public GameView(Context context, int screenX, int screenY, int dpi) {
         super(context);
         setWillNotDraw(false); // ensure onDraw is called
+        setFocusable(true);
+        setFocusableInTouchMode(true);
         Log.d("Resolution", "ScreenX: " + screenX + ", ScreenY: " + screenY);
         Log.d("Resolution", "dpi: " + dpi);
         this.PPCM = dpi / 2.54f; // pixels per centimeter
@@ -1718,22 +1720,23 @@ public class GameView extends SurfaceView implements Runnable {
      * Start the game thread
      */
     public void resume() {
-        isPlaying = true;
-        thread = new Thread(this);
-        thread.start();
-    }
-
-    /**
-     * Pause the game thread
-     */
-    public void pause() {
-        try {
-            isPlaying = false;
-            thread.join();
-        } catch (InterruptedException e) {
-            System.out.println("Pause went wrong");
+        if (thread == null || !thread.isAlive()) {
+            isPlaying = true;          // signal loop to run
+            thread = new Thread(this); // create a new thread safely
+            thread.start();
         }
     }
+
+    public void pause() {
+        isPlaying = false;            // stop the loop
+        try {
+            if (thread != null)
+                thread.join();        // wait for thread to finish
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * Check for collisions between players and balls
