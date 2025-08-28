@@ -12,11 +12,6 @@ public class Ball {
     private Paint ballPaint;
     private Player shooter = null;
     private boolean shot = true;
-    /** Constructor for the Ball class
-     * @param x Initial X coordinate of the ball
-     * @param y Initial Y coordinate of the ball
-     * @param radius Radius of the ball
-     */
     public Ball(float x, float y, float radius) {
         this.x = x;
         this.y = y;
@@ -86,11 +81,10 @@ public class Ball {
         return radius;
     }
 
-    public void updatePosition(float deltaTime) {
-        this.x += velocityX * deltaTime;
-        this.y += velocityY * deltaTime;
+    public void updatePosition() {
+        this.x += velocityX;
+        this.y += velocityY;
     }
-
 
     public void decreaseVelocity(float dampingFactor) {
         this.velocityX *= dampingFactor;

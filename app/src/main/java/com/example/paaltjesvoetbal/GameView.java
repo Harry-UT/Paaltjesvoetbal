@@ -107,6 +107,8 @@ public class GameView extends SurfaceView implements Runnable {
     public SoundManager soundManager;
     private final int TARGET_FPS = 60;
     private int fps;
+    private long fpsTimer = System.nanoTime();
+    private int frames = 0;
     private boolean onlineMode = false;
     private boolean twoVtwoMode = false;
     private final Paint goalPaintBlue = new Paint();
@@ -134,6 +136,8 @@ public class GameView extends SurfaceView implements Runnable {
     private final int port = 3000;
     private boolean needSync = false;
     private final float PPCM;
+    private final Object lock = new Object();
+
 
     /**
      * Constructor for the GameView class
@@ -144,6 +148,7 @@ public class GameView extends SurfaceView implements Runnable {
      */
     public GameView(Context context, int screenX, int screenY, int dpi) {
         super(context);
+        setWillNotDraw(false); // ensure onDraw is called
         Log.d("Resolution", "ScreenX: " + screenX + ", ScreenY: " + screenY);
         Log.d("Resolution", "dpi: " + dpi);
         this.PPCM = dpi / 2.54f; // pixels per centimeter
@@ -424,43 +429,104 @@ public class GameView extends SurfaceView implements Runnable {
      */
     @Override
     public void run() {
-        final long OPTIMAL_TIME = 1_000_000_000 / TARGET_FPS;
+        final long OPTIMAL_TIME = 1_000_000_000 / 60; // 60 updates per second
         long lastLoopTime = System.nanoTime();
-        long fpsTimer = System.nanoTime();
-        int frames = 0;
 
         while (isPlaying) {
             long now = System.nanoTime();
-            float deltaTime = (now - lastLoopTime) / 1_000_000_000.0f; // seconds
+            float deltaTime = (now - lastLoopTime) / 1_000_000_000.0f;
             lastLoopTime = now;
 
-            // Update game objects using deltaTime
-            update(deltaTime);
+            // --- Update ---
+            long updateStart = System.nanoTime();
+            update();
+            long updateTime = System.nanoTime() - updateStart;
 
-            // Draw frame
-            draw();
-
-            frames++;
-
-            // Sleep to maintain target FPS
+            // --- Sleep to maintain 60 FPS ---
             long frameTime = System.nanoTime() - now;
-            long sleepTime = (OPTIMAL_TIME - frameTime) / 1_000_000; // ms
+            long sleepTime = (OPTIMAL_TIME - frameTime) / 1_000_000;
             if (sleepTime > 0) {
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException ignored) {
-                }
-            }
-
-            // Update FPS every second
-            if (System.nanoTime() - fpsTimer >= 1_000_000_000) {
-                fps = frames;
-                frames = 0;
-                fpsTimer = System.nanoTime();
-                Log.d("FPSTRACK", "Real FPS: " + fps);
+                try { Thread.sleep(sleepTime); } catch (InterruptedException ignored) {}
             }
         }
     }
+
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        synchronized (lock) {
+            long now = System.nanoTime();
+            frames++;
+
+            // Update FPS every second
+            if (now - fpsTimer >= 1_000_000_000) {
+                fps = frames;
+                frames = 0;
+                fpsTimer = now;
+            }
+
+            // --- Draw everything ---
+            if (twoVtwoMode) {
+                canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);
+                if (debug) {
+                    drawNormalVectorsInwardsTwovTwo(canvas);
+                    drawNormalVectorsOutwardsTwovTwo(canvas);
+                }
+            } else {
+                canvas.drawBitmap(staticLayer, 0, 0, null);
+                for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+                    int goalPostX = (int) goalPosts.get(i).getX();
+                    int goalPostY = (int) goalPosts.get(i).getY();
+                    canvas.drawCircle(goalPostX, goalPostY, 5, goalPostPaint);
+                    if (debug) {
+                        canvas.drawText(String.valueOf(i), goalPostX + 10, goalPostY + 10, fpsPaint);
+                    }
+                }
+                if (PLAYERCOUNT < 4) {
+                    if (PLAYERCOUNT == 2) {
+                        goalLines.get(2).draw(canvas);
+                        goalLines.get(3).draw(canvas);
+                    } else if (PLAYERCOUNT == 3) {
+                        goalLines.get(3).draw(canvas);
+                    }
+                }
+                if (debug) {
+                    drawNormalVectorsInwards(canvas);
+                    drawNormalVectorsOutwards(canvas);
+                }
+            }
+
+            drawScores(canvas);
+
+            if (needSync) {
+                synchronized (joysticks) {
+                    synchronized (players) {
+                        synchronized (balls) {
+                            synchronized (shootButtons) {
+                                drawItems(canvas);
+                            }
+                        }
+                    }
+                }
+            } else drawItems(canvas);
+
+            if (scored) displayStarsAnimation(canvas);
+            else {
+                boolean allZero = true;
+                for (Player p : players) if (p.getScore() != 0) allZero = false;
+                if (!allZero) for (Star s : stars) {
+                    s.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), true);
+                    s.bounce(screenX, screenY);
+                }
+            }
+
+            // --- Draw FPS overlay ---
+            canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
+
+            invalidate(); // trigger next frame
+        }
+    }
+
 
     /**
      * Determine the edges for ball bounce based on the screen dimensions
@@ -632,7 +698,7 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Update the game state
      */
-    private void update(float deltaTime) {
+    private void update() {
         if (onlineMode) {
             updateOnline();
         } else {
@@ -1157,107 +1223,107 @@ public class GameView extends SurfaceView implements Runnable {
     /**
      * Draw the game elements on the canvas
      */
-    private void draw() {
-        long startTime = System.nanoTime();
+//    private void draw() {
+//        long startTime = System.nanoTime();
+//
+//        if (!holder.getSurface().isValid()) return;
+//
+//        long before = System.nanoTime();
+//        Canvas canvas = holder.lockHardwareCanvas();
+//        Log.d("FPSTRACK", "Lock time: " + ((System.nanoTime() - before) / 1_000_000) + " ms");
+//        long sectionStart, sectionTime;
+//
+//        // --- Draw static background ---
+//        sectionStart = System.nanoTime();
+//        if (twoVtwoMode) {
+//            canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);
+//            if (debug) {
+//                drawNormalVectorsInwardsTwovTwo(canvas);
+//                drawNormalVectorsOutwardsTwovTwo(canvas);
+//            }
+//        } else {
+//            canvas.drawBitmap(staticLayer, 0, 0, null);
+//            // Draw goal posts
+//            for (int i = 0; i < PLAYERCOUNT * 2; i++) {
+//                int goalPostX = (int) goalPosts.get(i).getX();
+//                int goalPostY = (int) goalPosts.get(i).getY();
+//                canvas.drawCircle(goalPostX, goalPostY, 5, goalPostPaint);
+//                if (debug) {
+//                    canvas.drawText(String.valueOf(i), goalPostX + 10, goalPostY + 10, fpsPaint);
+//                }
+//            }
+//            // Draw unused goal lines
+//            if (PLAYERCOUNT < 4) {
+//                if (PLAYERCOUNT == 2) {
+//                    goalLines.get(2).draw(canvas);
+//                    goalLines.get(3).draw(canvas);
+//                } else if (PLAYERCOUNT == 3) {
+//                    goalLines.get(3).draw(canvas);
+//                }
+//            }
+//            if (debug) {
+//                drawNormalVectorsInwards(canvas);
+//                drawNormalVectorsOutwards(canvas);
+//            }
+//        }
+//        sectionTime = (System.nanoTime() - sectionStart) / 1_000_000;
+//        Log.d("FPSTRACK", "Background+Goal draw: " + sectionTime + " ms");
+//
+//        // --- Draw scores ---
+//        sectionStart = System.nanoTime();
+//        drawScores(canvas);
+//        sectionTime = (System.nanoTime() - sectionStart) / 1_000_000;
+//        Log.d("FPSTRACK", "Scores draw: " + sectionTime + " ms");
+//
+//        // --- Draw items (balls, players, etc.) ---
+//        sectionStart = System.nanoTime();
+//        if (needSync) {
+//            synchronized (joysticks) {
+//                synchronized (players) {
+//                    synchronized (balls) {
+//                        synchronized (shootButtons) {
+//                            drawItems(canvas);
+//                        }
+//                    }
+//                }
+//            }
+//        } else {
+//            drawItems(canvas);
+//        }
+//        sectionTime = (System.nanoTime() - sectionStart) / 1_000_000;
+//        Log.d("FPSTRACK", "Items draw: " + sectionTime + " ms");
+//
+//        // --- Stars and animations ---
+//        sectionStart = System.nanoTime();
+//        if (scored) {
+//            displayStarsAnimation(canvas);
+//        } else {
+//            boolean allZero = true;
+//            for (Player player : players) {
+//                if (player.getScore() != 0) {
+//                    allZero = false;
+//                    break;
+//                }
+//            }
+//            if (!allZero) {
+//                for (Star star : stars) {
+//                    star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), true);
+//                    star.bounce(screenX, screenY);
+//                }
+//            }
+//        }
+//        sectionTime = (System.nanoTime() - sectionStart) / 1_000_000;
+//        Log.d("FPSTRACK", "Stars/animations draw: " + sectionTime + " ms");
+//
+//        // --- Draw FPS overlay ---
+//        canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
+//
+//        long start = System.nanoTime();
+//        holder.unlockCanvasAndPost(canvas);
+//        Log.d("FPSTRACK", "Unlock canvas time: " + (System.nanoTime() - start) / 1_000_000 + " ms");
+//        Log.d("FPSTRACK", "Total draw time: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
+//    }
 
-        if (!holder.getSurface().isValid()) return;
-
-        Canvas canvas = holder.lockCanvas();
-
-        if (twoVtwoMode) {
-            canvas.drawBitmap(staticLayerTwovTwo, 0, 0, null);    // Background + static stuff
-
-            if (debug) {
-                drawNormalVectorsInwardsTwovTwo(canvas);
-                drawNormalVectorsOutwardsTwovTwo(canvas);
-            }
-        } else {
-            canvas.drawBitmap(staticLayer, 0, 0, null);    // Background + static stuff
-            // Draw goal posts
-            for (int i = 0; i < PLAYERCOUNT * 2; i++) {
-                // Draw the goal post
-                int goalPostX = (int) goalPosts.get(i).getX();
-                int goalPostY = (int) goalPosts.get(i).getY();
-                canvas.drawCircle(goalPostX, goalPostY, 5, goalPostPaint);
-                // Draw a little index number for debugging
-                if (debug) {
-                    canvas.drawText(String.valueOf(i), goalPostX + 10, goalPostY + 10, fpsPaint);
-                }
-            }
-            // Draw unused goal lines in 2 and 3 player mode
-            if (PLAYERCOUNT < 4) {
-                // Draw unused goal lines when in less than 4 player mode
-                if (PLAYERCOUNT == 2) {
-                    goalLines.get(2).draw(canvas);
-                    goalLines.get(3).draw(canvas);
-                } else if (PLAYERCOUNT == 3) {
-                    goalLines.get(3).draw(canvas);
-                }
-            }
-            if (debug) {
-                drawNormalVectorsInwards(canvas);
-                drawNormalVectorsOutwards(canvas);
-            }
-        }
-
-        drawScores(canvas);
-
-        if (needSync) {
-            synchronized (joysticks) {
-                synchronized (players) {
-                    synchronized (balls) {
-                        synchronized (shootButtons) {
-                            drawItems(canvas);
-                        }
-                    }
-                }
-
-            }
-        } else {
-            drawItems(canvas);
-        }
-        // Draw indexes at the begin points of diagonalEdges for debugging
-        if (debug) {
-            Paint paint = new Paint();
-            paint.setColor(Color.BLACK);
-            paint.setTextSize(30);
-            for (int i = 0; i < diagonalEdges.size(); i++) {
-                Vector edge = diagonalEdges.get(i);
-                canvas.drawText(String.valueOf(i), (float) edge.getX1(), (float) edge.getY1(), paint);
-            }
-        }
-//        Log.d("GameView", "Draw time after sync: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-
-        if (scored) {
-            displayStarsAnimation(canvas);
-        } else {
-            // Check if all scores are 0
-            boolean allZero = true;
-            for (Player player : players) {
-                if (player.getScore() != 0) {
-                    allZero = false;
-                    break;
-                }
-            }
-            if (!allZero) {
-//                Log.d("GameView", "Not all scores are zero, updating stars");
-                for (Star star : stars) {
-                    // Fade stars out
-                    star.update(canvas, (int) balls.get(0).getX(), (int) balls.get(0).getY(), true);
-                    star.bounce(screenX, screenY);
-                }
-            }
-        }
-
-        // Draw fps
-        canvas.drawText("FPS: " + fps, 10, 50, fpsPaint);
-
-//        Log.d("GameView", "Draw time before unlocking holder: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-
-        // Unlock the canvas and post the updates
-        holder.unlockCanvasAndPost(canvas);
-        Log.d("GameView", "Draw time after holder: " + (System.nanoTime() - startTime) / 1_000_000 + " ms");
-    }
 
     private void drawItems(Canvas canvas) {
         for (int i = 0; i < PLAYERCOUNT; i++) {
