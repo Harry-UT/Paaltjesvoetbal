@@ -859,19 +859,23 @@ public class GameView extends SurfaceView implements Runnable {
                     double edgeDX = edge.getX2() - edge.getX1();
                     double edgeDY = edge.getY2() - edge.getY1();
                     double edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
-                    double normalX = -edgeDY / edgeLength;
-                    double normalY = edgeDX / edgeLength;
 
-                    // Direction from ball to closest point on edge
+                    // Find closest point on edge to ball center
                     double ballDX = ball.getX() - edge.getX1();
                     double ballDY = ball.getY() - edge.getY1();
                     double t = (ballDX * edgeDX + ballDY * edgeDY) / (edgeLength * edgeLength);
                     t = Math.max(0, Math.min(1, t));
                     double closestX = edge.getX1() + t * edgeDX;
                     double closestY = edge.getY1() + t * edgeDY;
-                    double dirX = closestX - ball.getX();
-                    double dirY = closestY - ball.getY();
-                    Log.d("Bounce", "Direction from ball to closest point on edge: dx=" + dirX + ", dy=" + dirY);
+
+                    // Dynamic normal: from edge toward the ball
+                    double normalX = ball.getX() - closestX;
+                    double normalY = ball.getY() - closestY;
+                    double normalLength = Math.sqrt(normalX * normalX + normalY * normalY);
+                    if (normalLength != 0) {
+                        normalX /= normalLength;
+                        normalY /= normalLength;
+                    }
 
                     double velocityX = ball.getVelocityX();
                     double velocityY = ball.getVelocityY();
