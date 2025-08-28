@@ -439,7 +439,7 @@ public class GameView extends SurfaceView implements Runnable {
 
             // --- Update ---
             long updateStart = System.nanoTime();
-            update();
+//            update();
             long updateTime = System.nanoTime() - updateStart;
 
             // --- Sleep to maintain 60 FPS ---
@@ -459,6 +459,8 @@ public class GameView extends SurfaceView implements Runnable {
     protected void onDraw(Canvas canvas) {
         synchronized (lock) {
             long now = System.nanoTime();
+
+            update();
 
             // Update FPS every second
             if (now - fpsTimer >= 1_000_000_000) {
